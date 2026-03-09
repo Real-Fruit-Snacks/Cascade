@@ -41,6 +41,9 @@ docs/plans/
 .claude-*
 scripts/take-screenshots.ts
 
+# ─── Example Vault (demo only, not for distribution) ────────
+docs/My Notes/
+
 # ─── Internal Notes / Audits ────────────────────────────────
 PERF-FIXES.md
 PERFORMANCE_AUDIT.md
