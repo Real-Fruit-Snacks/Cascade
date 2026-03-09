@@ -1,8 +1,12 @@
 <p align="center">
-  <img src="docs/screenshots/editor-main.png" alt="Cascade Editor" width="800" />
+  <img src="public/app-icon.png" alt="Cascade logo" width="128" />
 </p>
 
 <h1 align="center">Cascade</h1>
+
+<p align="center">
+  <img src="docs/screenshots/editor-main.png" alt="Cascade Editor" width="800" />
+</p>
 
 <p align="center">
   A fast, beautiful markdown note-taking app for personal knowledge management.
@@ -68,8 +72,18 @@
 ## Screenshots
 
 <details>
-<summary>Command Palette</summary>
-<img src="docs/screenshots/command-palette.png" alt="Command Palette" width="800" />
+<summary>Graph View</summary>
+<img src="docs/screenshots/graph-view.png" alt="Graph View" width="800" />
+</details>
+
+<details>
+<summary>Backlinks Panel</summary>
+<img src="docs/screenshots/backlinks-panel.png" alt="Backlinks Panel" width="800" />
+</details>
+
+<details>
+<summary>Vault Search</summary>
+<img src="docs/screenshots/vault-search.png" alt="Vault Search" width="800" />
 </details>
 
 <details>
@@ -83,14 +97,8 @@
 </details>
 
 <details>
-<summary>Vault Search</summary>
-<!-- TODO: Take manually — docs/screenshots/search.png -->
-<img src="docs/screenshots/search.png" alt="Vault Search" width="800" />
-</details>
-
-<details>
-<summary>Settings — Editor</summary>
-<img src="docs/screenshots/settings-editor.png" alt="Settings Editor" width="800" />
+<summary>Command Palette</summary>
+<img src="docs/screenshots/command-palette.png" alt="Command Palette" width="800" />
 </details>
 
 <details>
@@ -99,19 +107,23 @@
 </details>
 
 <details>
+<summary>Settings — Features</summary>
+<img src="docs/screenshots/settings-features.png" alt="Settings Features" width="800" />
+</details>
+
+<details>
+<summary>Settings — Editor</summary>
+<img src="docs/screenshots/settings-editor.png" alt="Settings Editor" width="800" />
+</details>
+
+<details>
 <summary>Settings — Keyboard Shortcuts</summary>
 <img src="docs/screenshots/settings-shortcuts.png" alt="Keyboard Shortcuts" width="800" />
 </details>
 
 <details>
-<summary>Tags Panel</summary>
-<img src="docs/screenshots/tags-panel.png" alt="Tags Panel" width="800" />
-</details>
-
-<details>
-<summary>Graph View</summary>
-<!-- TODO: Take manually — docs/screenshots/graph-view.png -->
-<img src="docs/screenshots/graph-view.png" alt="Graph View" width="800" />
+<summary>Welcome View</summary>
+<img src="docs/screenshots/welcome-view.png" alt="Welcome View" width="800" />
 </details>
 
 ## Installation

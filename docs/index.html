@@ -101,13 +101,7 @@
       width: 28px;
       height: 28px;
       border-radius: 8px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--crust);
+      overflow: hidden;
     }
 
     .nav-links {
@@ -699,7 +693,7 @@
   <nav>
     <div class="nav-inner">
       <div class="nav-logo">
-        <div class="logo-icon">C</div>
+        <img class="logo-icon" src="app-icon.png" alt="Cascade logo" />
         Cascade
       </div>
       <ul class="nav-links">
@@ -824,13 +818,16 @@
       </div>
       <div class="screenshots-tabs fade-in">
         <button class="screenshot-tab active" data-img="editor-main">Editor</button>
-        <button class="screenshot-tab" data-img="command-palette">Command Palette</button>
+        <button class="screenshot-tab" data-img="graph-view">Graph View</button>
+        <button class="screenshot-tab" data-img="backlinks-panel">Backlinks</button>
+        <button class="screenshot-tab" data-img="vault-search">Search</button>
         <button class="screenshot-tab" data-img="quick-open">Quick Open</button>
         <button class="screenshot-tab" data-img="find-replace">Find &amp; Replace</button>
+        <button class="screenshot-tab" data-img="command-palette">Command Palette</button>
         <button class="screenshot-tab" data-img="settings-appearance">Appearance</button>
-        <button class="screenshot-tab" data-img="settings-shortcuts">Shortcuts</button>
-        <button class="screenshot-tab" data-img="tags-panel">Tags</button>
+        <button class="screenshot-tab" data-img="settings-features">Features</button>
         <button class="screenshot-tab" data-img="settings-editor">Editor Settings</button>
+        <button class="screenshot-tab" data-img="settings-shortcuts">Shortcuts</button>
       </div>
       <div class="screenshot-frame fade-in" id="screenshotFrame">
         <img src="screenshots/editor-main.png" alt="Cascade screenshot" id="screenshotImg" />

@@ -222,8 +222,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                   <span
                     className="text-xs px-1.5 py-0.5 rounded ml-3 shrink-0"
                     style={{
-                      color: 'var(--ctp-overlay0)',
-                      backgroundColor: 'var(--ctp-surface1)',
+                      color: 'var(--ctp-subtext0)',
+                      backgroundColor: 'var(--ctp-surface0)',
+                      border: '1px solid var(--ctp-surface1)',
                     }}
                   >
                     {cmd.shortcut}
