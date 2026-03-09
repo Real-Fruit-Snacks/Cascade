@@ -362,6 +362,44 @@
 
     .screenshot-frame img.hidden { display: none; }
 
+    /* ─── Theme Tabs ──────────────────────────────────────── */
+    .theme-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .theme-tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--subtext0);
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .theme-tab:hover { color: var(--text); background: var(--surface0); }
+    .theme-tab.active {
+      color: var(--text);
+      background: var(--surface0);
+      border-color: var(--surface2);
+    }
+
+    .theme-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
     /* ─── Tech Stack ──────────────────────────────────────── */
     .tech-grid {
       display: grid;
@@ -699,6 +737,7 @@
       </div>
       <ul class="nav-links">
         <li><a href="#features">Features</a></li>
+        <li><a href="#themes">Themes</a></li>
         <li><a href="#screenshots">Screenshots</a></li>
         <li><a href="#install">Install</a></li>
         <li><a href="#faq">FAQ</a></li>
@@ -806,6 +845,34 @@
           <h3>Internationalization</h3>
           <p>2,200+ translation keys across 13 namespaces. English built-in, ready for community translations into any language.</p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Themes ────────────────────────────────────────────── -->
+  <section id="themes">
+    <div class="container">
+      <div class="section-header fade-in">
+        <span class="section-label">Themes</span>
+        <h2 class="section-title">Four flavors of Catppuccin.</h2>
+        <p class="section-subtitle" style="color: var(--subtext0); max-width: 520px; margin: 12px auto 0;">Dark, medium, and light — pick the palette that fits your vibe. Every theme supports custom accent colors.</p>
+      </div>
+      <div class="theme-tabs fade-in">
+        <button class="theme-tab active" data-theme="mocha">
+          <span class="theme-dot" style="background: #1e1e2e; border: 2px solid #585b70;"></span> Mocha
+        </button>
+        <button class="theme-tab" data-theme="macchiato">
+          <span class="theme-dot" style="background: #24273a; border: 2px solid #5b6078;"></span> Macchiato
+        </button>
+        <button class="theme-tab" data-theme="frappe">
+          <span class="theme-dot" style="background: #303446; border: 2px solid #626880;"></span> Frappe
+        </button>
+        <button class="theme-tab" data-theme="latte">
+          <span class="theme-dot" style="background: #eff1f5; border: 2px solid #bcc0cc;"></span> Latte
+        </button>
+      </div>
+      <div class="screenshot-frame fade-in" id="themeFrame">
+        <img src="screenshots/theme-mocha.png" alt="Catppuccin Mocha theme" id="themeImg" />
       </div>
     </div>
   </section>
@@ -1103,6 +1170,20 @@
         img.style.opacity = '0';
         setTimeout(() => {
           img.src = `screenshots/${tab.dataset.img}.png`;
+          img.style.opacity = '1';
+        }, 150);
+      });
+    });
+
+    // Theme tabs
+    document.querySelectorAll('.theme-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.theme-tab').forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+        const img = document.getElementById('themeImg');
+        img.style.opacity = '0';
+        setTimeout(() => {
+          img.src = `screenshots/theme-${tab.dataset.theme}.png`;
           img.style.opacity = '1';
         }, 150);
       });
