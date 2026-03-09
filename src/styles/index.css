@@ -1,0 +1,169 @@
+@import './fonts.css';
+@import './theme.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .sidebar-btn-hover {
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+  .sidebar-btn-hover:hover {
+    color: var(--ctp-accent) !important;
+  }
+  .folder-chevron {
+    transition: transform 0.15s ease;
+  }
+}
+
+/* Prevent scroll-through on modal overlays */
+.modal-overlay {
+  overflow: hidden;
+}
+
+/* Modal animations */
+@keyframes modal-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-content-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes modal-overlay-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes modal-content-out {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to { opacity: 0; transform: scale(0.96) translateY(8px); }
+}
+
+@keyframes panel-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-overlay {
+  animation: modal-overlay-in 0.15s ease-out;
+}
+
+.modal-content {
+  animation: modal-content-in 0.15s ease-out;
+}
+
+@keyframes set-var-modal-in {
+  from { opacity: 0; transform: translateX(-50%) scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+}
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+    background-color: var(--ctp-base);
+    color: var(--ctp-text);
+    font-family: 'Inter', Avenir, Helvetica, Arial, sans-serif;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+    scroll-behavior: smooth;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ctp-accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  input, textarea {
+    caret-color: var(--ctp-accent);
+  }
+
+  /* Suppress focus ring on mouse clicks */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ctp-surface1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ctp-surface2);
+}
+
+::selection { background: color-mix(in srgb, var(--ctp-accent) 30%, transparent); color: var(--ctp-text); }
+
+/* Sidebar collapse transition */
+.sidebar-panel { overflow: hidden; transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease; }
+.sidebar-collapsed { width: 0 !important; opacity: 0; pointer-events: none; }
+
+/* Thin scrollbar for settings sidebar */
+.settings-sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.settings-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: var(--ctp-surface1);
+  border-radius: 2px;
+}
+
+.settings-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--ctp-surface2);
+}
+
+/* Skeleton loading animation */
+@keyframes skeleton-shimmer {
+  0% { background-color: var(--ctp-surface0); }
+  50% { background-color: var(--ctp-surface1); }
+  100% { background-color: var(--ctp-surface0); }
+}
+
+.skeleton-pulse {
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Tooltip fade-in */
+@keyframes tooltip-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes tooltip-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+/* File tree reveal highlight (applied imperatively via DOM to avoid re-rendering all items) */
+.tree-item-revealed > div {
+  background-color: var(--ctp-surface1);
+  transition: background-color 1.2s ease-out;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

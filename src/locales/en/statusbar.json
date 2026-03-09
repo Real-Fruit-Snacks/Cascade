@@ -1,0 +1,17 @@
+{
+  "cursor": {
+    "line": "Ln",
+    "column": "Col"
+  },
+  "words": "{{count}} words",
+  "chars": "{{count}} chars",
+  "readingTime": "{{count}} min read",
+  "goalReached": "✓",
+  "selection": "{{words}} words, {{chars}} chars selected",
+  "saved": "Saved",
+  "unsavedChanges": "Unsaved changes",
+  "fileType": "Markdown",
+  "toast": {
+    "goalReached": "Word count goal reached!"
+  }
+}

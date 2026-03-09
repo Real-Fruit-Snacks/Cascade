@@ -1,0 +1,40 @@
+{
+  "title": "Graph",
+  "nodeCount": "{{count}} nodes",
+  "buttons": {
+    "switchToGlobal": "Switch to global graph",
+    "switchToLocal": "Switch to local graph",
+    "resetView": "Reset view & settings",
+    "graphSettings": "Graph settings"
+  },
+  "settings": {
+    "repulsion": "Repulsion",
+    "linkDistance": "Link distance",
+    "maxNodes": "Max nodes",
+    "showOrphans": "Show orphan nodes",
+    "alwaysShowLabels": "Always show labels",
+    "localGraph": "Local graph",
+    "depth": "Depth (hops)"
+  },
+  "filters": {
+    "sectionHeader": "Filters (comma-separated)",
+    "includeFolders": "Include folders",
+    "excludeFolders": "Exclude folders",
+    "includeTags": "Include tags",
+    "excludeTags": "Exclude tags",
+    "placeholders": {
+      "includeFolders": "e.g. notes, projects",
+      "excludeFolders": "e.g. archive, templates",
+      "includeTags": "e.g. project, idea",
+      "excludeTags": "e.g. draft, archive"
+    }
+  },
+  "colorBy": {
+    "label": "Color by",
+    "options": {
+      "none": "Default",
+      "folder": "Folder",
+      "tag": "Tag"
+    }
+  }
+}

@@ -118,7 +118,7 @@
 
 ### Pre-built Binaries
 
-Download the latest release for your platform from the [Releases](https://github.com/matt/cascade/releases) page.
+Download the latest release for your platform from the [Releases](https://github.com/Real-Fruit-Snacks/Cascade/releases) page.
 
 | Platform | Download |
 |----------|----------|
@@ -135,7 +135,7 @@ Download the latest release for your platform from the [Releases](https://github
 
 ```bash
 # Clone the repository
-git clone https://github.com/matt/cascade.git
+git clone https://github.com/Real-Fruit-Snacks/Cascade.git
 cd cascade
 
 # Install dependencies
@@ -225,4 +225,4 @@ npx playwright test
 
 ## License
 
-[MIT](LICENSE) &copy; Matt
+[MIT](LICENSE)

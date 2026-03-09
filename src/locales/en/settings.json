@@ -1,0 +1,884 @@
+{
+  "title": "Settings",
+  "search": {
+    "placeholder": "Search settings...",
+    "noResults": "No settings found"
+  },
+  "reset": {
+    "buttonLabel": "Reset All",
+    "buttonTitle": "Reset all settings to defaults",
+    "dialogTitle": "Reset Settings",
+    "dialogMessage": "Are you sure you want to reset all settings to their defaults? This includes editor preferences, auto-save interval, and custom keyboard shortcuts.",
+    "cancel": "Cancel",
+    "confirm": "Reset All"
+  },
+  "resetToDefault": "Reset to default",
+  "categories": {
+    "editor": "Editor",
+    "appearance": "Appearance",
+    "files": "Files",
+    "general": "General",
+    "features": "Features",
+    "plugins": "Plugins",
+    "shortcuts": "Keyboard Shortcuts"
+  },
+  "featurePages": {
+    "autosave": "Auto-Save",
+    "backlinks": "Backlinks",
+    "bookmarks": "Bookmarks",
+    "codeFolding": "Code Folding",
+    "dailyNotes": "Daily Notes",
+    "focusMode": "Focus Mode",
+    "folderColors": "Folder Colors",
+    "graphView": "Graph View",
+    "highlights": "Highlights",
+    "imagePreview": "Image Preview",
+    "indentGuides": "Indent Guides",
+    "livePreview": "Live Preview",
+    "mediaViewer": "Media Viewer",
+    "outline": "Outline",
+    "properties": "Properties",
+    "queryPreview": "Query Preview",
+    "search": "Search",
+    "spellcheck": "Spellcheck",
+    "statusBar": "Status Bar",
+    "tableOfContents": "Table of Contents",
+    "tags": "Tags",
+    "templates": "Templates",
+    "typewriterMode": "Typewriter Mode",
+    "variables": "Variables",
+    "wikiLinks": "Wiki Links",
+    "wordCountGoal": "Word Count Goal"
+  },
+  "systemMonospace": "System Monospace",
+  "editor": {
+    "subheaders": {
+      "text": "Text",
+      "display": "Display",
+      "editing": "Editing",
+      "other": "Other"
+    },
+    "fontSize": {
+      "label": "Font Size",
+      "description": "Editor font size in pixels"
+    },
+    "fontFamily": {
+      "label": "Font Family",
+      "description": "Monospace font for the editor"
+    },
+    "lineNumbers": {
+      "label": "Line Numbers",
+      "description": "Show line numbers in the gutter"
+    },
+    "readableLineLength": {
+      "label": "Readable Line Length",
+      "description": "Limit content width for comfortable reading. Set to 0 for full width.",
+      "off": "Off"
+    },
+    "vimMode": {
+      "label": "Vim Mode",
+      "description": "Enable vim keybindings in the editor"
+    },
+    "tabSize": {
+      "label": "Tab Size",
+      "description": "Number of spaces per indent level",
+      "twoSpaces": "2 spaces",
+      "fourSpaces": "4 spaces"
+    },
+    "highlightActiveLine": {
+      "label": "Highlight Active Line",
+      "description": "Highlight the line the cursor is on"
+    },
+    "defaultViewMode": {
+      "label": "Default View Mode",
+      "description": "View mode when opening new files (applies on next file open)",
+      "live": "Live Preview",
+      "source": "Source",
+      "reading": "Reading"
+    },
+    "codeBlockLineNumbers": {
+      "label": "Code Block Line Numbers",
+      "description": "Show line numbers in fenced code blocks"
+    }
+  },
+  "appearance": {
+    "subheaders": {
+      "theme": "Theme",
+      "colors": "Colors",
+      "layout": "Layout"
+    },
+    "theme": {
+      "label": "Theme",
+      "description": "Choose a built-in or custom theme",
+      "catppuccin": "Catppuccin",
+      "dark": "Dark",
+      "light": "Light",
+      "custom": "Custom",
+      "installTheme": "Install Theme",
+      "deleteTheme": "Delete",
+      "invalidThemeFile": "Invalid theme file. Must have id, name, dark, and colors fields.",
+      "missingColors": "Theme is missing colors: {{colors}}",
+      "parseError": "Failed to parse theme file. Must be valid JSON."
+    },
+    "accentColor": {
+      "label": "Accent Color",
+      "description": "Primary color for highlights, borders, and active elements"
+    },
+    "sidebarPosition": {
+      "label": "Sidebar Position",
+      "description": "Place the sidebar on the left or right",
+      "left": "Left",
+      "right": "Right"
+    },
+    "uiFontSize": {
+      "label": "UI Font Size",
+      "description": "Font size for menus, sidebar, and panels"
+    },
+    "communityThemes": "Community Themes",
+    "themeMarketplace": {
+      "searchPlaceholder": "Search themes...",
+      "loadingRegistry": "Loading registry...",
+      "noThemesFound": "No themes found. Add a registry below.",
+      "noThemesMatch": "No themes match your search.",
+      "by": "by {{author}}",
+      "darkLabel": "Dark",
+      "lightLabel": "Light",
+      "base": "Base",
+      "text": "Text",
+      "accent": "Accent",
+      "installing": "Installing...",
+      "installed": "Installed",
+      "install": "Install",
+      "registries": "Registries",
+      "noRegistries": "No registries configured.",
+      "removeRegistry": "Remove registry",
+      "registryPlaceholder": "https://github.com/owner/repo",
+      "add": "Add"
+    }
+  },
+  "accentColors": {
+    "mauve": "Mauve",
+    "blue": "Blue",
+    "pink": "Pink",
+    "red": "Red",
+    "peach": "Peach",
+    "yellow": "Yellow",
+    "green": "Green",
+    "teal": "Teal",
+    "sky": "Sky",
+    "lavender": "Lavender",
+    "flamingo": "Flamingo",
+    "rosewater": "Rosewater"
+  },
+  "files": {
+    "subheaders": {
+      "explorer": "Explorer",
+      "deletion": "Deletion",
+      "attachmentsTemplates": "Attachments & Templates"
+    },
+    "sortOrder": {
+      "label": "Sort Order",
+      "description": "How files are sorted in the file explorer",
+      "nameAsc": "Name (A \u2192 Z)",
+      "nameDesc": "Name (Z \u2192 A)",
+      "modifiedNewest": "Modified (Newest)",
+      "modifiedOldest": "Modified (Oldest)"
+    },
+    "showFileExtensions": {
+      "label": "Show File Extensions",
+      "description": "Display .md extension in the file explorer"
+    },
+    "showFolderIcons": {
+      "label": "Show Folder Icons",
+      "description": "Display folder icons in the file explorer"
+    },
+    "showFileIcons": {
+      "label": "Show File Icons",
+      "description": "Display file icons in the file explorer"
+    },
+    "confirmBeforeDelete": {
+      "label": "Confirm Before Delete",
+      "description": "Show a confirmation dialog before deleting files"
+    },
+    "moveToTrash": {
+      "label": "Move to Trash",
+      "description": "Move deleted files to a .trash folder instead of permanently deleting them"
+    },
+    "templatesFolder": {
+      "label": "Templates Folder",
+      "description": "Folder containing note templates (shown when creating new files)",
+      "placeholder": "templates"
+    },
+    "attachmentLocation": {
+      "label": "Attachment Location",
+      "description": "Where to save pasted images and attachments",
+      "vaultFolder": "Designated folder",
+      "sameFolder": "Same folder as current file"
+    },
+    "attachmentsFolder": {
+      "label": "Attachments Folder",
+      "description": "Folder path relative to vault root",
+      "placeholder": "attachments"
+    }
+  },
+  "general": {
+    "subheaders": {
+      "startup": "Startup",
+      "language": "Language"
+    },
+    "language": {
+      "label": "Language",
+      "description": "Display language for the interface"
+    },
+    "onStartup": {
+      "label": "On Startup",
+      "description": "What to do when the app launches",
+      "reopenLast": "Reopen Last Vault",
+      "showPicker": "Show Vault Picker"
+    }
+  },
+  "features": {
+    "autoSave": {
+      "label": "Auto-Save",
+      "description": "Automatically save files after editing"
+    },
+    "backlinks": {
+      "label": "Backlinks",
+      "description": "Show the backlinks panel in the sidebar"
+    },
+    "bookmarks": {
+      "label": "Bookmarks",
+      "description": "Star files as favorites for quick access"
+    },
+    "calloutPreview": {
+      "label": "Callout Preview",
+      "description": "Render callout/admonition blocks with styled formatting"
+    },
+    "codeFolding": {
+      "label": "Code Folding",
+      "description": "Fold/collapse headings and code blocks in the editor"
+    },
+    "dailyNotes": {
+      "label": "Daily Notes",
+      "description": "Create and open a daily note for today with a configurable folder and template"
+    },
+    "focusMode": {
+      "label": "Focus Mode",
+      "description": "Hide sidebar, tabs, and status bar for distraction-free writing"
+    },
+    "folderColors": {
+      "label": "Folder Colors",
+      "description": "Enable custom color labels for folders in the file explorer"
+    },
+    "graphView": {
+      "label": "Graph View",
+      "description": "Show the graph view button in the sidebar"
+    },
+    "highlightSyntax": {
+      "label": "Highlight Syntax",
+      "description": "Render ==highlighted== text with a colored background"
+    },
+    "imagePreview": {
+      "label": "Image Preview",
+      "description": "Show inline image previews in the editor"
+    },
+    "indentGuides": {
+      "label": "Indent Guides",
+      "description": "Show vertical lines for indentation levels"
+    },
+    "livePreview": {
+      "label": "Live Preview",
+      "description": "Render markdown formatting inline while editing"
+    },
+    "mathPreview": {
+      "label": "Math Preview",
+      "description": "Render LaTeX math expressions inline"
+    },
+    "mediaViewer": {
+      "label": "Media Viewer",
+      "description": "View images and PDFs in tabs"
+    },
+    "mermaidDiagrams": {
+      "label": "Mermaid Diagrams",
+      "description": "Render Mermaid diagram code blocks as visual diagrams"
+    },
+    "outline": {
+      "label": "Outline",
+      "description": "Show the document outline panel in the sidebar"
+    },
+    "propertiesWidget": {
+      "label": "Properties Widget",
+      "description": "Render YAML frontmatter as a styled properties panel"
+    },
+    "queryPreview": {
+      "label": "Query Preview",
+      "description": "Render query code blocks as live tables or lists."
+    },
+    "searchInVault": {
+      "label": "Search in Vault",
+      "description": "Search across all files in the vault with Ctrl+Shift+F"
+    },
+    "spellcheck": {
+      "label": "Spellcheck",
+      "description": "Underline misspelled words in the editor"
+    },
+    "statusBar": {
+      "label": "Status Bar",
+      "description": "Show word count, cursor position, and other stats at the bottom"
+    },
+    "tableOfContents": {
+      "label": "Table of Contents",
+      "description": "Auto-generated table of contents from document headings"
+    },
+    "tags": {
+      "label": "Tags",
+      "description": "Enable #tag highlighting and the tags panel in the sidebar"
+    },
+    "templates": {
+      "label": "Templates",
+      "description": "Apply template variables when creating new files from templates"
+    },
+    "typewriterMode": {
+      "label": "Typewriter Mode",
+      "description": "Keep the cursor vertically centered while typing"
+    },
+    "variables": {
+      "label": "Variables",
+      "description": "Dynamic variable replacement using frontmatter values"
+    },
+    "welcomeView": {
+      "label": "Welcome View",
+      "description": "Show recent files and vault stats when no file is open"
+    },
+    "wikiLinks": {
+      "label": "Wiki Links",
+      "description": "Enable [[wiki-link]] syntax highlighting, completion, and click-to-open"
+    },
+    "wordCountGoal": {
+      "label": "Word Count Goal",
+      "description": "Set a target word count and track progress in the status bar"
+    }
+  },
+  "folderColors": {
+    "colorSubfolders": {
+      "label": "Color Subfolders",
+      "description": "Subfolders inherit their parent folder's color"
+    },
+    "colorFiles": {
+      "label": "Color Files",
+      "description": "Files inherit their parent folder's color"
+    },
+    "folderStyle": {
+      "label": "Folder Style",
+      "description": "How colored folders are displayed",
+      "iconOnly": "Icon Only",
+      "text": "Text",
+      "background": "Background",
+      "accentBar": "Accent Bar",
+      "full": "Full",
+      "dot": "Dot",
+      "custom": "Custom"
+    },
+    "colorFolderIcon": {
+      "label": "Color Folder Icon",
+      "description": "Apply color to the folder icon"
+    },
+    "colorFolderName": {
+      "label": "Color Folder Name",
+      "description": "Apply color to the folder text label"
+    },
+    "colorFolderBackground": {
+      "label": "Color Folder Background",
+      "description": "Apply a subtle tinted background to the folder row"
+    },
+    "colorChevron": {
+      "label": "Color Chevron",
+      "description": "Apply color to the expand/collapse arrow"
+    },
+    "fileStyle": {
+      "label": "File Style",
+      "description": "How files inherit their folder's color",
+      "iconOnly": "Icon Only",
+      "text": "Text",
+      "background": "Background",
+      "accentBar": "Accent Bar",
+      "full": "Full",
+      "dot": "Dot",
+      "custom": "Custom"
+    },
+    "colorFileIcon": {
+      "label": "Color File Icon",
+      "description": "Apply inherited color to file icons"
+    },
+    "colorFileName": {
+      "label": "Color File Name",
+      "description": "Apply inherited color to file text labels"
+    },
+    "colorFileBackground": {
+      "label": "Color File Background",
+      "description": "Apply a subtle tinted background to file rows"
+    },
+    "boldFolderNames": {
+      "label": "Bold Folder Names",
+      "description": "Make colored folder names bold"
+    },
+    "colorIntensity": {
+      "label": "Color Intensity",
+      "description": "Opacity for background tint and accent bar"
+    }
+  },
+  "shortcuts": {
+    "groups": {
+      "files": "Files",
+      "tabs": "Tabs",
+      "navigation": "Navigation",
+      "export": "Export",
+      "sidebar": "Sidebar",
+      "app": "App"
+    },
+    "default": "default: {{shortcut}}",
+    "clickToRebind": "Click to rebind",
+    "pressKeys": "Press keys...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "resetToDefault": "Reset to default"
+  },
+  "wikiLinksOptions": {
+    "title": "Wiki Links Options",
+    "description": "Configure how wiki-links behave when clicking and completing.",
+    "openInNewTab": {
+      "label": "Open in New Tab",
+      "description": "Open wiki-link targets in a new tab instead of the current one"
+    },
+    "showFullPath": {
+      "label": "Show Full Path",
+      "description": "Show full file path on hover over wiki links"
+    },
+    "createOnFollow": {
+      "label": "Create on Follow",
+      "description": "Create a new file if the wiki-link target does not exist when clicked"
+    }
+  },
+  "livePreviewOptions": {
+    "title": "Live Preview Options",
+    "description": "Choose which markdown elements are rendered inline while editing.",
+    "headings": {
+      "label": "Headings",
+      "description": "Render heading sizes inline"
+    },
+    "bold": {
+      "label": "Bold",
+      "description": "Render **bold** text inline"
+    },
+    "italic": {
+      "label": "Italic",
+      "description": "Render *italic* text inline"
+    },
+    "links": {
+      "label": "Links",
+      "description": "Render links with clickable styling"
+    },
+    "images": {
+      "label": "Images",
+      "description": "Show image previews inline"
+    },
+    "codeBlocks": {
+      "label": "Code Blocks",
+      "description": "Render code blocks with syntax highlighting"
+    }
+  },
+  "tagsOptions": {
+    "title": "Tags Options",
+    "description": "Configure tag behavior and auto-completion.",
+    "autoComplete": {
+      "label": "Auto-Complete Tags",
+      "description": "Suggest existing tags from the vault when typing #"
+    },
+    "nestedTags": {
+      "label": "Nested Tags",
+      "description": "Support nested tag hierarchy using #parent/child syntax"
+    }
+  },
+  "graphOptions": {
+    "title": "Graph View Options",
+    "description": "Customize graph rendering and performance settings.",
+    "nodeSize": {
+      "label": "Node Size",
+      "description": "Size of nodes in the graph (1\u201320)"
+    },
+    "linkDistance": {
+      "label": "Link Distance",
+      "description": "Distance between connected nodes (20\u2013300)"
+    },
+    "showOrphans": {
+      "label": "Show Orphan Notes",
+      "description": "Display notes with no links to other notes"
+    },
+    "maxNodes": {
+      "label": "Max Nodes",
+      "description": "Maximum number of nodes to render (50\u20132000)"
+    }
+  },
+  "backlinksOptions": {
+    "title": "Backlinks Options",
+    "description": "Configure how backlinks are displayed in the sidebar panel.",
+    "contextLines": {
+      "label": "Context Lines",
+      "description": "Number of surrounding lines to show for each backlink (0\u20135)"
+    },
+    "groupByFolder": {
+      "label": "Group by Folder",
+      "description": "Group backlinks by their parent folder instead of a flat list"
+    }
+  },
+  "outlineOptions": {
+    "title": "Outline Options",
+    "description": "Configure the document outline panel behavior.",
+    "minHeadingLevel": {
+      "label": "Minimum Heading Level",
+      "description": "Only show headings at or above this level (1 = H1, 6 = H6)",
+      "h1": "H1 and below",
+      "h2": "H2 and below",
+      "h3": "H3 and below",
+      "h4": "H4 and below",
+      "h5": "H5 and below",
+      "h6": "H6 only"
+    },
+    "autoExpand": {
+      "label": "Auto-Expand",
+      "description": "Automatically expand all outline sections"
+    }
+  },
+  "variablesOptions": {
+    "title": "Variables Options",
+    "description": "Configure variable syntax and replacement behavior. Variables use frontmatter values.",
+    "highlightVariables": {
+      "label": "Highlight Variables",
+      "description": "Color-code variables in the editor based on resolution status"
+    },
+    "openDelimiter": {
+      "label": "Open Delimiter",
+      "description": "Character(s) that start a variable reference"
+    },
+    "closeDelimiter": {
+      "label": "Close Delimiter",
+      "description": "Character(s) that end a variable reference"
+    },
+    "defaultSeparator": {
+      "label": "Default Separator",
+      "description": "Character between variable name and default value"
+    },
+    "missingValueText": {
+      "label": "Missing Value Text",
+      "description": "Text shown when a variable has no value and no default"
+    },
+    "supportNesting": {
+      "label": "Support Nesting",
+      "description": "Allow dot notation for nested frontmatter values (e.g. server.ip)"
+    },
+    "caseInsensitive": {
+      "label": "Case Insensitive",
+      "description": "Ignore case when matching variable names to frontmatter keys"
+    },
+    "arraySeparator": {
+      "label": "Array Separator",
+      "description": "Text used to join array values when replacing"
+    },
+    "preserveOnMissing": {
+      "label": "Preserve on Missing",
+      "description": "Keep the variable syntax unchanged if no value is found"
+    },
+    "sidebarButtonAction": {
+      "label": "Sidebar Button Action",
+      "description": "What happens when clicking the Variables button in the sidebar",
+      "openList": "Open List Variables",
+      "showMenu": "Show Actions Menu"
+    }
+  },
+  "dailyNotesOptions": {
+    "title": "Daily Notes Options",
+    "description": "Configure where daily notes are stored and how they are named.",
+    "notesFolder": {
+      "label": "Notes Folder",
+      "description": "Folder path relative to vault root where daily notes are saved",
+      "placeholder": "daily"
+    },
+    "dateFormat": {
+      "label": "Date Format",
+      "description": "Format used for the daily note filename"
+    },
+    "templateFile": {
+      "label": "Template File",
+      "description": "Path to a template file relative to vault root (leave empty for no template)",
+      "placeholder": "templates/daily.md"
+    },
+    "periodicNotes": {
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "yearly": "Yearly",
+      "notesLabel": "{{period}} Notes",
+      "folder": {
+        "label": "Folder",
+        "description": "Folder for {{period}} notes"
+      },
+      "format": {
+        "label": "Format",
+        "description": "Filename format for {{period}} notes"
+      },
+      "template": {
+        "label": "Template",
+        "description": "Template file for {{period}} notes"
+      }
+    }
+  },
+  "codeFoldingOptions": {
+    "title": "Code Folding Options",
+    "description": "Configure which elements can be folded in the editor.",
+    "foldHeadings": {
+      "label": "Fold Headings",
+      "description": "Allow folding markdown headings to collapse their content"
+    },
+    "foldCodeBlocks": {
+      "label": "Fold Code Blocks",
+      "description": "Allow folding fenced code blocks"
+    },
+    "minFoldLevel": {
+      "label": "Minimum Fold Level",
+      "description": "Only fold headings at or above this level (1 = H1, 6 = H6)",
+      "h1": "H1 and below",
+      "h2": "H2 and below",
+      "h3": "H3 and below",
+      "h4": "H4 and below",
+      "h5": "H5 and below",
+      "h6": "H6 only"
+    }
+  },
+  "highlightOptions": {
+    "title": "Highlight Options",
+    "description": "Configure the ==highlight== syntax appearance.",
+    "highlightColor": {
+      "label": "Highlight Color",
+      "description": "Catppuccin color used for highlighted text background"
+    }
+  },
+  "propertiesOptions": {
+    "title": "Properties Options",
+    "description": "Configure the YAML frontmatter properties widget.",
+    "showTypes": {
+      "label": "Show Types",
+      "description": "Display the data type (string, number, array, etc.) next to each property"
+    }
+  },
+  "statusBarOptions": {
+    "title": "Status Bar Options",
+    "description": "Choose which statistics are shown in the status bar.",
+    "wordCount": {
+      "label": "Word Count",
+      "description": "Show the total word count"
+    },
+    "characterCount": {
+      "label": "Character Count",
+      "description": "Show the total character count"
+    },
+    "readingTime": {
+      "label": "Reading Time",
+      "description": "Show estimated reading time"
+    },
+    "selectionStats": {
+      "label": "Selection Stats",
+      "description": "Show word and character count of selected text"
+    }
+  },
+  "autoSaveOptions": {
+    "title": "Auto-Save Options",
+    "description": "Configure automatic file saving behavior.",
+    "saveMode": {
+      "label": "Save Mode",
+      "description": "How auto-save is triggered",
+      "focusChange": "On Focus Change",
+      "timer": "After Delay"
+    },
+    "saveInterval": {
+      "label": "Save Interval",
+      "description": "Delay in ms after typing before auto-saving (500\u201330000)"
+    }
+  },
+  "spellcheckOptions": {
+    "title": "Spellcheck Options",
+    "description": "Cascade uses a built-in dictionary to check spelling. Right-click misspelled words for suggestions or to add them to your custom dictionary.",
+    "enableSpellcheck": {
+      "label": "Enable Spellcheck",
+      "description": "Underline misspelled words in the editor"
+    },
+    "skipCapitalized": {
+      "label": "Skip Capitalized Words",
+      "description": "Don't flag capitalized words (proper nouns, acronyms)"
+    },
+    "customDictionary": {
+      "title": "Custom Dictionary",
+      "description": "Words you've added will not be flagged as misspelled. You can also add words by right-clicking underlined words in the editor.",
+      "addPlaceholder": "Add a word\u2026",
+      "add": "Add",
+      "loading": "Loading\u2026",
+      "noWords": "No custom words added yet",
+      "removeWord": "Remove \"{{word}}\"",
+      "wordCount": "{{count}} word in custom dictionary",
+      "wordCountPlural": "{{count}} words in custom dictionary"
+    }
+  },
+  "templatesOptions": {
+    "title": "Templates Options",
+    "description": "Configure template folder and available template variables.",
+    "availableVariables": "Available Variables",
+    "variables": {
+      "title": "File name without extension",
+      "date": "Current date (YYYY-MM-DD)",
+      "time": "Current time (HH:mm)",
+      "datetime": "Full date and time",
+      "dateFormat": "Custom date format (e.g., MMMM D, YYYY)",
+      "clipboard": "Current clipboard contents",
+      "cursor": "Cursor position after template is applied"
+    }
+  },
+  "searchOptions": {
+    "title": "Search Options",
+    "description": "Configure default search behavior for vault-wide search (Ctrl+Shift+F).",
+    "caseSensitive": {
+      "label": "Case Sensitive",
+      "description": "Match exact letter casing by default"
+    },
+    "useRegex": {
+      "label": "Use Regex",
+      "description": "Interpret search queries as regular expressions by default"
+    },
+    "wholeWord": {
+      "label": "Whole Word",
+      "description": "Only match whole words by default"
+    }
+  },
+  "focusModeOptions": {
+    "title": "Focus Mode Options",
+    "description": "Configure distraction-free writing. Toggle focus mode with F11 or Ctrl+Shift+Enter.",
+    "dimParagraphs": {
+      "label": "Dim Paragraphs",
+      "description": "Dim non-active paragraphs to focus on the current one"
+    },
+    "typewriterScrolling": {
+      "label": "Typewriter Scrolling",
+      "description": "Keep cursor centered vertically while in focus mode"
+    }
+  },
+  "wordCountGoalOptions": {
+    "title": "Word Count Goal Options",
+    "description": "Set a target word count for your writing sessions.",
+    "targetWords": {
+      "label": "Target Words",
+      "description": "Number of words to aim for"
+    },
+    "showInStatusBar": {
+      "label": "Show in Status Bar",
+      "description": "Display progress toward goal in the status bar"
+    },
+    "notifyOnReach": {
+      "label": "Notify on Reach",
+      "description": "Show a toast notification when the goal is reached"
+    }
+  },
+  "bookmarksOptions": {
+    "title": "Bookmarks Options",
+    "description": "Bookmark files for quick access via the sidebar panel. Right-click a file to toggle its bookmark.",
+    "enableBookmarks": {
+      "label": "Enable Bookmarks",
+      "description": "Show the bookmarks panel and allow starring files"
+    }
+  },
+  "typewriterOptions": {
+    "title": "Typewriter Mode Options",
+    "description": "Keep the active line centered vertically while typing.",
+    "verticalOffset": {
+      "label": "Vertical Offset",
+      "description": "Where to position the cursor (0% = top, 50% = center, 100% = bottom)"
+    }
+  },
+  "indentGuidesOptions": {
+    "title": "Indent Guides Options",
+    "description": "Show vertical lines at each indentation level.",
+    "guideColor": {
+      "label": "Guide Color",
+      "description": "Color of the indent guide lines"
+    },
+    "guideStyle": {
+      "label": "Guide Style",
+      "description": "Line style for indent guides",
+      "solid": "Solid",
+      "dashed": "Dashed",
+      "dotted": "Dotted"
+    }
+  },
+  "imagePreviewOptions": {
+    "title": "Image Preview Options",
+    "description": "Show inline image previews below image links in the editor.",
+    "maxHeight": {
+      "label": "Max Height",
+      "description": "Maximum height in pixels for inline image previews"
+    }
+  },
+  "mediaViewerOptions": {
+    "title": "Media Viewer Options",
+    "description": "View images and PDF files directly in editor tabs.",
+    "pdfDefaultZoom": {
+      "label": "PDF Default Zoom",
+      "description": "Default zoom level for PDF files (25-400%)"
+    },
+    "imageDefaultZoom": {
+      "label": "Image Default Zoom",
+      "description": "Default zoom behavior when opening images",
+      "fitToView": "Fit to View",
+      "actualSize": "Actual Size (100%)"
+    }
+  },
+  "tocOptions": {
+    "title": "Table of Contents Options",
+    "description": "Auto-generate a table of contents from document headings. Use the command palette to insert or update.",
+    "autoUpdateOnSave": {
+      "label": "Auto-Update on Save",
+      "description": "Automatically update the TOC when saving the file"
+    }
+  },
+  "queryOptions": {
+    "title": "Query Preview",
+    "description": "Query blocks let you create dynamic views of your notes based on frontmatter properties. Write a query inside a <code>query</code> code block and it will render as a live table or list. Click inside the rendered result to edit the query.",
+    "howItWorks": {
+      "title": "How It Works",
+      "description": "Queries read the <strong>frontmatter properties</strong> (YAML metadata) at the top of your markdown files.",
+      "note": "...can be found by queries that filter on <code>status</code>, <code>priority</code>, or <code>tags</code>. Queries also detect inline <code>#tags</code> in the body of your notes."
+    },
+    "syntaxReference": {
+      "title": "Syntax Reference",
+      "outputType": "Output Type (required, first line)",
+      "sourceFilter": "Source Filter (optional)",
+      "filters": "Filters (optional, multiple allowed)",
+      "sorting": "Sorting (optional)",
+      "limit": "Limit (optional)"
+    },
+    "examples": {
+      "title": "Examples",
+      "booksRated": "Show all books rated 4 or higher",
+      "activeProjects": "List active projects",
+      "recentMeetings": "Recent meeting notes",
+      "keywordNotes": "Find notes containing a keyword",
+      "allNotes": "All notes with no specific filter"
+    },
+    "tips": {
+      "title": "Tips",
+      "clickFile": "Click on any file name in the results to open that note.",
+      "clickQuery": "Click inside the rendered query to reveal and edit the raw query code.",
+      "tableNoFields": "If <code>TABLE</code> is used without field names, all properties from matching notes will be shown.",
+      "caseSensitive": "Property names are case-sensitive. Make sure <code>WHERE</code> field names match your frontmatter exactly.",
+      "tagsCase": "Tags in <code>FROM #tag</code> are matched case-insensitively, both in frontmatter <code>tags:</code> and inline <code>#tag</code> usage.",
+      "listProperties": "List-type properties (like <code>tags: [a, b]</code>) are displayed as comma-separated values and can be searched with <code>contains</code>.",
+      "largeVaults": "Queries scan your entire vault (or the filtered subset) each time. For very large vaults, use <code>FROM</code> to narrow the scope."
+    }
+  }
+}

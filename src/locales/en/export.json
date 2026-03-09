@@ -1,0 +1,55 @@
+{
+  "dialogAriaLabel": "Export",
+  "title": {
+    "current": "Export Note",
+    "vault": "Export Vault",
+    "folder": "Export Folder",
+    "tag": "Export by Tag"
+  },
+  "labels": {
+    "file": "File",
+    "scope": "Scope",
+    "folder": "Folder",
+    "tag": "Tag",
+    "format": "Format"
+  },
+  "scope": {
+    "current": "Current Note",
+    "vault": "Entire Vault",
+    "folder": "Folder...",
+    "tag": "Tag..."
+  },
+  "folder": {
+    "selectPlaceholder": "Select folder..."
+  },
+  "tag": {
+    "placeholder": "#tag-name"
+  },
+  "format": {
+    "html": "HTML",
+    "pdf": "PDF (Print)",
+    "markdown": "Markdown",
+    "docx": "Word Document",
+    "htmlThemed": "HTML (Themed)",
+    "htmlMinimal": "HTML (Minimal)"
+  },
+  "options": {
+    "includeImages": "Include images",
+    "resolveWikiLinks": "Resolve wiki-links"
+  },
+  "progress": {
+    "exporting": "Exporting {{current}} of {{total}} files..."
+  },
+  "buttons": {
+    "cancelExport": "Cancel Export",
+    "exporting": "Exporting..."
+  },
+  "toast": {
+    "selectFolder": "Please select a folder",
+    "enterTag": "Please enter a tag",
+    "noFilesForTag": "No files found with tag #{{tag}}",
+    "noFilesToExport": "No files to export",
+    "exportedFiles": "Exported {{count}} files",
+    "exportFailed": "Export failed: {{message}}"
+  }
+}

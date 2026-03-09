@@ -1,0 +1,37 @@
+{
+  "marketplace": {
+    "searchPlaceholder": "Search plugins...",
+    "loadingRegistry": "Loading registry...",
+    "noPluginsFound": "No plugins found. Add a registry below.",
+    "noPluginsMatch": "No plugins match your search.",
+    "by": "by {{author}}",
+    "installing": "Installing...",
+    "installed": "Installed",
+    "install": "Install",
+    "registries": "Registries",
+    "noRegistries": "No registries configured.",
+    "removeRegistry": "Remove registry",
+    "registryPlaceholder": "https://github.com/owner/repo"
+  },
+  "section": {
+    "thirdPartyPlugins": "Third-party plugins",
+    "thirdPartyWarning": "Plugins are written by third-party developers and have full access to your vault. They can read, modify, and delete files. Only enable plugins from authors you trust.",
+    "turnOnPlugins": "Turn on plugins",
+    "thirdPartyEnabled": "Third-party plugins enabled",
+    "openPluginsFolder": "Open plugins folder",
+    "tabInstalled": "Installed",
+    "tabBrowse": "Browse",
+    "noPluginsInstalled": "No plugins installed. Place plugins in .cascade/plugins/ to get started.",
+    "active": "Active"
+  },
+  "detail": {
+    "back": "← Back",
+    "statusLabel": "Status:",
+    "statusActive": "Active",
+    "statusEnabledNotLoaded": "Enabled (not loaded)",
+    "statusDisabled": "Disabled",
+    "permissionsLabel": "Permissions:",
+    "readmeSection": "README",
+    "noReadme": "No README found. Add a README.md to the plugin folder."
+  }
+}

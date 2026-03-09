@@ -1,0 +1,93 @@
+# ─── Dependencies ──────────────────────────────────────────────
+node_modules/
+
+# ─── Build Output ─────────────────────────────────────────────
+dist/
+dist-ssr/
+src-tauri/target/
+*.local
+
+# ─── Logs ─────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ─── Test Artifacts ───────────────────────────────────────────
+.playwright/
+test-results/
+test-vault/
+playwright-report/
+blob-report/
+
+# ─── AI / LLM ────────────────────────────────────────────────
+.claude/
+.omc/
+.cursor/
+.cursorrules
+.cursorignore
+.windsurf/
+.codeium/
+.continue/
+.copilot/
+.aider*
+.bolt/
+AGENTS.md
+docs/agents/
+docs/plans/
+.claude-*
+scripts/take-screenshots.ts
+
+# ─── Internal Notes / Audits ────────────────────────────────
+PERF-FIXES.md
+PERFORMANCE_AUDIT.md
+POLISH_TODO.md
+ROADMAP.md
+UX_AUDIT.md
+
+# ─── Environment & Secrets ───────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+credentials.json
+
+# ─── OS Files ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# ─── Editor / IDE ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+*~
+
+# ─── Tauri ────────────────────────────────────────────────────
+src-tauri/WixTools/
+src-tauri/NSIS/
+*.msi
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+
+# ─── Misc ─────────────────────────────────────────────────────
+*.tsbuildinfo
+.eslintcache
+.cache/
+tmp/
+temp/

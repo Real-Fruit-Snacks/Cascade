@@ -1,0 +1,176 @@
+{
+  "panels": {
+    "files": "Files",
+    "tags": "Tags",
+    "backlinks": "Links",
+    "outline": "Outline",
+    "bookmarks": "Bookmarks",
+    "graph": "Graph"
+  },
+  "views": {
+    "files": "Files (Ctrl+Shift+E)",
+    "tags": "Tags (Ctrl+Shift+T)",
+    "backlinks": "Backlinks (Ctrl+Shift+L)",
+    "outline": "Outline (Ctrl+Shift+O)",
+    "bookmarks": "Bookmarks (Ctrl+Shift+K)",
+    "graphView": "Graph View (Ctrl+Shift+G)",
+    "variables": "Variables",
+    "search": "Search (Ctrl+Shift+F)",
+    "commandPalette": "Command Palette (Ctrl+K)",
+    "closeVault": "Close Vault",
+    "settings": "Settings (Ctrl+,)"
+  },
+  "variablesMenu": {
+    "listAll": "List All Variables",
+    "replaceAllInDocument": "Replace All in Document",
+    "replaceInSelection": "Replace in Selection",
+    "copyDocumentReplaced": "Copy Document (Replaced)",
+    "copyLineReplaced": "Copy Line (Replaced)",
+    "copySelectionReplaced": "Copy Selection (Replaced)"
+  },
+  "contextMenu": {
+    "newFile": "New File",
+    "newFolder": "New Folder",
+    "rename": "Rename",
+    "moveTo": "Move to...",
+    "setColor": "Set Color...",
+    "copyPath": "Copy Path",
+    "revealInExplorer": "Reveal in Explorer",
+    "moveToTrash": "Move to Trash",
+    "bookmark": "Bookmark",
+    "removeBookmark": "Remove Bookmark",
+    "newFileHere": "New File Here"
+  },
+  "tooltips": {
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "newFolder": "New folder",
+    "newFile": "New file",
+    "removeBookmark": "Remove bookmark",
+    "convertToWikiLink": "Convert to wiki-link",
+    "graphSwitchToGlobal": "Switch to global graph",
+    "graphSwitchToLocal": "Switch to local graph",
+    "graphResetView": "Reset view & settings",
+    "graphSettings": "Graph settings",
+    "sortCountHighLow": "Sort: count (high → low)",
+    "sortCountLowHigh": "Sort: count (low → high)",
+    "sortNameAZ": "Sort: name (A → Z)",
+    "sortNameZA": "Sort: name (Z → A)"
+  },
+  "filters": {
+    "searchFiles": "Search files…",
+    "filterLinks": "Filter links…",
+    "filterBookmarks": "Filter bookmarks…",
+    "searchTags": "Search tags…",
+    "filterTemplates": "Filter templates…",
+    "filterFolders": "Filter folders..."
+  },
+  "emptyStates": {
+    "vaultEmpty": "This vault is empty",
+    "vaultEmptyHint": "Create a file or folder to get started",
+    "noBookmarks": "No bookmarked files yet.",
+    "noBookmarksHint": "Right-click a file to bookmark it.",
+    "noMatchingBookmarks": "No matching bookmarks.",
+    "noFileOpen": "No file open",
+    "noHeadings": "No headings found",
+    "openNoteToSeeLinks": "Open a note to see its links.",
+    "noOutgoingLinks": "This note doesn't link to any other notes.",
+    "noIncomingLinks": "No other notes link to this file.",
+    "noUnlinkedMentions": "No unlinked mentions found.",
+    "noTags": "No tags found. Use #tag in your notes.",
+    "noFolders": "No folders found"
+  },
+  "fileTree": {
+    "folderColor": "Folder Color",
+    "resetColor": "Reset",
+    "root": "Root"
+  },
+  "modals": {
+    "newFile": {
+      "title": "New File",
+      "placeholder": "File name",
+      "submitLabel": "Create",
+      "alreadyExists": "A file with that name already exists"
+    },
+    "newFolder": {
+      "title": "New Folder",
+      "placeholder": "Folder name",
+      "submitLabel": "Create",
+      "alreadyExists": "A folder with that name already exists"
+    },
+    "moveFile": {
+      "title": "Move \"{{fileName}}\"",
+      "ariaLabel": "Move File",
+      "move": "Move"
+    },
+    "templatePicker": {
+      "title": "New from Template",
+      "blank": "Blank",
+      "folderTemplates": "Folder Templates",
+      "noMatch": "No templates match \"{{search}}\""
+    },
+    "delete": {
+      "titleTrash": "Move to Trash",
+      "titleDelete": "Delete Permanently",
+      "messageTrash": "Move {{target}} \"{{name}}\"?",
+      "messageDelete": "Permanently delete {{target}} \"{{name}}\"?",
+      "targetFolder": "folder and all its contents",
+      "targetFile": "file",
+      "confirmTrash": "Move to Trash",
+      "confirmDelete": "Delete"
+    }
+  },
+  "backlinks": {
+    "outgoing": "Outgoing",
+    "incoming": "Incoming",
+    "unlinked": "Unlinked",
+    "link": "Link",
+    "moreLines": "+{{count}} more",
+    "collapseSection": "Collapse section",
+    "expandSection": "Expand section"
+  },
+  "outline": {
+    "headingTitle": "{{text}} (line {{line}})"
+  },
+  "tags": {
+    "renamingInfo": "Renaming #{{old}} → #{{new}}…",
+    "renamedSuccess": "Renamed tag in {{count}} file",
+    "renamedSuccess_plural": "Renamed tag in {{count}} files",
+    "noFilesUpdated": "No files were updated",
+    "noteCount": "{{count}} note",
+    "noteCount_plural": "{{count}} notes"
+  },
+  "graph": {
+    "nodeCount": "{{count}} nodes",
+    "repulsion": "Repulsion",
+    "linkDistance": "Link distance",
+    "maxNodes": "Max nodes",
+    "showOrphans": "Show orphan nodes",
+    "alwaysShowLabels": "Always show labels",
+    "localGraph": "Local graph",
+    "depth": "Depth (hops)",
+    "filters": "Filters (comma-separated)",
+    "includeFolders": "Include folders",
+    "excludeFolders": "Exclude folders",
+    "includeTags": "Include tags",
+    "excludeTags": "Exclude tags",
+    "colorBy": "Color by",
+    "colorByNone": "Default",
+    "colorByFolder": "Folder",
+    "colorByTag": "Tag",
+    "placeholderIncludeFolders": "e.g. notes, projects",
+    "placeholderExcludeFolders": "e.g. archive, templates",
+    "placeholderIncludeTags": "e.g. project, idea",
+    "placeholderExcludeTags": "e.g. draft, archive"
+  },
+  "vault": {
+    "openVault": "Open Vault"
+  },
+  "rename": {
+    "alreadyExists": "A file with that name already exists"
+  },
+  "toast": {
+    "failedFolderTemplate": "Failed to apply folder template — created empty folder instead",
+    "failedTemplate": "Failed to apply template — created blank file instead"
+  }
+}

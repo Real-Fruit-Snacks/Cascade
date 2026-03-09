@@ -1,0 +1,33 @@
+{
+  "placeholder": "Search in all notes...",
+  "loading": "searching\u2026",
+  "invalidRegex": "invalid regex",
+  "matchCount": "{{count}} matches in {{files}} files",
+  "noMatchingFiles": "No matching files",
+  "typeToSearch": "Type to search all notes",
+  "selectFileToPreview": "Select a file to preview matches",
+  "noFileSelected": "No file selected",
+  "toggleReplace": {
+    "collapse": "Collapse replace",
+    "expand": "Expand replace"
+  },
+  "toggles": {
+    "regex": "Use regular expression",
+    "matchCase": "Match case",
+    "wholeWord": "Match whole word"
+  },
+  "replace": {
+    "placeholder": "Replace with...",
+    "button": "Replace",
+    "buttonAll": "Replace All",
+    "titleSelected": "Replace in selected file (Enter)",
+    "titleAll": "Replace in all files (Ctrl+Enter)",
+    "success": "Replaced {{replacements}} in {{files}} file",
+    "success_plural": "Replaced {{replacements}} in {{files}} files",
+    "failed": "Replace failed"
+  },
+  "preview": {
+    "matchCount_one": "{{count}} match",
+    "matchCount_other": "{{count}} matches"
+  }
+}

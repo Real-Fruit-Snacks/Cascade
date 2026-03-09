@@ -1,0 +1,88 @@
+{
+  "wizard": {
+    "ariaLabel": "Import Wizard",
+    "title": "Import",
+    "steps": {
+      "source": "Source",
+      "preview": "Preview",
+      "importStep": "Import",
+      "done": "Done"
+    }
+  },
+  "select": {
+    "prompt": "Select a source to import from:"
+  },
+  "sources": {
+    "obsidian": {
+      "description": "Import settings from an existing Obsidian vault",
+      "fileLabel": "Detects .obsidian/ in current vault"
+    },
+    "notion": {
+      "description": "Import from a Notion HTML/Markdown export zip",
+      "fileLabel": "Select Notion export zip file"
+    },
+    "roam": {
+      "description": "Import from a Roam Research JSON export",
+      "fileLabel": "Select Roam JSON export file"
+    },
+    "bear": {
+      "description": "Import from Bear exported markdown (zip or folder)",
+      "fileLabel": "Select Bear export zip or folder"
+    }
+  },
+  "filePicker": {
+    "bearFolderTitle": "Select Bear export folder"
+  },
+  "preview": {
+    "noObsidianFolder": "No .obsidian/ folder found in this vault.",
+    "settingsDetected": "Settings detected — click Apply to import:",
+    "settings": {
+      "theme": "Theme",
+      "fontSize": "Font Size",
+      "vimMode": "Vim Mode",
+      "lineNumbers": "Line Numbers",
+      "spellCheck": "Spell Check",
+      "templateFolder": "Template Folder",
+      "attachments": "Attachments",
+      "dailyNotesFolder": "Daily Notes Folder",
+      "dailyNotesFormat": "Daily Notes Format",
+      "themeDark": "Dark",
+      "themeLight": "Light",
+      "fontSizePx": "{{size}}px"
+    }
+  },
+  "done": {
+    "title": "Import Complete",
+    "warnings": "Warnings:",
+    "andMore": "...and {{count}} more",
+    "filesImported": "{{count}} files imported",
+    "filesSkipped": "{{count}} files skipped",
+    "errors": "{{count}} errors"
+  },
+  "toast": {
+    "importedFiles": "Imported {{count}} files from {{source}}",
+    "importFailed": "Import failed: {{message}}",
+    "importedSettings": "Imported {{count}} settings from Obsidian"
+  },
+  "changes": {
+    "themeDark": "Theme → Mocha (dark)",
+    "themeLight": "Theme → Latte (light)",
+    "fontSize": "Font size → {{size}}px",
+    "vimModeEnabled": "Vim mode → enabled",
+    "vimModeDisabled": "Vim mode → disabled",
+    "lineNumbersShown": "Line numbers → shown",
+    "lineNumbersHidden": "Line numbers → hidden",
+    "spellCheckEnabled": "Spell check → enabled",
+    "spellCheckDisabled": "Spell check → disabled",
+    "templateFolder": "Template folder → {{folder}}",
+    "attachmentFolder": "Attachment folder → {{folder}}",
+    "dailyNotesFolder": "Daily notes folder → {{folder}}",
+    "dailyNotesFormat": "Daily notes format → {{format}}"
+  },
+  "buttons": {
+    "detecting": "Detecting…",
+    "importing": "Importing…",
+    "next": "Next",
+    "applySettings": "Apply Settings"
+  }
+}

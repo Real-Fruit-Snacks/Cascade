@@ -1,0 +1,34 @@
+{
+  "about": {
+    "title": "About Cascade",
+    "builtWith": "Built with",
+    "builtWithValue": "Tauri, React, CodeMirror",
+    "theme": "Theme",
+    "themeValue": "Catppuccin",
+    "madeBy": "Made by",
+    "madeByValue": "the Cascade team"
+  },
+  "unsavedChanges": {
+    "title": "Unsaved Changes",
+    "message": "You have unsaved changes. Close anyway?",
+    "confirmLabel": "Close"
+  },
+  "fileProperties": {
+    "title": "File Properties",
+    "name": "Name",
+    "path": "Path",
+    "modified": "Modified",
+    "words": "Words",
+    "characters": "Characters",
+    "lines": "Lines",
+    "paragraphs": "Paragraphs",
+    "backlinks": "Backlinks",
+    "tags": "Tags"
+  },
+  "closeVault": {
+    "title": "Close Vault",
+    "messageDirty": "You have unsaved changes. Close vault anyway?",
+    "messageClean": "Are you sure you want to close this vault?",
+    "confirmLabel": "Close Vault"
+  }
+}

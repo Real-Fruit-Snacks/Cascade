@@ -1,0 +1,101 @@
+{
+  "viewModes": {
+    "livePreview": "Live Preview",
+    "source": "Source",
+    "reading": "Reading"
+  },
+  "specialTabs": {
+    "graph": "Graph"
+  },
+  "tabs": {
+    "unpinTitle": "Unpin tab (or double-click tab)",
+    "closeTitle": "Close tab",
+    "moreTabsSingular": "{{count}} more tab",
+    "moreTabsPlural": "{{count}} more tabs"
+  },
+  "paneMenu": {
+    "title": "Note options",
+    "ariaLabel": "Note options"
+  },
+  "tabContextMenu": {
+    "pinTab": "Pin Tab",
+    "unpinTab": "Unpin Tab",
+    "closeTab": "Close Tab",
+    "closeTabsToRight": "Close Tabs to the Right",
+    "revealInSidebar": "Reveal in Sidebar",
+    "copyFilePath": "Copy File Path",
+    "closeOtherTabs": "Close Other Tabs",
+    "closeAllTabs": "Close All Tabs"
+  },
+  "paneContextMenu": {
+    "fileProperties": "File Properties",
+    "revealInFileTree": "Reveal in File Tree",
+    "copyFilePath": "Copy File Path",
+    "findAndReplace": "Find and Replace",
+    "export": "Export\u2026",
+    "settings": "Settings"
+  },
+  "editorContextMenu": {
+    "cut": "Cut",
+    "copy": "Copy",
+    "paste": "Paste",
+    "selectAll": "Select All",
+    "setVariable": "Set Variable: {{name}}",
+    "copyLineReplaced": "Copy Line (Replaced)",
+    "copySelectionReplaced": "Copy Selection (Replaced)",
+    "replaceInSelection": "Replace in Selection",
+    "noSuggestions": "No suggestions",
+    "addToDictionary": "Add to Dictionary",
+    "ignore": "Ignore"
+  },
+  "dialogs": {
+    "unsavedChangesMessage": "\"{{name}}\" has unsaved changes. Close anyway?",
+    "unsavedChangesTitle": "Unsaved Changes",
+    "closeTabsRightMessage": "Close tabs to the right? Unsaved changes will be lost.",
+    "closeTabsRightTitle": "Close Tabs to the Right",
+    "closeOtherTabsMessage": "Close other tabs? Unsaved changes will be lost.",
+    "closeOtherTabsTitle": "Close Other Tabs",
+    "closeAllTabsMessage": "Close all tabs? Unsaved changes will be lost.",
+    "closeAllTabsTitle": "Close All Tabs"
+  },
+  "toast": {
+    "addedToDictionary": "Added \"{{word}}\" to dictionary"
+  },
+  "welcomeView": {
+    "subtitle": "Welcome to Cascade",
+    "dismiss": "Dismiss welcome view",
+    "files": "Files",
+    "tags": "Tags",
+    "links": "Links",
+    "recentFiles": "Recent Files",
+    "openFileHint": "Open a file to see it here",
+    "tagsSection": "Tags",
+    "openFile": "Open file",
+    "newFile": "New file",
+    "commandPalette": "Command palette",
+    "timeJustNow": "just now",
+    "timeYesterday": "yesterday"
+  },
+  "welcomeScreen": {
+    "selectFile": "Select a file to start editing",
+    "shortcuts": "Ctrl+O to quick open · Ctrl+N to create new",
+    "openVault": "Open a vault to get started"
+  },
+  "imageViewer": {
+    "zoomOut": "Zoom out",
+    "zoomIn": "Zoom in",
+    "fit": "Fit",
+    "fitToView": "Fit to view",
+    "actualSize": "Actual size (100%)",
+    "oneToOne": "1:1"
+  },
+  "pdfViewer": {
+    "zoomOut": "Zoom out",
+    "zoomIn": "Zoom in",
+    "fitToWidth": "Fit to width",
+    "fitWidth": "Fit Width"
+  },
+  "pluginView": {
+    "iframeTitle": "Plugin view: {{viewType}}"
+  }
+}
