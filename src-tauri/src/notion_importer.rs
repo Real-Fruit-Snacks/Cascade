@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 use regex::Regex;
 use scraper::{ElementRef, Html, Selector};
 
+use tauri::Emitter;
+
 use crate::error::CascadeError;
 
 #[derive(serde::Serialize, Clone)]
@@ -465,6 +467,7 @@ fn convert_body_skip_first_table(el: ElementRef, link_map: &HashMap<String, Stri
 /// The main Tauri command: import a Notion export zip into the vault.
 #[tauri::command]
 pub fn import_notion_export(
+    app_handle: tauri::AppHandle,
     vault_root: String,
     export_path: String,
 ) -> Result<ImportResult, CascadeError> {
@@ -505,9 +508,14 @@ pub fn import_notion_export(
     let mut files_imported: u32 = 0;
     let mut files_skipped: u32 = 0;
     let mut errors: Vec<String> = Vec::new();
+    let total_entries = archive.len() as u32;
 
     // Second pass: process each entry
     for i in 0..archive.len() {
+        app_handle.emit("import://progress", serde_json::json!({
+            "current": i as u32 + 1, "total": total_entries, "file": "",
+        })).ok();
+
         let mut entry = match archive.by_index(i) {
             Ok(e) => e,
             Err(e) => {

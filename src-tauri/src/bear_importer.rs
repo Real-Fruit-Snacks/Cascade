@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 use regex::Regex;
 use walkdir::WalkDir;
 
+use tauri::Emitter;
+
 use crate::error::CascadeError;
 
 #[derive(serde::Serialize, Clone)]
@@ -172,8 +174,13 @@ fn copy_attachment(src: &Path, dest_dir: &Path) -> Option<String> {
 }
 
 /// Process all files found under `export_dir`.
-fn process_export_dir(export_dir: &Path, vault_root: &Path, result: &mut ImportResult) {
+fn process_export_dir(export_dir: &Path, vault_root: &Path, result: &mut ImportResult, app_handle: &tauri::AppHandle) {
     let attachments_dir = vault_root.join("attachments");
+
+    // Count total files for progress reporting
+    let total: u32 = WalkDir::new(export_dir).min_depth(1)
+        .into_iter().filter_map(|e| e.ok()).filter(|e| e.path().is_file()).count() as u32;
+    let mut processed: u32 = 0;
 
     for entry in WalkDir::new(export_dir).min_depth(1) {
         let Ok(entry) = entry else { continue };
@@ -181,6 +188,12 @@ fn process_export_dir(export_dir: &Path, vault_root: &Path, result: &mut ImportR
         if !path.is_file() {
             continue;
         }
+
+        processed += 1;
+        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+        app_handle.emit("import://progress", serde_json::json!({
+            "current": processed, "total": total, "file": file_name,
+        })).ok();
 
         let ext = path
             .extension()
@@ -265,6 +278,7 @@ fn extract_zip(zip_path: &Path) -> Result<PathBuf, CascadeError> {
 
 #[tauri::command]
 pub fn import_bear_export(
+    app_handle: tauri::AppHandle,
     vault_root: String,
     export_path: String,
 ) -> Result<ImportResult, CascadeError> {
@@ -287,11 +301,11 @@ pub fn import_bear_export(
     if lower.ends_with(".zip") {
         // Extract zip to temp dir, process, then clean up.
         let tmp_path = extract_zip(&export)?;
-        process_export_dir(&tmp_path, &vault, &mut result);
+        process_export_dir(&tmp_path, &vault, &mut result, &app_handle);
         // Best-effort cleanup of temp dir.
         let _ = fs::remove_dir_all(&tmp_path);
     } else if export.is_dir() {
-        process_export_dir(&export, &vault, &mut result);
+        process_export_dir(&export, &vault, &mut result, &app_handle);
     } else {
         return Err(CascadeError::Import(format!(
             "export_path must be a .zip file or a directory, got: {}",

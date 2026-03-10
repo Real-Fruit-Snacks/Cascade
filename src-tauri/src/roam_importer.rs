@@ -5,6 +5,8 @@ use regex::Regex;
 use serde::Deserialize;
 use serde_json::Value;
 
+use tauri::Emitter;
+
 use crate::error::CascadeError;
 
 #[derive(serde::Serialize, Clone, Default)]
@@ -245,6 +247,7 @@ fn page_to_markdown(page: &RoamPage, uid_page_map: &HashMap<String, String>) -> 
 
 #[tauri::command]
 pub fn import_roam_export(
+    app_handle: tauri::AppHandle,
     vault_root: String,
     export_path: String,
 ) -> Result<ImportResult, CascadeError> {
@@ -277,7 +280,12 @@ pub fn import_roam_export(
         ..Default::default()
     };
 
-    for page in &pages {
+    let total_pages = pages.len() as u32;
+    for (idx, page) in pages.iter().enumerate() {
+        app_handle.emit("import://progress", serde_json::json!({
+            "current": idx as u32 + 1, "total": total_pages, "file": &page.title,
+        })).ok();
+
         let filename = format!("{}.md", sanitize_filename(&page.title));
         let dest = vault_path.join(&filename);
 

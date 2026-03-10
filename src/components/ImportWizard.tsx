@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, CheckCircle, AlertCircle, X, FolderOpen, FileUp, Loader2 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
+import { listen } from '@tauri-apps/api/event';
 import { useFocusTrap } from '../hooks/use-focus-trap';
 import { useCloseAnimation } from '../hooks/use-close-animation';
 import { useVaultStore } from '../stores/vault-store';
@@ -82,6 +83,16 @@ export function ImportWizard({ open: isOpen, onClose }: ImportWizardProps) {
   const [importing, setImporting] = useState(false);
   const [applied, setApplied] = useState<string[]>([]);
   const [exportPath, setExportPath] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{ current: number; total: number; file: string } | null>(null);
+
+  // Listen for import progress events from backend
+  useEffect(() => {
+    if (!importing) { setProgress(null); return; }
+    const unlisten = listen<{ current: number; total: number; file: string }>('import://progress', (e) => {
+      setProgress(e.payload);
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [importing]);
 
   const selectedSource = SOURCES.find((s) => s.id === source);
 
@@ -481,7 +492,7 @@ export function ImportWizard({ open: isOpen, onClose }: ImportWizardProps) {
               >
                 {importing && <Loader2 size={12} className="animate-spin" />}
                 {importing
-                  ? (source === 'obsidian' ? t('buttons.detecting') : t('buttons.importing'))
+                  ? (source === 'obsidian' ? t('buttons.detecting') : (progress ? `${progress.current}/${progress.total}` : t('buttons.importing')))
                   : (source === 'obsidian' ? t('buttons.next') : tc('import'))}
               </button>
             </>
