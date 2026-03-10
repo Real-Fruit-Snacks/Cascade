@@ -257,8 +257,7 @@ export class CalloutHeaderWidget extends WidgetType {
 
 // ── Transclusion widget ────────────────────────────────────
 
-// Track active transclusion chain to detect cycles
-const _activeTransclusions = new Set<string>();
+const MAX_TRANSCLUSION_DEPTH = 3;
 
 export class TransclusionWidget extends WidgetType {
   private _dom: HTMLElement | null = null;
@@ -268,13 +267,15 @@ export class TransclusionWidget extends WidgetType {
     readonly linkText: string,
     readonly heading: string | null = null,
     readonly blockId: string | null = null,
+    readonly depth: number = 0,
   ) {
     super();
   }
 
   eq(other: TransclusionWidget) {
     return this.filePath === other.filePath && this.linkText === other.linkText
-      && this.heading === other.heading && this.blockId === other.blockId;
+      && this.heading === other.heading && this.blockId === other.blockId
+      && this.depth === other.depth;
   }
 
   toDOM() {
@@ -295,9 +296,8 @@ export class TransclusionWidget extends WidgetType {
 
     this._dom = body;
 
-    // Cycle detection
-    const key = `${this.filePath}#${this.heading ?? ''}^${this.blockId ?? ''}`;
-    if (_activeTransclusions.has(key)) {
+    // Depth-based cycle / nesting limit
+    if (this.depth >= MAX_TRANSCLUSION_DEPTH) {
       body.textContent = '[Circular embed detected]';
       body.classList.add('cm-transclusion-error');
       return wrapper;
@@ -305,9 +305,7 @@ export class TransclusionWidget extends WidgetType {
 
     const vaultPath = useVaultStore.getState().vaultPath;
     if (vaultPath) {
-      _activeTransclusions.add(key);
       readFile(vaultPath, this.filePath).then((content) => {
-        _activeTransclusions.delete(key);
         if (!this._dom) return;
 
         let text: string;
@@ -323,7 +321,6 @@ export class TransclusionWidget extends WidgetType {
 
         this._dom.innerHTML = renderMarkdownPreview(text);
       }).catch(() => {
-        _activeTransclusions.delete(key);
         if (!this._dom) return;
         this._dom.textContent = `[Could not read: ${this.linkText}]`;
         this._dom.classList.add('cm-transclusion-error');

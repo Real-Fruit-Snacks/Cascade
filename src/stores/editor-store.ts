@@ -103,6 +103,26 @@ interface EditorDerived {
 
 let openFileSeq = 0;
 
+/** Apply auto-TOC update to a tab's content before saving. Returns the (possibly updated) tab. */
+async function applyTocUpdate(tab: Tab, editorView: EditorView | null): Promise<Tab> {
+  const settings = useSettingsStore.getState();
+  if (!settings.enableTableOfContents || !settings.tocAutoUpdate || !tab.path.endsWith('.md')) {
+    return tab;
+  }
+  try {
+    const { updateTocInDoc } = await import('../lib/toc');
+    const result = updateTocInDoc(tab.content);
+    if (result) {
+      const newContent = tab.content.slice(0, result.from) + result.insert + tab.content.slice(result.to);
+      if (editorView) {
+        editorView.dispatch({ changes: { from: result.from, to: result.to, insert: result.insert } });
+      }
+      return { ...tab, content: newContent };
+    }
+  } catch { /* ignore TOC errors during save */ }
+  return tab;
+}
+
 /** Compute derived values from tabs + activeTabIndex */
 function derived(tabs: Tab[], activeTabIndex: number): EditorDerived {
   const tab = tabs[activeTabIndex];
@@ -528,22 +548,7 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
     // Skip save for non-markdown tabs (images, PDFs)
     if (tab.type && tab.type !== 'markdown') return;
 
-    // Auto-update TOC if enabled
-    if (useSettingsStore.getState().enableTableOfContents && useSettingsStore.getState().tocAutoUpdate && tab.path.endsWith('.md')) {
-      try {
-        const { updateTocInDoc } = await import('../lib/toc');
-        const result = updateTocInDoc(tab.content);
-        if (result) {
-          const newContent = tab.content.slice(0, result.from) + result.insert + tab.content.slice(result.to);
-          tab = { ...tab, content: newContent };
-          // Also update the editor view
-          const view = get().editorViewRef.current;
-          if (view) {
-            view.dispatch({ changes: { from: result.from, to: result.to, insert: result.insert } });
-          }
-        }
-      } catch { /* ignore TOC errors during save */ }
-    }
+    tab = await applyTocUpdate(tab, get().editorViewRef.current);
 
     try {
       await cmd.writeFile(vaultRoot, tab.path, tab.content);
@@ -833,6 +838,8 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
     if (!tab) return;
     if (tab.type && tab.type !== 'markdown') return;
 
+    tab = await applyTocUpdate(tab, pane.editorViewRef.current);
+
     try {
       await cmd.writeFile(vaultRoot, tab.path, tab.content);
     } catch (e) {
@@ -966,18 +973,42 @@ window.addEventListener('beforeunload', () => {
 
 const SESSION_KEY_PREFIX = 'cascade-session:';
 
-interface SessionData {
-  tabs: { path: string; cursorPos?: number; scrollTop?: number }[];
+interface SessionTabData {
+  path: string;
+  cursorPos?: number;
+  scrollTop?: number;
+}
+
+interface SessionPaneData {
+  tabs: SessionTabData[];
   activeTabIndex: number;
 }
 
+interface SessionData {
+  tabs: SessionTabData[];
+  activeTabIndex: number;
+  panes?: SessionPaneData[];
+  activePaneIndex?: number;
+  splitDirection?: SplitDirection | null;
+}
+
 export function saveSession(vaultRoot: string) {
-  const { tabs, activeTabIndex } = useEditorStore.getState();
+  const { tabs, activeTabIndex, panes, activePaneIndex, splitDirection } = useEditorStore.getState();
   const session: SessionData = {
     tabs: tabs
       .filter((t) => !t.path.startsWith('__'))
       .map((t) => ({ path: t.path, cursorPos: t.cursorPos, scrollTop: t.scrollTop })),
     activeTabIndex,
+    panes: panes.length > 0
+      ? panes.map((p) => ({
+          tabs: p.tabs
+            .filter((t) => !t.path.startsWith('__'))
+            .map((t) => ({ path: t.path, cursorPos: t.cursorPos, scrollTop: t.scrollTop })),
+          activeTabIndex: p.activeTabIndex,
+        }))
+      : undefined,
+    activePaneIndex: panes.length > 0 ? activePaneIndex : undefined,
+    splitDirection: panes.length > 0 ? splitDirection : undefined,
   };
   try {
     localStorage.setItem(SESSION_KEY_PREFIX + vaultRoot, JSON.stringify(session));
@@ -1000,6 +1031,25 @@ export async function restoreSession(vaultRoot: string) {
     const idx = Math.min(session.activeTabIndex, session.tabs.length - 1);
     if (idx >= 0) {
       store.switchTab(idx);
+    }
+
+    // Restore split pane state if present
+    if (Array.isArray(session.panes) && session.panes.length >= 2 && session.splitDirection) {
+      store.splitPane(session.splitDirection);
+      const restoredPanes = session.panes;
+      // Open files into each pane (skip pane 0 — already mirrors main tabs)
+      for (let pi = 1; pi < restoredPanes.length; pi++) {
+        const paneData = restoredPanes[pi];
+        for (const tabData of paneData.tabs) {
+          await store.openFileInPane(pi, vaultRoot, tabData.path, true);
+        }
+        if (paneData.activeTabIndex >= 0) {
+          store.switchPaneTab(pi, paneData.activeTabIndex);
+        }
+      }
+      if (typeof session.activePaneIndex === 'number') {
+        store.setActivePaneIndex(session.activePaneIndex);
+      }
     }
   } catch { /* ignore corrupt session data */ }
 }
