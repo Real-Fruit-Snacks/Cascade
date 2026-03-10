@@ -3447,7 +3447,6 @@ function AutoSaveOptionsPage({ settings, intervalValue, setIntervalValue, commit
 
 function SpellcheckOptionsPage() {
   const { t: ts } = useTranslation('settings');
-  const spellcheck = useSettingsStore((s) => s.spellcheck);
   const spellcheckSkipCapitalized = useSettingsStore((s) => s.spellcheckSkipCapitalized);
   const update = useSettingsStore((s) => s.update);
   const vaultPath = useVaultStore((s) => s.vaultPath);
@@ -3494,12 +3493,6 @@ function SpellcheckOptionsPage() {
           {ts('spellcheckOptions.description')}
         </span>
       </div>
-      <SettingRow label={ts('spellcheckOptions.enableSpellcheck.label')} description={ts('spellcheckOptions.enableSpellcheck.description')}>
-        <ToggleSwitch
-          checked={spellcheck}
-          onChange={(v) => update({ spellcheck: v })}
-        />
-      </SettingRow>
       <SettingRow label={ts('spellcheckOptions.skipCapitalized.label')} description={ts('spellcheckOptions.skipCapitalized.description')}>
         <ToggleSwitch
           checked={spellcheckSkipCapitalized}
@@ -3889,8 +3882,6 @@ function CanvasOptionsPage() {
 
 function BookmarksOptionsPage() {
   const { t: ts } = useTranslation('settings');
-  const enableBookmarks = useSettingsStore((s) => s.enableBookmarks);
-  const update = useSettingsStore((s) => s.update);
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1 mb-1">
@@ -3899,12 +3890,6 @@ function BookmarksOptionsPage() {
           {ts('bookmarksOptions.description')}
         </span>
       </div>
-      <SettingRow label={ts('bookmarksOptions.enableBookmarks.label')} description={ts('bookmarksOptions.enableBookmarks.description')}>
-        <ToggleSwitch
-          checked={enableBookmarks}
-          onChange={(v) => update({ enableBookmarks: v })}
-        />
-      </SettingRow>
       <FeatureWiki featureId="bookmarks-options" />
     </div>
   );

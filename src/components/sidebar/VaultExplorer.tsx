@@ -403,8 +403,12 @@ export function VaultExplorer() {
       setPendingCreateType('file');
       setTemplatePickerOpen(true);
     } else {
-      await createFile(fileName);
-      await openFile(vaultPath, fileName);
+      try {
+        await createFile(fileName);
+        await openFile(vaultPath, fileName);
+      } catch (e) {
+        useToastStore.getState().addToast(`Failed to create "${fileName}": ${e instanceof Error ? e.message : e}`, 'error');
+      }
     }
   }, [vaultPath, createFile, openFile, templateFiles, enableTemplates]);
 
@@ -474,7 +478,11 @@ export function VaultExplorer() {
       setPendingCreateType('folder');
       setTemplatePickerOpen(true);
     } else {
-      await createFolder(name);
+      try {
+        await createFolder(name);
+      } catch (e) {
+        useToastStore.getState().addToast(`Failed to create folder "${name}": ${e instanceof Error ? e.message : e}`, 'error');
+      }
     }
   }, [vaultPath, createFolder, folderTemplates, enableTemplates]);
 

@@ -159,6 +159,7 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
   );
   const renameRef = useRef<HTMLInputElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
+  const isCommittingRename = useRef(false);
 
   // Effective color: own color takes priority, then inherited from parent (all gated by feature toggle)
   const effectiveColor = enableFolderColors ? (folderColor || (folderColorSubfolders ? inheritedColor : null)) : null;
@@ -218,12 +219,14 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
   };
 
   const commitRename = async () => {
+    if (isCommittingRename.current) return;
     const newName = renameValue.trim();
     if (!newName || newName === entry.name) {
       setRenaming(false);
       setRenameError(null);
       return;
     }
+    isCommittingRename.current = true;
 
     const parentDir = getParentDir(entry.path);
     const newPath = parentDir ? `${parentDir}/${newName}` : newName;
@@ -246,6 +249,8 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setRenameError(msg.includes('already exists') ? t('rename.alreadyExists') : `${t('common:rename')} failed: ${msg}`);
+    } finally {
+      isCommittingRename.current = false;
     }
   };
 

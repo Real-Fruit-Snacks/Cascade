@@ -310,7 +310,16 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
       const tabType = getTabType(path);
 
       // For image/pdf tabs, don't read file content — just store the path
-      if (tabType !== 'markdown' && useSettingsStore.getState().enableMediaViewer) {
+      if (tabType !== 'markdown') {
+        if (!useSettingsStore.getState().enableMediaViewer) {
+          set({ isFileLoading: false });
+          const fileName = path.replace(/\\/g, '/').split('/').pop() ?? path;
+          useToastStore.getState().addToast(
+            `Cannot open "${fileName}" — enable Media Viewer in Settings to view ${tabType} files.`,
+            'warning',
+          );
+          return;
+        }
         if (seq !== openFileSeq) return;
         const tab: Tab = { path, content: '', savedContent: '', isDirty: false, type: tabType };
 
@@ -733,7 +742,15 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
     const tabType = getTabType(path);
     let tab: Tab;
 
-    if (tabType !== 'markdown' && useSettingsStore.getState().enableMediaViewer) {
+    if (tabType !== 'markdown') {
+      if (!useSettingsStore.getState().enableMediaViewer) {
+        const fileName = path.replace(/\\/g, '/').split('/').pop() ?? path;
+        useToastStore.getState().addToast(
+          `Cannot open "${fileName}" — enable Media Viewer in Settings to view ${tabType} files.`,
+          'warning',
+        );
+        return;
+      }
       tab = { path, content: '', savedContent: '', isDirty: false, type: tabType };
     } else {
       try {

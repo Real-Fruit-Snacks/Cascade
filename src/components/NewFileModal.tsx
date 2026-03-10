@@ -6,6 +6,7 @@ import { useCloseAnimation } from '../hooks/use-close-animation';
 
 // eslint-disable-next-line no-control-regex -- intentional: reject control chars in filenames
 const INVALID_CHARS = /[<>:"|?*\x00-\x1f]/;
+const RESERVED_NAMES = /^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(\.|$)/i;
 
 interface NewFileModalProps {
   open: boolean;
@@ -36,6 +37,10 @@ export function NewFileModal({ open, onClose, onCreate }: NewFileModalProps) {
     if (!trimmed) return;
     if (INVALID_CHARS.test(trimmed)) {
       setError(t('newFileModal.invalidChars'));
+      return;
+    }
+    if (RESERVED_NAMES.test(trimmed)) {
+      setError(t('newFileModal.reservedName', 'This name is reserved by the operating system'));
       return;
     }
     const path = trimmed.endsWith('.md') ? trimmed : `${trimmed}.md`;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { Compartment, EditorState, Transaction } from '@codemirror/state';
+import { Compartment, EditorState, Prec, Transaction } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, rectangularSelection, crosshairCursor } from '@codemirror/view';
 import { defaultKeymap, historyKeymap, history, redo, indentWithTab } from '@codemirror/commands';
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
@@ -363,7 +363,7 @@ export function useCodeMirror() {
     // Load vim mode dynamically if enabled at startup
     if (settings.vimMode) {
       import('@replit/codemirror-vim').then(({ vim }) => {
-        view.dispatch({ effects: vimComp.reconfigure(vim()) });
+        view.dispatch({ effects: vimComp.reconfigure(Prec.highest(vim())) });
       });
     }
 
@@ -586,7 +586,7 @@ export function useCodeMirror() {
 
     if (vimMode) {
       import('@replit/codemirror-vim').then(({ vim }) => {
-        view.dispatch({ effects: vimComp.reconfigure(vim()) });
+        view.dispatch({ effects: vimComp.reconfigure(Prec.highest(vim())) });
       });
     } else {
       view.dispatch({ effects: vimComp.reconfigure([]) });
