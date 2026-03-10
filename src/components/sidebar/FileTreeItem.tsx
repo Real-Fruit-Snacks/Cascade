@@ -673,73 +673,83 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
         document.body,
       )}
 
-      <InputModal
-        open={newFileModal}
-        title={t('modals.newFile.title')}
-        icon={<FilePlus size={14} />}
-        placeholder={t('modals.newFile.placeholder')}
-        submitLabel={t('modals.newFile.submitLabel')}
-        onClose={() => setNewFileModal(false)}
-        onSubmit={handleNewFileSubmit}
-        validate={(name) => {
-          const fileName = name.endsWith('.md') ? name : `${name}.md`;
-          if (entry.children?.some((e) => !e.isDir && e.name.toLowerCase() === fileName.toLowerCase())) {
-            return t('modals.newFile.alreadyExists');
-          }
-          return null;
-        }}
-      />
+      {newFileModal && (
+        <InputModal
+          open={newFileModal}
+          title={t('modals.newFile.title')}
+          icon={<FilePlus size={14} />}
+          placeholder={t('modals.newFile.placeholder')}
+          submitLabel={t('modals.newFile.submitLabel')}
+          onClose={() => setNewFileModal(false)}
+          onSubmit={handleNewFileSubmit}
+          validate={(name) => {
+            const fileName = name.endsWith('.md') ? name : `${name}.md`;
+            if (entry.children?.some((e) => !e.isDir && e.name.toLowerCase() === fileName.toLowerCase())) {
+              return t('modals.newFile.alreadyExists');
+            }
+            return null;
+          }}
+        />
+      )}
 
-      <InputModal
-        open={newFolderModal}
-        title={t('modals.newFolder.title')}
-        icon={<FolderPlus size={14} />}
-        placeholder={t('modals.newFolder.placeholder')}
-        submitLabel={t('modals.newFolder.submitLabel')}
-        onClose={() => setNewFolderModal(false)}
-        onSubmit={handleNewFolderSubmit}
-        validate={(name) => {
-          if (entry.children?.some((e) => e.isDir && e.name.toLowerCase() === name.toLowerCase())) {
-            return t('modals.newFolder.alreadyExists');
-          }
-          return null;
-        }}
-      />
+      {newFolderModal && (
+        <InputModal
+          open={newFolderModal}
+          title={t('modals.newFolder.title')}
+          icon={<FolderPlus size={14} />}
+          placeholder={t('modals.newFolder.placeholder')}
+          submitLabel={t('modals.newFolder.submitLabel')}
+          onClose={() => setNewFolderModal(false)}
+          onSubmit={handleNewFolderSubmit}
+          validate={(name) => {
+            if (entry.children?.some((e) => e.isDir && e.name.toLowerCase() === name.toLowerCase())) {
+              return t('modals.newFolder.alreadyExists');
+            }
+            return null;
+          }}
+        />
+      )}
 
-      <InputModal
-        open={newCanvasModal}
-        title={t('modals.newCanvas.title')}
-        icon={<LayoutGrid size={14} />}
-        placeholder={t('modals.newCanvas.placeholder')}
-        submitLabel={t('modals.newCanvas.submitLabel')}
-        onClose={() => setNewCanvasModal(false)}
-        onSubmit={handleNewCanvasSubmit}
-        validate={(name) => {
-          const fileName = name.endsWith('.canvas') ? name : `${name}.canvas`;
-          if (entry.children?.some((e) => !e.isDir && e.name.toLowerCase() === fileName.toLowerCase())) {
-            return t('modals.newCanvas.alreadyExists');
-          }
-          return null;
-        }}
-      />
+      {newCanvasModal && (
+        <InputModal
+          open={newCanvasModal}
+          title={t('modals.newCanvas.title')}
+          icon={<LayoutGrid size={14} />}
+          placeholder={t('modals.newCanvas.placeholder')}
+          submitLabel={t('modals.newCanvas.submitLabel')}
+          onClose={() => setNewCanvasModal(false)}
+          onSubmit={handleNewCanvasSubmit}
+          validate={(name) => {
+            const fileName = name.endsWith('.canvas') ? name : `${name}.canvas`;
+            if (entry.children?.some((e) => !e.isDir && e.name.toLowerCase() === fileName.toLowerCase())) {
+              return t('modals.newCanvas.alreadyExists');
+            }
+            return null;
+          }}
+        />
+      )}
 
-      <TemplatePicker
-        open={templatePickerOpen}
-        templates={pendingCreateType === 'file' ? templateFiles : []}
-        folderTemplates={pendingCreateType === 'folder' ? folderTemplates : []}
-        onClose={() => { setTemplatePickerOpen(false); setPendingFilePath(null); }}
-        onSelect={handleTemplateSelect}
-      />
+      {templatePickerOpen && (
+        <TemplatePicker
+          open={templatePickerOpen}
+          templates={pendingCreateType === 'file' ? templateFiles : []}
+          folderTemplates={pendingCreateType === 'folder' ? folderTemplates : []}
+          onClose={() => { setTemplatePickerOpen(false); setPendingFilePath(null); }}
+          onSelect={handleTemplateSelect}
+        />
+      )}
 
-      <ConfirmDialog
-        open={deleteConfirmOpen}
-        title={useTrash ? t('modals.delete.titleTrash') : t('modals.delete.titleDelete')}
-        message={`${useTrash ? t('modals.delete.messageTrash', { target: entry.isDir ? t('modals.delete.targetFolder') : t('modals.delete.targetFile'), name: entry.name }) : t('modals.delete.messageDelete', { target: entry.isDir ? t('modals.delete.targetFolder') : t('modals.delete.targetFile'), name: entry.name })}`}
-        kind="warning"
-        confirmLabel={useTrash ? t('modals.delete.confirmTrash') : t('modals.delete.confirmDelete')}
-        onConfirm={performDelete}
-        onCancel={() => setDeleteConfirmOpen(false)}
-      />
+      {deleteConfirmOpen && (
+        <ConfirmDialog
+          open={deleteConfirmOpen}
+          title={useTrash ? t('modals.delete.titleTrash') : t('modals.delete.titleDelete')}
+          message={`${useTrash ? t('modals.delete.messageTrash', { target: entry.isDir ? t('modals.delete.targetFolder') : t('modals.delete.targetFile'), name: entry.name }) : t('modals.delete.messageDelete', { target: entry.isDir ? t('modals.delete.targetFolder') : t('modals.delete.targetFile'), name: entry.name })}`}
+          kind="warning"
+          confirmLabel={useTrash ? t('modals.delete.confirmTrash') : t('modals.delete.confirmDelete')}
+          onConfirm={performDelete}
+          onCancel={() => setDeleteConfirmOpen(false)}
+        />
+      )}
     </div>
   );
 });
