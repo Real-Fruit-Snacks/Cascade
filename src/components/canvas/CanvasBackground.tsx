@@ -92,12 +92,19 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
 
     const { x, y, zoom } = viewport;
 
+    // Resolve CSS custom properties once at the start of the draw call
+    const rootStyle = getComputedStyle(document.documentElement);
+    const cssVar = (name: string, fallback: string) =>
+      rootStyle.getPropertyValue(name).trim() || fallback;
+    const dotColorResolved = cssVar('--ctp-surface1', '#45475a');
+    const blueResolved = cssVar('--ctp-blue', '#89b4fa');
+    const baseResolved = cssVar('--ctp-base', '#1e1e2e');
+    const accentResolved = cssVar('--ctp-accent', '') || blueResolved;
+
     // ── Grid dots ────────────────────────────────────────────────────────────
     const gridSize = (canvasGridSize || 20) * zoom;
     if (gridSize >= 5) {
-      const dotColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--ctp-surface1')
-        .trim() || '#45475a';
+      const dotColor = dotColorResolved;
 
       ctx.fillStyle = dotColor;
       const dotRadius = Math.max(1, zoom * 1.2);
@@ -139,7 +146,7 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
       // Border at medium opacity
       ctx.globalAlpha = isGroupSelected ? 0.8 : 0.3;
       ctx.strokeStyle = isGroupSelected
-        ? (getComputedStyle(document.documentElement).getPropertyValue('--ctp-blue').trim() || '#89b4fa')
+        ? blueResolved
         : groupColor;
       ctx.lineWidth = isGroupSelected ? 2 * zoom : 1 * zoom;
       ctx.beginPath();
@@ -185,7 +192,7 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
 
       const isSelected = selectedEdgeIds.has(edge.id);
       const color = isSelected
-        ? (getComputedStyle(document.documentElement).getPropertyValue('--ctp-blue').trim() || '#89b4fa')
+        ? blueResolved
         : resolveEdgeColor(edge.color);
 
       ctx.strokeStyle = color;
@@ -271,9 +278,7 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
         // Background pill for readability
         const metrics = ctx.measureText(edge.label);
         const pad = 4 * zoom;
-        const bg = getComputedStyle(document.documentElement)
-          .getPropertyValue('--ctp-base')
-          .trim() || '#1e1e2e';
+        const bg = baseResolved;
         ctx.fillStyle = bg;
         ctx.fillRect(
           labelX - metrics.width / 2 - pad,
@@ -296,10 +301,7 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
       const mrw = Math.abs(mx2 - mx1);
       const mrh = Math.abs(my2 - my1);
 
-      const accentColor =
-        getComputedStyle(document.documentElement).getPropertyValue('--ctp-accent').trim() ||
-        getComputedStyle(document.documentElement).getPropertyValue('--ctp-blue').trim() ||
-        '#89b4fa';
+      const accentColor = accentResolved;
 
       ctx.globalAlpha = 0.12;
       ctx.fillStyle = accentColor;
@@ -333,9 +335,7 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
         const cp2x = connectDrag.currentX - (dx / (dist || 1)) * Math.min(offset, dist * 0.5);
         const cp2y = connectDrag.currentY - (dy / (dist || 1)) * Math.min(offset, dist * 0.5);
 
-        const accentColor =
-          getComputedStyle(document.documentElement).getPropertyValue('--ctp-blue').trim() ||
-          '#89b4fa';
+        const accentColor = blueResolved;
 
         ctx.strokeStyle = accentColor;
         ctx.fillStyle = accentColor;

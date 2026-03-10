@@ -802,6 +802,7 @@ export function ExportModal({ open, onClose, defaultScope }: ExportModalProps) {
         // Open print dialog via hidden iframe
         const iframe = document.createElement('iframe');
         iframe.style.cssText = 'position:fixed;top:-9999px;width:800px;height:600px;';
+        iframe.sandbox.add('allow-same-origin', 'allow-modals');
         document.body.appendChild(iframe);
         const doc = iframe.contentDocument;
         if (doc) {

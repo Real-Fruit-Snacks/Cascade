@@ -48,7 +48,7 @@ export function LinkCard({ node, selected, style, onMouseDown, onResizeMouseDown
         cursor: 'default',
       }}
       onClick={handleClick}
-      onDoubleClick={() => { if (canvasTool !== 'hand' && !canvasLocked && !node.locked) openUrl(node.url).catch(() => window.open(node.url, '_blank')); }}
+      onDoubleClick={() => { if (canvasTool !== 'hand' && !canvasLocked && !node.locked && /^https?:\/\//i.test(node.url)) openUrl(node.url).catch(() => window.open(node.url, '_blank', 'noopener')); }}
       onMouseDown={onMouseDown}
     >
       <ExternalLink size={16} style={{ color: 'var(--ctp-accent)', flexShrink: 0 }} />

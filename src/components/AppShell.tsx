@@ -48,8 +48,7 @@ function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
   const alt = needsAlt ? e.altKey : !e.altKey;
   const meta = needsMeta ? e.metaKey : true; // Meta handled via ctrlOrMeta
 
-  if (!ctrlOrMeta || !shift || !alt) return false;
-  void meta;
+  if (!ctrlOrMeta || !shift || !alt || !meta) return false;
 
   // Normalize key comparison
   const eventKey = e.key;
@@ -192,6 +191,9 @@ export function AppShell() {
   }, []);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Skip non-shortcut keystrokes early (no modifier held)
+    if (!e.ctrlKey && !e.metaKey && !e.altKey) return;
+
     // Dispatch shortcuts via command registry
     const cmds = commandRegistry.getAll();
     for (const cmd of cmds) {
