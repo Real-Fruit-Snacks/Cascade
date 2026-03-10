@@ -78,6 +78,9 @@ pub fn run() {
             git::git_sync,
             git::git_status,
             git::git_disconnect,
+            git::store_sync_pat,
+            git::read_sync_pat,
+            git::delete_sync_pat,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

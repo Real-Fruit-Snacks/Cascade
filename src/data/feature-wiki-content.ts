@@ -643,4 +643,26 @@ export const featureWikiContent: Record<string, FeatureWikiEntry> = {
       },
     ],
   },
+
+  "sync-options": {
+    overview:
+      "GitHub Sync backs up your vault to a private GitHub repository and keeps it in sync across devices. It uses a Personal Access Token (PAT) for authentication and handles commits, pushes, and pulls automatically — no external git tools required.",
+    usage: [
+      "Enable GitHub Sync in the Features list to activate it.",
+      "Open the GitHub Sync settings page and enter your repository URL (HTTPS format).",
+      "Generate a Personal Access Token (PAT) on GitHub with 'repo' scope and paste it into the token field.",
+      "Click 'Test Connection' to verify your credentials work.",
+      "Click 'Connect & Push' to initialize the repository and push your vault.",
+      "Once connected, Cascade automatically syncs on the interval you choose (default: every 5 minutes).",
+      "Click the sync indicator in the status bar to trigger a manual sync at any time.",
+    ],
+    tips: [
+      "Use a private repository to keep your notes secure — your PAT is stored locally in your vault settings.",
+      "If a sync conflict occurs, Cascade saves the remote version as 'filename.conflict.md' next to your local copy. Review both, keep what you want, and delete the .conflict.md file.",
+      "The status bar shows your sync state: green cloud = synced, spinning = syncing, red = error, orange = offline with pending commits.",
+      "If you work offline, Cascade commits locally and pushes everything when you reconnect.",
+      "Auto-sync skips if a sync is already in progress, so rapid saves won't cause issues.",
+      "Cascade auto-generates a .gitignore to exclude app config, OS files, and temp files from the repo.",
+    ],
+  },
 };

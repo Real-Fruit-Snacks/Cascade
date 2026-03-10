@@ -212,6 +212,7 @@ export interface Settings {
   // Sync
   syncEnabled: boolean;
   syncRepoUrl: string;
+  /** Runtime-only — PAT is stored in OS credential store, never persisted to disk. */
   syncPat: string;
   syncAutoSync: boolean;
   syncInterval: number;
@@ -421,10 +422,15 @@ export function getAppLevelSettings(): Partial<Settings> {
   }
 }
 
+/** Keys that are never persisted to disk (stored securely elsewhere). */
+const EXCLUDED_FROM_DISK: (keyof Settings)[] = ['syncPat'];
+
 function saveSettingsToVault(settings: Settings) {
   saveAppLevelSettings(settings);
   if (!currentVaultPath) return;
-  writeVaultSettings(currentVaultPath, JSON.stringify(settings, null, 2)).catch((e) => {
+  const filtered = { ...settings };
+  for (const key of EXCLUDED_FROM_DISK) delete (filtered as Record<string, unknown>)[key];
+  writeVaultSettings(currentVaultPath, JSON.stringify(filtered, null, 2)).catch((e) => {
     import('../stores/toast-store').then(({ useToastStore }) => {
       useToastStore.getState().addToast(`Failed to save settings: ${e instanceof Error ? e.message : String(e)}`, 'error');
     });

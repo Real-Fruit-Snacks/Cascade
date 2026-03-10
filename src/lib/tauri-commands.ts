@@ -272,3 +272,17 @@ export function gitStatus(vaultPath: string): Promise<GitStatus> {
 export function gitDisconnect(vaultPath: string): Promise<void> {
   return invoke<void>('git_disconnect', { vaultPath });
 }
+
+// ── Secure PAT storage ───────────────────────────────────────────
+
+export function storeSyncPat(vaultPath: string, pat: string): Promise<void> {
+  return invoke<void>('store_sync_pat', { vaultPath, pat });
+}
+
+export function readSyncPat(vaultPath: string): Promise<string> {
+  return invoke<string>('read_sync_pat', { vaultPath });
+}
+
+export function deleteSyncPat(vaultPath: string): Promise<void> {
+  return invoke<void>('delete_sync_pat', { vaultPath });
+}

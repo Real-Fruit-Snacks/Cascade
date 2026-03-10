@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { gitSync, gitStatus } from '../lib/tauri-commands';
+import { gitSync, gitStatus, readSyncPat } from '../lib/tauri-commands';
 import { useSettingsStore } from './settings-store';
 import { useVaultStore } from './vault-store';
 import { useToastStore } from './toast-store';
@@ -29,12 +29,17 @@ export const useSyncStore = create<SyncState>((set, get) => ({
 
     const settings = useSettingsStore.getState();
     const vaultPath = useVaultStore.getState().vaultPath;
-    if (!settings.syncEnabled || !vaultPath || !settings.syncPat) return;
+    if (!settings.syncEnabled || !vaultPath) return;
 
     set({ syncStatus: 'syncing', lastError: null });
 
     try {
-      const result = await gitSync(vaultPath, settings.syncPat);
+      const pat = await readSyncPat(vaultPath);
+      if (!pat) {
+        set({ syncStatus: 'error', lastError: 'No PAT configured — add your token in Sync settings' });
+        return;
+      }
+      const result = await gitSync(vaultPath, pat);
 
       if (result.conflicts.length > 0) {
         useToastStore.getState().addToast(

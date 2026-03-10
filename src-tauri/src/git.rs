@@ -335,3 +335,43 @@ pub fn git_disconnect(vault_path: String) -> Result<(), CascadeError> {
     repo.remote_delete("origin")?;
     Ok(())
 }
+
+// ── Secure PAT storage via OS credential store ──────────────────────
+
+const KEYRING_SERVICE: &str = "com.matt.cascade";
+
+fn keyring_key(vault_path: &str) -> String {
+    format!("sync-pat:{}", vault_path)
+}
+
+#[tauri::command]
+pub fn store_sync_pat(vault_path: String, pat: String) -> Result<(), CascadeError> {
+    let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_key(&vault_path))
+        .map_err(|e| CascadeError::Git(format!("Keyring error: {e}")))?;
+    entry
+        .set_password(&pat)
+        .map_err(|e| CascadeError::Git(format!("Failed to store PAT: {e}")))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn read_sync_pat(vault_path: String) -> Result<String, CascadeError> {
+    let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_key(&vault_path))
+        .map_err(|e| CascadeError::Git(format!("Keyring error: {e}")))?;
+    match entry.get_password() {
+        Ok(pat) => Ok(pat),
+        Err(keyring::Error::NoEntry) => Ok(String::new()),
+        Err(e) => Err(CascadeError::Git(format!("Failed to read PAT: {e}"))),
+    }
+}
+
+#[tauri::command]
+pub fn delete_sync_pat(vault_path: String) -> Result<(), CascadeError> {
+    let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_key(&vault_path))
+        .map_err(|e| CascadeError::Git(format!("Keyring error: {e}")))?;
+    match entry.delete_credential() {
+        Ok(()) => Ok(()),
+        Err(keyring::Error::NoEntry) => Ok(()),
+        Err(e) => Err(CascadeError::Git(format!("Failed to delete PAT: {e}"))),
+    }
+}

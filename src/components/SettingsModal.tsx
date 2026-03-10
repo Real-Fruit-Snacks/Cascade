@@ -11,7 +11,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { commandRegistry } from '../lib/command-registry';
 import { useFocusTrap } from '../hooks/use-focus-trap';
 import { flavorLabels, registerCustomTheme, unregisterCustomTheme, type CustomTheme, type FlavorColors } from '../styles/catppuccin-flavors';
-import { listCustomThemes, saveCustomTheme, deleteCustomTheme, readCustomDictionary, writeCustomDictionary, gitTestConnection, gitInitRepo, gitStatus as gitStatusCmd, gitDisconnect } from '../lib/tauri-commands';
+import { listCustomThemes, saveCustomTheme, deleteCustomTheme, readCustomDictionary, writeCustomDictionary, gitTestConnection, gitInitRepo, gitStatus as gitStatusCmd, gitDisconnect, storeSyncPat, readSyncPat, deleteSyncPat } from '../lib/tauri-commands';
 import { useSyncStore } from '../stores/sync-store';
 import type { ViewMode } from '../types/index';
 import { FeatureWiki } from './FeatureWiki';
@@ -82,14 +82,13 @@ function formatKeyCombo(e: KeyboardEvent): string | null {
   return parts.join('+');
 }
 
-type SettingsCategory = 'editor' | 'appearance' | 'files' | 'folder-colors' | 'general' | 'sync' | 'features' | 'shortcuts' | 'plugins' | 'wikilinks-options' | 'livepreview-options' | 'tags-options' | 'graph-options' | 'backlinks-options' | 'outline-options' | 'variables-options' | 'dailynotes-options' | 'codefolding-options' | 'highlight-options' | 'properties-options' | 'statusbar-options' | 'autosave-options' | 'spellcheck-options' | 'templates-options' | 'search-options' | 'focusmode-options' | 'wordcountgoal-options' | 'bookmarks-options' | 'typewriter-options' | 'indentguides-options' | 'imagepreview-options' | 'toc-options' | 'query-options' | 'mediaviewer-options' | 'canvas-options';
+type SettingsCategory = 'editor' | 'appearance' | 'files' | 'folder-colors' | 'general' | 'sync-options' | 'features' | 'shortcuts' | 'plugins' | 'wikilinks-options' | 'livepreview-options' | 'tags-options' | 'graph-options' | 'backlinks-options' | 'outline-options' | 'variables-options' | 'dailynotes-options' | 'codefolding-options' | 'highlight-options' | 'properties-options' | 'statusbar-options' | 'autosave-options' | 'spellcheck-options' | 'templates-options' | 'search-options' | 'focusmode-options' | 'wordcountgoal-options' | 'bookmarks-options' | 'typewriter-options' | 'indentguides-options' | 'imagepreview-options' | 'toc-options' | 'query-options' | 'mediaviewer-options' | 'canvas-options';
 
 const CATEGORIES: { id: SettingsCategory; labelKey: string; icon: typeof SettingsIcon }[] = [
   { id: 'editor', labelKey: 'categories.editor', icon: Type },
   { id: 'appearance', labelKey: 'categories.appearance', icon: Palette },
   { id: 'files', labelKey: 'categories.files', icon: FolderOpen },
   { id: 'general', labelKey: 'categories.general', icon: Sliders },
-  { id: 'sync', labelKey: 'categories.sync', icon: Cloud },
   { id: 'features', labelKey: 'categories.features', icon: ToggleRight },
   { id: 'plugins', labelKey: 'categories.plugins', icon: Puzzle },
   { id: 'shortcuts', labelKey: 'categories.shortcuts', icon: Keyboard },
@@ -116,6 +115,7 @@ const FEATURE_OPTION_PAGES: { id: SettingsCategory; labelKey: string; icon: Reac
   { id: 'query-options', labelKey: 'featurePages.queryPreview', icon: Database, settingsKey: 'enableQueryPreview' },
   { id: 'search-options', labelKey: 'featurePages.search', icon: Search, settingsKey: 'enableSearch' },
   { id: 'spellcheck-options', labelKey: 'featurePages.spellcheck', icon: SpellCheck, settingsKey: 'spellcheck' },
+  { id: 'sync-options', labelKey: 'featurePages.sync', icon: Cloud, settingsKey: 'syncEnabled' },
   { id: 'statusbar-options', labelKey: 'featurePages.statusBar', icon: PanelBottom, settingsKey: 'enableStatusBar' },
   { id: 'toc-options', labelKey: 'featurePages.tableOfContents', icon: ListTree, settingsKey: 'enableTableOfContents' },
   { id: 'tags-options', labelKey: 'featurePages.tags', icon: Hash, settingsKey: 'enableTags' },
@@ -620,7 +620,8 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
   { id: 'spellcheckOptions', category: 'spellcheck-options' as SettingsCategory, keywords: 'spell check spelling browser options' },
   { id: 'templatesOptions', category: 'templates-options' as SettingsCategory, keywords: 'templates folder variables cursor clipboard date options' },
   { id: 'searchOptions', category: 'search-options' as SettingsCategory, keywords: 'search case sensitive regex whole word options' },
-  { id: 'syncOptions', category: 'sync' as SettingsCategory, keywords: 'sync github git repository backup cloud push pull auto-sync interval token' },
+  { id: 'syncOptions', category: 'sync-options' as SettingsCategory, keywords: 'sync github git repository backup cloud push pull auto-sync interval token' },
+  { id: 'syncEnabled', category: 'features', keywords: 'sync github git cloud backup toggle feature enable disable' },
 ];
 
 interface SettingsContentProps {
@@ -696,7 +697,7 @@ function SettingsContent(props: SettingsContentProps) {
     if (cat === 'files') return showFiles!.length > 0;
     if (cat === 'folder-colors') return showFolderColors!.length > 0;
     if (cat === 'general') return showGeneral!.length > 0;
-    if (cat === 'sync') return SEARCHABLE_ITEMS.filter((i) => i.category === 'sync' && matchItem(i)).length > 0;
+    if (cat === 'sync-options') return SEARCHABLE_ITEMS.filter((i) => i.category === 'sync-options' && matchItem(i)).length > 0;
     if (cat === 'features') return showFeatures!.length > 0;
     if (cat === 'shortcuts') return showShortcuts!.length > 0;
     if (cat === 'plugins') return 'plugins'.includes(q);
@@ -722,7 +723,7 @@ function SettingsContent(props: SettingsContentProps) {
   const visibleGeneralIds = visibleIds('general');
   const visibleFeaturesIds = visibleIds('features');
 
-  const noResults = isSearching && !shouldShowCategory('editor') && !shouldShowCategory('appearance') && !shouldShowCategory('files') && !shouldShowCategory('folder-colors') && !shouldShowCategory('general') && !shouldShowCategory('sync') && !shouldShowCategory('features') && !shouldShowCategory('plugins') && !shouldShowCategory('shortcuts') && !shouldShowCategory('wikilinks-options') && !shouldShowCategory('livepreview-options') && !shouldShowCategory('tags-options') && !shouldShowCategory('graph-options') && !shouldShowCategory('backlinks-options') && !shouldShowCategory('outline-options') && !shouldShowCategory('variables-options') && !shouldShowCategory('dailynotes-options') && !shouldShowCategory('codefolding-options') && !shouldShowCategory('highlight-options') && !shouldShowCategory('properties-options') && !shouldShowCategory('statusbar-options') && !shouldShowCategory('autosave-options') && !shouldShowCategory('spellcheck-options') && !shouldShowCategory('templates-options') && !shouldShowCategory('search-options') && !shouldShowCategory('focusmode-options') && !shouldShowCategory('wordcountgoal-options') && !shouldShowCategory('bookmarks-options') && !shouldShowCategory('typewriter-options') && !shouldShowCategory('indentguides-options') && !shouldShowCategory('imagepreview-options') && !shouldShowCategory('toc-options');
+  const noResults = isSearching && !shouldShowCategory('editor') && !shouldShowCategory('appearance') && !shouldShowCategory('files') && !shouldShowCategory('folder-colors') && !shouldShowCategory('general') && !shouldShowCategory('sync-options') && !shouldShowCategory('features') && !shouldShowCategory('plugins') && !shouldShowCategory('shortcuts') && !shouldShowCategory('wikilinks-options') && !shouldShowCategory('livepreview-options') && !shouldShowCategory('tags-options') && !shouldShowCategory('graph-options') && !shouldShowCategory('backlinks-options') && !shouldShowCategory('outline-options') && !shouldShowCategory('variables-options') && !shouldShowCategory('dailynotes-options') && !shouldShowCategory('codefolding-options') && !shouldShowCategory('highlight-options') && !shouldShowCategory('properties-options') && !shouldShowCategory('statusbar-options') && !shouldShowCategory('autosave-options') && !shouldShowCategory('spellcheck-options') && !shouldShowCategory('templates-options') && !shouldShowCategory('search-options') && !shouldShowCategory('focusmode-options') && !shouldShowCategory('wordcountgoal-options') && !shouldShowCategory('bookmarks-options') && !shouldShowCategory('typewriter-options') && !shouldShowCategory('indentguides-options') && !shouldShowCategory('imagepreview-options') && !shouldShowCategory('toc-options');
 
   if (noResults) {
     return (
@@ -1373,6 +1374,14 @@ function SettingsContent(props: SettingsContentProps) {
               />
             </SettingRow>
           )}
+          {(!visibleFeaturesIds || visibleFeaturesIds.has('syncEnabled')) && (
+            <SettingRow label={ts('features.sync.label')} description={ts('features.sync.description')}>
+              <ToggleSwitch
+                checked={settings.syncEnabled}
+                onChange={(v) => settings.update({ syncEnabled: v })}
+              />
+            </SettingRow>
+          )}
           {(!visibleFeaturesIds || visibleFeaturesIds.has('enableTableOfContents')) && (
             <SettingRow label={ts('features.tableOfContents.label')} description={ts('features.tableOfContents.description')}>
               <ToggleSwitch
@@ -1793,9 +1802,9 @@ function SettingsContent(props: SettingsContentProps) {
         </>
       )}
 
-      {shouldShowCategory('sync') && (
+      {shouldShowCategory('sync-options') && (
         <>
-          {isSearching && <SectionHeader label={ts('categories.sync')} />}
+          {isSearching && <SectionHeader label={ts('featurePages.sync')} />}
           <SyncOptionsPage settings={settings} />
         </>
       )}
@@ -4089,17 +4098,41 @@ function TocOptionsPage({ settings }: OptionsPageProps) {
 function SyncOptionsPage({ settings }: OptionsPageProps) {
   const update = useSettingsStore.getState().update;
   const vaultPath = useVaultStore.getState().vaultPath;
+  const syncStatus = useSyncStore((s) => s.syncStatus);
+  const lastSyncTime = useSyncStore((s) => s.lastSyncTime);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [connectResult, setConnectResult] = useState<string | null>(null);
+  const [showPat, setShowPat] = useState(false);
+  const [pat, setPat] = useState('');
+  const [patLoaded, setPatLoaded] = useState(false);
+
+  // Load PAT from OS credential store on mount
+  useEffect(() => {
+    if (vaultPath && !patLoaded) {
+      readSyncPat(vaultPath).then((stored) => {
+        if (stored) setPat(stored);
+        setPatLoaded(true);
+      }).catch(() => setPatLoaded(true));
+    }
+  }, [vaultPath, patLoaded]);
+
+  const handlePatChange = (value: string) => {
+    setPat(value);
+    if (vaultPath) {
+      storeSyncPat(vaultPath, value).catch(() => {/* toast handled by keyring error */});
+    }
+  };
+
+  const isConnected = syncStatus !== 'disconnected';
 
   const handleTestConnection = async () => {
-    if (!settings.syncRepoUrl || !settings.syncPat) return;
+    if (!settings.syncRepoUrl || !pat) return;
     setTesting(true);
     setTestResult(null);
     try {
-      await gitTestConnection(settings.syncRepoUrl, settings.syncPat);
+      await gitTestConnection(settings.syncRepoUrl, pat);
       setTestResult('success');
     } catch {
       setTestResult('error');
@@ -4108,21 +4141,15 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
   };
 
   const handleConnect = async () => {
-    if (!vaultPath || !settings.syncRepoUrl || !settings.syncPat) return;
+    if (!vaultPath || !settings.syncRepoUrl || !pat) return;
     setConnecting(true);
     setConnectResult(null);
     try {
       const status = await gitStatusCmd(vaultPath);
       if (status.is_repo && status.has_remote) {
-        update({ syncEnabled: true });
         setConnectResult('Connected — sync enabled');
-      } else if (status.is_repo) {
-        await gitInitRepo(vaultPath, settings.syncRepoUrl, settings.syncPat);
-        update({ syncEnabled: true });
-        setConnectResult('Remote added — initial push complete');
       } else {
-        await gitInitRepo(vaultPath, settings.syncRepoUrl, settings.syncPat);
-        update({ syncEnabled: true });
+        await gitInitRepo(vaultPath, settings.syncRepoUrl, pat);
         setConnectResult('Repository initialized — initial push complete');
       }
       useSyncStore.getState().refreshStatus();
@@ -4136,127 +4163,221 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
     if (!vaultPath) return;
     try {
       await gitDisconnect(vaultPath);
-      update({ syncEnabled: false });
+      await deleteSyncPat(vaultPath);
+      setPat('');
       useSyncStore.getState().reset();
       setConnectResult(null);
+      setTestResult(null);
     } catch (err: unknown) {
       setConnectResult(`Error: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '7px 10px',
+    borderRadius: 6,
+    border: '1px solid var(--ctp-surface1)',
+    backgroundColor: 'var(--ctp-surface0)',
+    color: 'var(--ctp-text)',
+    fontSize: 13,
+    outline: 'none',
+  };
+
+  const formatAgo = (ts: number | null) => {
+    if (!ts) return 'never';
+    const secs = Math.floor((Date.now() - ts) / 1000);
+    if (secs < 60) return 'just now';
+    const mins = Math.floor(secs / 60);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    return `${hrs}h ago`;
+  };
+
   return (
-    <>
-      <SettingRow label="Repository URL" description="HTTPS URL of your GitHub repository">
-        <input
-          type="text"
-          value={settings.syncRepoUrl}
-          placeholder="https://github.com/user/vault.git"
-          onChange={(e) => update({ syncRepoUrl: e.target.value })}
-          style={{
-            width: 320,
-            padding: '6px 10px',
-            borderRadius: 6,
-            border: '1px solid var(--ctp-surface1)',
-            backgroundColor: 'var(--ctp-surface0)',
-            color: 'var(--ctp-text)',
-            fontSize: 13,
-          }}
-        />
-      </SettingRow>
+    <div className="flex flex-col gap-5">
+      {/* Header */}
+      <div className="flex flex-col gap-1 mb-1">
+        <span className="text-sm font-medium" style={{ color: 'var(--ctp-accent)' }}>GitHub Sync</span>
+        <span className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>
+          Sync your vault to a GitHub repository for backup and cross-device access.
+        </span>
+      </div>
 
-      <SettingRow label="Personal Access Token" description="GitHub PAT with repo scope">
-        <input
-          type="password"
-          value={settings.syncPat}
-          placeholder="ghp_..."
-          onChange={(e) => update({ syncPat: e.target.value })}
+      {/* Connection Status Banner */}
+      {isConnected && (
+        <div
+          className="flex items-center gap-3 rounded-lg px-4 py-3"
           style={{
-            width: 320,
-            padding: '6px 10px',
-            borderRadius: 6,
-            border: '1px solid var(--ctp-surface1)',
-            backgroundColor: 'var(--ctp-surface0)',
-            color: 'var(--ctp-text)',
-            fontSize: 13,
+            backgroundColor: syncStatus === 'error' ? 'color-mix(in srgb, var(--ctp-red) 10%, var(--ctp-mantle))' : 'color-mix(in srgb, var(--ctp-green) 10%, var(--ctp-mantle))',
+            border: `1px solid ${syncStatus === 'error' ? 'var(--ctp-red)' : 'var(--ctp-green)'}`,
           }}
-        />
-      </SettingRow>
+        >
+          <Cloud size={16} style={{ color: syncStatus === 'error' ? 'var(--ctp-red)' : 'var(--ctp-green)', flexShrink: 0 }} />
+          <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+            <span className="text-xs font-medium" style={{ color: 'var(--ctp-text)' }}>
+              {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Sync Error' : syncStatus === 'offline' ? 'Offline — commits pending' : 'Connected'}
+            </span>
+            <span className="text-xs" style={{ color: 'var(--ctp-subtext0)' }}>
+              {settings.syncRepoUrl ? settings.syncRepoUrl.replace(/\.git$/, '').replace(/^https:\/\/github\.com\//, '') : 'No repository'} · Last synced {formatAgo(lastSyncTime)}
+            </span>
+          </div>
+          <button
+            onClick={() => useSyncStore.getState().triggerSync()}
+            disabled={syncStatus === 'syncing'}
+            className="text-xs px-2.5 py-1 rounded"
+            style={{
+              backgroundColor: 'var(--ctp-surface0)',
+              color: 'var(--ctp-text)',
+              border: '1px solid var(--ctp-surface1)',
+              cursor: syncStatus === 'syncing' ? 'default' : 'pointer',
+              opacity: syncStatus === 'syncing' ? 0.5 : 1,
+            }}
+          >
+            Sync Now
+          </button>
+        </div>
+      )}
 
-      <SettingRow label="Test Connection" description="Verify your URL and token work">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {/* Repository Settings */}
+      <div className="flex flex-col gap-3 rounded-lg p-4" style={{ backgroundColor: 'var(--ctp-mantle)', border: '1px solid var(--ctp-surface0)' }}>
+        <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>Repository</span>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs" style={{ color: 'var(--ctp-subtext0)' }}>Repository URL</label>
+          <input
+            type="text"
+            value={settings.syncRepoUrl}
+            placeholder="https://github.com/username/vault.git"
+            onChange={(e) => update({ syncRepoUrl: e.target.value })}
+            style={inputStyle}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs" style={{ color: 'var(--ctp-subtext0)' }}>Personal Access Token</label>
+          <div style={{ position: 'relative' }}>
+            <input
+              type={showPat ? 'text' : 'password'}
+              value={pat}
+              placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              onChange={(e) => handlePatChange(e.target.value)}
+              style={{ ...inputStyle, paddingRight: 60 }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPat((v) => !v)}
+              className="text-xs"
+              style={{
+                position: 'absolute',
+                right: 8,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: 'var(--ctp-overlay1)',
+                cursor: 'pointer',
+                padding: '2px 4px',
+              }}
+            >
+              {showPat ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          <span className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>
+            Generate at GitHub → Settings → Developer settings → Personal access tokens. Requires <strong>repo</strong> scope.
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 mt-1">
           <button
             onClick={handleTestConnection}
-            disabled={testing || !settings.syncRepoUrl || !settings.syncPat}
-            className="settings-btn"
+            disabled={testing || !settings.syncRepoUrl || !pat}
+            className="text-xs px-3 py-1.5 rounded"
+            style={{
+              backgroundColor: 'var(--ctp-surface0)',
+              color: 'var(--ctp-text)',
+              border: '1px solid var(--ctp-surface1)',
+              cursor: testing || !settings.syncRepoUrl || !pat ? 'default' : 'pointer',
+              opacity: testing || !settings.syncRepoUrl || !pat ? 0.5 : 1,
+            }}
           >
-            {testing ? 'Testing...' : 'Test'}
+            {testing ? 'Testing...' : 'Test Connection'}
           </button>
-          {testResult === 'success' && <span style={{ color: 'var(--ctp-green)', fontSize: 13 }}>Connected</span>}
-          {testResult === 'error' && <span style={{ color: 'var(--ctp-red)', fontSize: 13 }}>Failed</span>}
-        </div>
-      </SettingRow>
 
-      <SettingRow label="" description="">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {!settings.syncEnabled ? (
+          {!isConnected ? (
             <button
               onClick={handleConnect}
-              disabled={connecting || !settings.syncRepoUrl || !settings.syncPat}
-              className="settings-btn"
-              style={{ backgroundColor: 'var(--ctp-accent)', color: 'var(--ctp-base)' }}
+              disabled={connecting || !settings.syncRepoUrl || !pat}
+              className="text-xs px-3 py-1.5 rounded font-medium"
+              style={{
+                backgroundColor: 'var(--ctp-accent)',
+                color: 'var(--ctp-base)',
+                border: 'none',
+                cursor: connecting || !settings.syncRepoUrl || !pat ? 'default' : 'pointer',
+                opacity: connecting || !settings.syncRepoUrl || !pat ? 0.5 : 1,
+              }}
             >
-              {connecting ? 'Connecting...' : 'Connect & Enable Sync'}
+              {connecting ? 'Connecting...' : 'Connect & Push'}
             </button>
           ) : (
             <button
               onClick={handleDisconnect}
-              className="settings-btn"
-              style={{ backgroundColor: 'var(--ctp-red)', color: 'var(--ctp-base)' }}
+              className="text-xs px-3 py-1.5 rounded"
+              style={{
+                backgroundColor: 'transparent',
+                color: 'var(--ctp-red)',
+                border: '1px solid var(--ctp-red)',
+                cursor: 'pointer',
+              }}
             >
               Disconnect
             </button>
           )}
+
+          {testResult === 'success' && <span className="text-xs" style={{ color: 'var(--ctp-green)' }}>Connection successful</span>}
+          {testResult === 'error' && <span className="text-xs" style={{ color: 'var(--ctp-red)' }}>Connection failed</span>}
           {connectResult && (
-            <span style={{ fontSize: 13, color: connectResult.startsWith('Error') ? 'var(--ctp-red)' : 'var(--ctp-green)' }}>
+            <span className="text-xs" style={{ color: connectResult.startsWith('Error') ? 'var(--ctp-red)' : 'var(--ctp-green)' }}>
               {connectResult}
             </span>
           )}
         </div>
-      </SettingRow>
+      </div>
 
-      {settings.syncEnabled && (
-        <>
-          <SettingRow label="Auto-sync" description="Automatically sync on an interval">
-            <ToggleSwitch
-              checked={settings.syncAutoSync}
-              onChange={(v) => update({ syncAutoSync: v })}
-            />
+      {/* Auto-Sync Settings */}
+      <div className="flex flex-col gap-3 rounded-lg p-4" style={{ backgroundColor: 'var(--ctp-mantle)', border: '1px solid var(--ctp-surface0)' }}>
+        <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>Auto-Sync</span>
+
+        <SettingRow label="Automatic sync" description="Periodically sync your vault in the background">
+          <ToggleSwitch
+            checked={settings.syncAutoSync}
+            onChange={(v) => update({ syncAutoSync: v })}
+          />
+        </SettingRow>
+
+        {settings.syncAutoSync && (
+          <SettingRow label="Sync interval" description="How often to sync automatically">
+            <select
+              value={settings.syncInterval}
+              onChange={(e) => update({ syncInterval: Number(e.target.value) })}
+              className="text-xs px-2 py-1 rounded outline-none"
+              style={{
+                backgroundColor: 'var(--ctp-surface0)',
+                color: 'var(--ctp-text)',
+                border: '1px solid var(--ctp-surface2)',
+              }}
+            >
+              <option value={1}>Every minute</option>
+              <option value={5}>Every 5 minutes</option>
+              <option value={10}>Every 10 minutes</option>
+              <option value={30}>Every 30 minutes</option>
+            </select>
           </SettingRow>
+        )}
+      </div>
 
-          {settings.syncAutoSync && (
-            <SettingRow label="Sync Interval" description="Minutes between auto-syncs">
-              <select
-                value={settings.syncInterval}
-                onChange={(e) => update({ syncInterval: Number(e.target.value) })}
-                style={{
-                  padding: '6px 10px',
-                  borderRadius: 6,
-                  border: '1px solid var(--ctp-surface1)',
-                  backgroundColor: 'var(--ctp-surface0)',
-                  color: 'var(--ctp-text)',
-                  fontSize: 13,
-                }}
-              >
-                <option value={1}>1 minute</option>
-                <option value={5}>5 minutes</option>
-                <option value={10}>10 minutes</option>
-                <option value={30}>30 minutes</option>
-              </select>
-            </SettingRow>
-          )}
-        </>
-      )}
-    </>
+      <FeatureWiki featureId="sync-options" />
+    </div>
   );
 }
 

@@ -20,8 +20,7 @@
     "general": "General",
     "features": "Features",
     "plugins": "Plugins",
-    "shortcuts": "Keyboard Shortcuts",
-    "sync": "Sync"
+    "shortcuts": "Keyboard Shortcuts"
   },
   "featurePages": {
     "autosave": "Auto-Save",
@@ -50,7 +49,8 @@
     "typewriterMode": "Typewriter Mode",
     "variables": "Variables",
     "wikiLinks": "Wiki Links",
-    "wordCountGoal": "Word Count Goal"
+    "wordCountGoal": "Word Count Goal",
+    "sync": "GitHub Sync"
   },
   "systemMonospace": "System Monospace",
   "editor": {
@@ -363,6 +363,10 @@
     "wordCountGoal": {
       "label": "Word Count Goal",
       "description": "Set a target word count and track progress in the status bar"
+    },
+    "sync": {
+      "label": "GitHub Sync",
+      "description": "Sync your vault to a GitHub repository for backup and cross-device access"
     }
   },
   "folderColors": {
