@@ -1,6 +1,7 @@
 mod bear_importer;
 mod error;
 mod fts;
+mod git;
 mod importer;
 mod indexer;
 mod notion_importer;
@@ -71,6 +72,12 @@ pub fn run() {
             vault::write_integrity_file,
             vault::verify_plugin_integrity,
             vault::extract_plugin_zip,
+            git::git_test_connection,
+            git::git_init_repo,
+            git::git_clone_repo,
+            git::git_sync,
+            git::git_status,
+            git::git_disconnect,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
