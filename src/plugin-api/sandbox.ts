@@ -386,9 +386,14 @@ export class PluginSandbox {
         requirePermission(this.permissions, 'vault.write');
         const filePath = args[0] as string;
         validateVaultPath(filePath);
+        const content = args[1] as string;
+        const MAX_PLUGIN_WRITE_SIZE = 5 * 1024 * 1024; // 5 MB
+        if (content && content.length > MAX_PLUGIN_WRITE_SIZE) {
+          throw new Error(`Content exceeds maximum allowed size (${MAX_PLUGIN_WRITE_SIZE} bytes)`);
+        }
         const vaultPath = useVaultStore.getState().vaultPath;
         if (!vaultPath) throw new Error('No vault open');
-        await cmd.writeFile(vaultPath, filePath, args[1] as string);
+        await cmd.writeFile(vaultPath, filePath, content);
         return undefined;
       }
       case 'vault.onFileChange': {
