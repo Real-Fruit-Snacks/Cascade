@@ -39,7 +39,9 @@
     "moveToTrash": "Move to Trash",
     "bookmark": "Bookmark",
     "removeBookmark": "Remove Bookmark",
-    "newFileHere": "New File Here"
+    "newFileHere": "New File Here",
+    "newCanvas": "New Canvas",
+    "newCanvasHere": "New Canvas Here"
   },
   "tooltips": {
     "expandAll": "Expand all",
@@ -108,6 +110,12 @@
       "blank": "Blank",
       "folderTemplates": "Folder Templates",
       "noMatch": "No templates match \"{{search}}\""
+    },
+    "newCanvas": {
+      "title": "New Canvas",
+      "placeholder": "Canvas name",
+      "submitLabel": "Create",
+      "alreadyExists": "A canvas with that name already exists"
     },
     "delete": {
       "titleTrash": "Move to Trash",

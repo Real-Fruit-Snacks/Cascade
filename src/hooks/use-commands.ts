@@ -47,6 +47,10 @@ export function useCommands(options: {
       window.dispatchEvent(new Event('cascade:new-file'));
     });
 
+    reg('file.new-canvas', i18n.t('commands:labels.newCanvas'), '', () => {
+      window.dispatchEvent(new Event('cascade:new-canvas'));
+    });
+
     reg('file.save', i18n.t('commands:labels.save'), 'Ctrl+S', () => {
       const vaultPath = useVaultStore.getState().vaultPath;
       if (!vaultPath) return;

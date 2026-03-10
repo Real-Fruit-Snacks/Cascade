@@ -1,7 +1,7 @@
 import { memo, useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
-import { File, FilePlus, Folder, FolderOpen, FolderPlus, FolderInput, ChevronRight, Pencil, Trash2, Palette, Star, Copy, ExternalLink } from 'lucide-react';
+import { File, FilePlus, Folder, FolderOpen, FolderPlus, FolderInput, ChevronRight, Pencil, Trash2, Palette, Star, Copy, ExternalLink, LayoutGrid } from 'lucide-react';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { ConfirmDialog } from '../ConfirmDialog';
 import type { FileEntry } from '../../types/index';
@@ -374,6 +374,21 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
     }
   }, [entry.isDir, entry.path, createFolder, folderTemplates]);
 
+  const handleNewCanvasSubmit = useCallback(async (name: string) => {
+    setNewCanvasModal(false);
+    const dir = entry.isDir ? entry.path : getParentDir(entry.path);
+    const fileName = name.endsWith('.canvas') ? name : `${name}.canvas`;
+    const fullPath = dir ? `${dir}/${fileName}` : fileName;
+    await createFile(fullPath);
+    if (vaultPath) {
+      await writeFile(vaultPath, fullPath, '{"nodes":[],"edges":[]}');
+      await openFile(vaultPath, fullPath);
+    }
+    if (entry.isDir) {
+      onToggleExpand(entry.path, true);
+    }
+  }, [entry.isDir, entry.path, createFile, openFile, vaultPath, onToggleExpand]);
+
   const handleMoveConfirm = useCallback(async (target: string) => {
     setMoveModalOpen(false);
     const wasActive = useEditorStore.getState().activeFilePath === entry.path;
@@ -393,10 +408,12 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
   const [colorPickerPos, setColorPickerPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [newFileModal, setNewFileModal] = useState(false);
   const [newFolderModal, setNewFolderModal] = useState(false);
+  const [newCanvasModal, setNewCanvasModal] = useState(false);
 
   const menuItems: MenuItem[] = entry.isDir
     ? [
         { label: t('contextMenu.newFile'), icon: <FilePlus size={12} />, onClick: () => setNewFileModal(true) },
+        { label: t('contextMenu.newCanvas'), icon: <LayoutGrid size={12} />, onClick: () => setNewCanvasModal(true) },
         { label: t('contextMenu.newFolder'), icon: <FolderPlus size={12} />, onClick: () => setNewFolderModal(true) },
         { label: t('contextMenu.rename'), icon: <Pencil size={12} />, onClick: startRename },
         { label: t('contextMenu.moveTo'), icon: <FolderInput size={12} />, onClick: () => setMoveModalOpen(true) },
@@ -425,6 +442,7 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
         { label: t('contextMenu.rename'), icon: <Pencil size={12} />, onClick: startRename },
         { label: t('contextMenu.moveTo'), icon: <FolderInput size={12} />, onClick: () => setMoveModalOpen(true) },
         { label: t('contextMenu.newFileHere'), icon: <FilePlus size={12} />, onClick: () => setNewFileModal(true) },
+        { label: t('contextMenu.newCanvasHere'), icon: <LayoutGrid size={12} />, onClick: () => setNewCanvasModal(true) },
         { label: '', icon: undefined, separator: true, onClick: () => {} },
         { label: t('contextMenu.copyPath'), icon: <Copy size={12} />, onClick: () => navigator.clipboard.writeText(entry.path) },
         { label: t('contextMenu.revealInExplorer'), icon: <ExternalLink size={12} />, onClick: () => { if (vaultPath) revealItemInDir(`${vaultPath}/${entry.path}`); } },
@@ -521,7 +539,11 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
         ) : (
           <>
             <span className="shrink-0" style={{ width: 14 }} />
-            {showFileIcons && <File size={14} className="shrink-0" style={{ color: targets?.icon && color ? color : 'var(--ctp-overlay1)' }} />}
+            {showFileIcons && (
+              entry.name.endsWith('.canvas')
+                ? <LayoutGrid size={14} className="shrink-0" style={{ color: targets?.icon && color ? color : 'var(--ctp-blue)' }} />
+                : <File size={14} className="shrink-0" style={{ color: targets?.icon && color ? color : 'var(--ctp-overlay1)' }} />
+            )}
           </>
         )}
 
@@ -686,6 +708,23 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
         validate={(name) => {
           if (entry.children?.some((e) => e.isDir && e.name.toLowerCase() === name.toLowerCase())) {
             return t('modals.newFolder.alreadyExists');
+          }
+          return null;
+        }}
+      />
+
+      <InputModal
+        open={newCanvasModal}
+        title={t('modals.newCanvas.title')}
+        icon={<LayoutGrid size={14} />}
+        placeholder={t('modals.newCanvas.placeholder')}
+        submitLabel={t('modals.newCanvas.submitLabel')}
+        onClose={() => setNewCanvasModal(false)}
+        onSubmit={handleNewCanvasSubmit}
+        validate={(name) => {
+          const fileName = name.endsWith('.canvas') ? name : `${name}.canvas`;
+          if (entry.children?.some((e) => !e.isDir && e.name.toLowerCase() === fileName.toLowerCase())) {
+            return t('modals.newCanvas.alreadyExists');
           }
           return null;
         }}

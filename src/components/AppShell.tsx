@@ -29,6 +29,7 @@ import { useEditorStore } from '../stores/editor-store';
 import { useVaultStore } from '../stores/vault-store';
 import { useSettingsStore } from '../stores/settings-store';
 import type { VariableMatch } from '../lib/tidemark';
+import { writeFile } from '../lib/tauri-commands';
 
 const SIDEBAR_STORAGE_KEY = 'cascade-sidebar-visible';
 
@@ -79,6 +80,7 @@ export function AppShell() {
   const [commandPaletteVisible, setCommandPaletteVisible] = useState(false);
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [newFileModalVisible, setNewFileModalVisible] = useState(false);
+  const [newCanvasModalVisible, setNewCanvasModalVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [exportVisible, setExportVisible] = useState(false);
   const [exportDefaultScope, setExportDefaultScope] = useState<'current' | 'vault'>('current');
@@ -204,6 +206,7 @@ export function AppShell() {
       if (useSettingsStore.getState().enableSearch) setSearchModalVisible(true);
     };
     const newFile = () => setNewFileModalVisible(true);
+    const newCanvas = () => setNewCanvasModalVisible(true);
     const openSettings = () => setSettingsVisible(true);
     const openCmdPalette = () => setCommandPaletteVisible(true);
     const openExport = () => { setExportDefaultScope('current'); setExportVisible(true); };
@@ -242,6 +245,7 @@ export function AppShell() {
     const events: [string, EventListener][] = [
       ['cascade:open-search', openSearch],
       ['cascade:new-file', newFile],
+      ['cascade:new-canvas', newCanvas],
       ['cascade:open-settings', openSettings],
       ['cascade:open-command-palette', openCmdPalette],
       ['cascade:export', openExport],
@@ -508,6 +512,25 @@ export function AppShell() {
     });
   }, []);
 
+  const closeNewCanvasModal = useCallback(() => {
+    setNewCanvasModalVisible(false);
+  }, []);
+
+  const handleCreateCanvas = useCallback((path: string) => {
+    const vaultPath = useVaultStore.getState().vaultPath;
+    if (!vaultPath) return;
+    const canvasPath = path.endsWith('.canvas') ? path : `${path}.canvas`;
+    useVaultStore.getState().createFile(canvasPath).then(() => {
+      return writeFile(vaultPath, canvasPath, '{"nodes":[],"edges":[]}');
+    }).then(() => {
+      useEditorStore.getState().openFile(vaultPath, canvasPath);
+    }).catch((err) => {
+      console.error('Failed to create canvas:', canvasPath, err);
+      const fileName = canvasPath.replace(/\\/g, '/').split('/').pop() ?? canvasPath;
+      useToastStore.getState().addToast(t('common:failedToCreateFile', { fileName }), 'error');
+    });
+  }, []);
+
   // Listen for link-picker requests from the editor
   useEffect(() => {
     const unsub = quickOpenBus.subscribe((callback) => {
@@ -624,6 +647,11 @@ export function AppShell() {
         open={newFileModalVisible}
         onClose={closeNewFileModal}
         onCreate={handleCreateFile}
+      />
+      <NewFileModal
+        open={newCanvasModalVisible}
+        onClose={closeNewCanvasModal}
+        onCreate={handleCreateCanvas}
       />
       <ErrorBoundary name="settings-modal">
         <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}><div className="rounded-xl p-8" style={{ backgroundColor: 'var(--ctp-base)', width: 500 }}><div className="w-6 h-6 mx-auto border-2 rounded-full animate-spin" style={{ borderColor: 'var(--ctp-surface2)', borderTopColor: 'var(--ctp-accent)' }} /></div></div>}>
