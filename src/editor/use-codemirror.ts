@@ -31,7 +31,6 @@ import { tableEditor, tableEditorTheme } from './table-editor';
 import { footnotePreview, footnotePreviewTheme } from './footnote-preview';
 import { mermaidPreview, mermaidPreviewTheme } from './mermaid-preview';
 import { queryPreview, queryPreviewTheme } from './query-preview';
-import { embedPreview, embedPreviewTheme } from './embed-preview';
 import { customSpellcheck } from './custom-spellcheck';
 import { initDictionary, setVaultPath as setSpellcheckVault } from './spellcheck-engine';
 import { formattingKeymap } from './formatting-commands';
@@ -71,7 +70,6 @@ interface Compartments {
   highlightSyntaxComp: Compartment;
   markdownComp: Compartment;
   tableEditorComp: Compartment;
-  embedPreviewComp: Compartment;
 }
 
 function createCompartments(): Compartments {
@@ -103,7 +101,6 @@ function createCompartments(): Compartments {
     highlightSyntaxComp: new Compartment(),
     markdownComp: new Compartment(),
     tableEditorComp: new Compartment(),
-    embedPreviewComp: new Compartment(),
   };
 }
 
@@ -252,7 +249,7 @@ export function useCodeMirror() {
     wikiLinksComp, tagsComp, tidemarkComp, codeFoldingComp, typewriterComp,
     indentGuidesComp, imagePreviewComp, mathPreviewComp, calloutPreviewComp,
     mermaidPreviewComp, queryPreviewComp, focusModeComp, highlightSyntaxComp,
-    markdownComp, tableEditorComp, embedPreviewComp,
+    markdownComp, tableEditorComp,
   } = compsRef.current;
 
   const updateContent = useEditorStore((s) => s.updateContent);
@@ -312,8 +309,6 @@ export function useCodeMirror() {
   const spellcheckSkipCapitalized = useSettingsStore((s) => s.spellcheckSkipCapitalized);
   const enableProperties = useSettingsStore((s) => s.enableProperties);
   const propertiesShowTypes = useSettingsStore((s) => s.propertiesShowTypes);
-  const enableEmbedPreview = useSettingsStore((s) => s.enableEmbedPreview);
-
   // Ref avoids re-creating the EditorView when save dependencies change
   const handleSaveRef = useRef(() => {});
   handleSaveRef.current = () => {
@@ -385,7 +380,6 @@ export function useCodeMirror() {
         calloutPreviewComp.of(settings.enableCalloutPreview ? [calloutPreview, calloutPreviewTheme] : []),
         mermaidPreviewComp.of(settings.enableMermaidPreview ? [mermaidPreview, mermaidPreviewTheme] : []),
         queryPreviewComp.of(settings.enableQueryPreview ? [queryPreview, queryPreviewTheme] : []),
-        embedPreviewComp.of(settings.enableEmbedPreview ? [embedPreview, embedPreviewTheme] : []),
         tableEditorComp.of([...tableEditor, tableEditorTheme]),
         bracketMatching(),
         closeBrackets(),
@@ -652,13 +646,6 @@ export function useCodeMirror() {
     if (!view) return;
     view.dispatch({ effects: queryPreviewComp.reconfigure(enableQueryPreview ? [queryPreview, queryPreviewTheme] : []) });
   }, [enableQueryPreview]);
-
-  // Embed preview
-  useEffect(() => {
-    const view = viewRef.current;
-    if (!view) return;
-    view.dispatch({ effects: embedPreviewComp.reconfigure(enableEmbedPreview ? [embedPreview, embedPreviewTheme] : []) });
-  }, [enableEmbedPreview]);
 
   // Live preview: reconfigure when any sub-toggle or related setting changes
   useEffect(() => {

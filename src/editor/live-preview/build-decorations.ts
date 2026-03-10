@@ -53,6 +53,7 @@ export function buildDecorations(view: EditorView): DecorationSet {
   const fmEndPos = fm ? fm.endPos : -1;
 
   // ── Embed transclusions ![[target]] (text-level scan) ──
+  if (lpSettings.enableEmbedPreview) {
   const EMBED_RE = /!\[\[([^\]]+)\]\]/g;
   const flatFiles = useVaultStore.getState().flatFiles;
 
@@ -100,6 +101,7 @@ export function buildDecorations(view: EditorView): DecorationSet {
       }
     }
   }
+  } // end enableEmbedPreview
 
   for (const { from, to } of view.visibleRanges) {
     tree.iterate({
