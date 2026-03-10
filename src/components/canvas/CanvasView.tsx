@@ -80,12 +80,27 @@ const BEZIER_SAMPLE_COUNT = 30;
 const CTRL_OFFSET = 80; // world-space pixels, must match CanvasBackground
 const DEFAULT_GRID_SIZE = 20;
 
-// Module-level clipboard for copy/paste
+// Clipboard helpers using the system clipboard
 interface ClipboardData {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
 }
-let canvasClipboard: ClipboardData | null = null;
+
+async function writeCanvasClipboard(data: ClipboardData): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(JSON.stringify({ __cascadeCanvas: true, ...data }));
+  } catch { /* clipboard access denied — ignore */ }
+}
+
+async function readCanvasClipboard(): Promise<ClipboardData | null> {
+  try {
+    const raw = await navigator.clipboard.readText();
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.__cascadeCanvas && Array.isArray(parsed.nodes)) return parsed;
+  } catch { /* not canvas data or clipboard access denied */ }
+  return null;
+}
 
 // Sample a cubic bezier at t in [0,1]
 function bezierPoint(
@@ -329,7 +344,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
         return;
       }
 
-      // Ctrl+C — copy selected nodes (and internal edges)
+      // Ctrl+C — copy selected nodes (and internal edges) to system clipboard
       if (ctrl && e.key === 'c') {
         const selectedNodes = store.nodes.filter((n) => store.selectedNodeIds.has(n.id));
         if (selectedNodes.length > 0) {
@@ -337,10 +352,10 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
           const internalEdges = store.edges.filter(
             (ed) => selectedIds.has(ed.fromNode) && selectedIds.has(ed.toNode),
           );
-          canvasClipboard = {
+          writeCanvasClipboard({
             nodes: selectedNodes.map((n) => ({ ...n })),
             edges: internalEdges.map((ed) => ({ ...ed })),
-          };
+          });
           e.preventDefault();
         }
         return;
@@ -348,11 +363,13 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
 
       // Ctrl+V — paste clipboard nodes offset by (20, 20), with new IDs
       if (ctrl && e.key === 'v') {
-        if (canvasClipboard && canvasClipboard.nodes.length > 0) {
+        e.preventDefault();
+        readCanvasClipboard().then((clipData) => {
+          if (!clipData || clipData.nodes.length === 0) return;
           store.pushUndo();
           const idMap = new Map<string, string>();
           const pastedNodeIds: string[] = [];
-          for (const node of canvasClipboard.nodes) {
+          for (const node of clipData.nodes) {
             const { id: oldId, ...rest } = node;
             store.addNode({ ...rest, x: node.x + DEFAULT_GRID_SIZE, y: node.y + DEFAULT_GRID_SIZE }, true);
             const newId = useCanvasStore.getState().nodes.at(-1)?.id;
@@ -361,7 +378,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
               pastedNodeIds.push(newId);
             }
           }
-          for (const edge of canvasClipboard.edges) {
+          for (const edge of clipData.edges) {
             const newFrom = idMap.get(edge.fromNode);
             const newTo = idMap.get(edge.toNode);
             if (newFrom && newTo) {
@@ -378,8 +395,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
             selectedNodeIds: new Set(pastedNodeIds),
             selectedEdgeIds: new Set(),
           }));
-          e.preventDefault();
-        }
+        });
         return;
       }
 
