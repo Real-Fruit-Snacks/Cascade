@@ -11,6 +11,7 @@ import { CommandPalette } from './CommandPalette';
 import { NewFileModal } from './NewFileModal';
 import { SetVariableModal } from './SetVariableModal';
 import { ListVariablesModal } from './ListVariablesModal';
+import { getVariablesOptions } from '../hooks/use-variables-options';
 
 const SearchModal = lazy(() => import('./SearchModal').then((m) => ({ default: m.SearchModal })));
 const SettingsModal = lazy(() => import('./SettingsModal').then((m) => ({ default: m.SettingsModal })));
@@ -303,17 +304,7 @@ export function AppShell() {
       if (!view || !vaultPath) return;
 
       const { extractFrontmatter, parseFrontmatter, replaceVariables } = await import('../lib/tidemark');
-      const s = useSettingsStore.getState();
-      const opts = {
-        openDelimiter: s.variablesOpenDelimiter,
-        closeDelimiter: s.variablesCloseDelimiter,
-        defaultSeparator: s.variablesDefaultSeparator,
-        missingValueText: s.variablesMissingText,
-        supportNesting: s.variablesSupportNesting,
-        caseInsensitive: s.variablesCaseInsensitive,
-        arrayJoinSeparator: s.variablesArrayJoinSeparator,
-        preserveOnMissing: s.variablesPreserveOnMissing,
-      };
+      const opts = getVariablesOptions();
 
       const doc = view.state.doc.toString();
       const fm = extractFrontmatter(doc);
@@ -335,17 +326,7 @@ export function AppShell() {
       if (!view) return;
 
       const { extractFrontmatter, parseFrontmatter, replaceVariables } = await import('../lib/tidemark');
-      const s = useSettingsStore.getState();
-      const opts = {
-        openDelimiter: s.variablesOpenDelimiter,
-        closeDelimiter: s.variablesCloseDelimiter,
-        defaultSeparator: s.variablesDefaultSeparator,
-        missingValueText: s.variablesMissingText,
-        supportNesting: s.variablesSupportNesting,
-        caseInsensitive: s.variablesCaseInsensitive,
-        arrayJoinSeparator: s.variablesArrayJoinSeparator,
-        preserveOnMissing: s.variablesPreserveOnMissing,
-      };
+      const opts = getVariablesOptions();
 
       const doc = view.state.doc.toString();
       const fm = extractFrontmatter(doc);
@@ -366,17 +347,7 @@ export function AppShell() {
       if (!view) return;
 
       const { extractFrontmatter, parseFrontmatter, getVariableAtPosition } = await import('../lib/tidemark');
-      const s = useSettingsStore.getState();
-      const opts = {
-        openDelimiter: s.variablesOpenDelimiter,
-        closeDelimiter: s.variablesCloseDelimiter,
-        defaultSeparator: s.variablesDefaultSeparator,
-        missingValueText: s.variablesMissingText,
-        supportNesting: s.variablesSupportNesting,
-        caseInsensitive: s.variablesCaseInsensitive,
-        arrayJoinSeparator: s.variablesArrayJoinSeparator,
-        preserveOnMissing: s.variablesPreserveOnMissing,
-      };
+      const opts = getVariablesOptions();
 
       const doc = view.state.doc.toString();
       const fm = extractFrontmatter(doc);
@@ -403,17 +374,7 @@ export function AppShell() {
       if (!view) return;
 
       const { extractFrontmatter, parseFrontmatter, scanDocumentVariables } = await import('../lib/tidemark');
-      const s = useSettingsStore.getState();
-      const opts = {
-        openDelimiter: s.variablesOpenDelimiter,
-        closeDelimiter: s.variablesCloseDelimiter,
-        defaultSeparator: s.variablesDefaultSeparator,
-        missingValueText: s.variablesMissingText,
-        supportNesting: s.variablesSupportNesting,
-        caseInsensitive: s.variablesCaseInsensitive,
-        arrayJoinSeparator: s.variablesArrayJoinSeparator,
-        preserveOnMissing: s.variablesPreserveOnMissing,
-      };
+      const opts = getVariablesOptions();
 
       const doc = view.state.doc.toString();
       const fm = extractFrontmatter(doc);
@@ -430,17 +391,7 @@ export function AppShell() {
       if (!view) return;
 
       const { extractFrontmatter, parseFrontmatter, replaceVariables } = await import('../lib/tidemark');
-      const s = useSettingsStore.getState();
-      const opts = {
-        openDelimiter: s.variablesOpenDelimiter,
-        closeDelimiter: s.variablesCloseDelimiter,
-        defaultSeparator: s.variablesDefaultSeparator,
-        missingValueText: s.variablesMissingText,
-        supportNesting: s.variablesSupportNesting,
-        caseInsensitive: s.variablesCaseInsensitive,
-        arrayJoinSeparator: s.variablesArrayJoinSeparator,
-        preserveOnMissing: s.variablesPreserveOnMissing,
-      };
+      const opts = getVariablesOptions();
 
       const doc = view.state.doc.toString();
       const fm = extractFrontmatter(doc);
@@ -458,17 +409,7 @@ export function AppShell() {
       if (!view) return;
 
       const { extractFrontmatter, parseFrontmatter, replaceVariables } = await import('../lib/tidemark');
-      const s = useSettingsStore.getState();
-      const opts = {
-        openDelimiter: s.variablesOpenDelimiter,
-        closeDelimiter: s.variablesCloseDelimiter,
-        defaultSeparator: s.variablesDefaultSeparator,
-        missingValueText: s.variablesMissingText,
-        supportNesting: s.variablesSupportNesting,
-        caseInsensitive: s.variablesCaseInsensitive,
-        arrayJoinSeparator: s.variablesArrayJoinSeparator,
-        preserveOnMissing: s.variablesPreserveOnMissing,
-      };
+      const opts = getVariablesOptions();
 
       const doc = view.state.doc.toString();
       const fm = extractFrontmatter(doc);
@@ -489,17 +430,7 @@ export function AppShell() {
       if (!view) return;
 
       const { extractFrontmatter, parseFrontmatter, replaceVariables } = await import('../lib/tidemark');
-      const s = useSettingsStore.getState();
-      const opts = {
-        openDelimiter: s.variablesOpenDelimiter,
-        closeDelimiter: s.variablesCloseDelimiter,
-        defaultSeparator: s.variablesDefaultSeparator,
-        missingValueText: s.variablesMissingText,
-        supportNesting: s.variablesSupportNesting,
-        caseInsensitive: s.variablesCaseInsensitive,
-        arrayJoinSeparator: s.variablesArrayJoinSeparator,
-        preserveOnMissing: s.variablesPreserveOnMissing,
-      };
+      const opts = getVariablesOptions();
 
       const doc = view.state.doc.toString();
       const fm = extractFrontmatter(doc);
