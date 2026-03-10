@@ -20,7 +20,8 @@
     "general": "General",
     "features": "Features",
     "plugins": "Plugins",
-    "shortcuts": "Keyboard Shortcuts"
+    "shortcuts": "Keyboard Shortcuts",
+    "sync": "Sync"
   },
   "featurePages": {
     "autosave": "Auto-Save",
