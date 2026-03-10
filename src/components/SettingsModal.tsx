@@ -4095,6 +4095,7 @@ function TocOptionsPage({ settings }: OptionsPageProps) {
 }
 
 function SyncOptionsPage({ settings }: OptionsPageProps) {
+  const { t: ts } = useTranslation('settings');
   const update = useSettingsStore.getState().update;
   const vaultPath = useVaultStore.getState().vaultPath;
   const syncStatus = useSyncStore((s) => s.syncStatus);
@@ -4150,10 +4151,10 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
     try {
       const status = await gitStatusCmd(vaultPath);
       if (status.is_repo && status.has_remote) {
-        setConnectResult('Connected — sync enabled');
+        setConnectResult(ts('syncOptions.connectedSyncEnabled'));
       } else {
         await gitInitRepo(vaultPath, settings.syncRepoUrl, pat);
-        setConnectResult('Repository initialized — initial push complete');
+        setConnectResult(ts('syncOptions.repoInitialized'));
       }
       useSyncStore.getState().refreshStatus();
     } catch (err: unknown) {
@@ -4187,10 +4188,10 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
     outline: 'none',
   };
 
-  const formatAgo = (ts: number | null) => {
-    if (!ts) return 'never';
-    const secs = Math.floor((Date.now() - ts) / 1000);
-    if (secs < 60) return 'just now';
+  const formatAgo = (time: number | null) => {
+    if (!time) return ts('syncOptions.never');
+    const secs = Math.floor((Date.now() - time) / 1000);
+    if (secs < 60) return ts('syncOptions.justNow');
     const mins = Math.floor(secs / 60);
     if (mins < 60) return `${mins}m ago`;
     const hrs = Math.floor(mins / 60);
@@ -4201,9 +4202,9 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
     <div className="flex flex-col gap-5">
       {/* Header */}
       <div className="flex flex-col gap-1 mb-1">
-        <span className="text-sm font-medium" style={{ color: 'var(--ctp-accent)' }}>GitHub Sync</span>
+        <span className="text-sm font-medium" style={{ color: 'var(--ctp-accent)' }}>{ts('syncOptions.title')}</span>
         <span className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>
-          Sync your vault to a GitHub repository for backup and cross-device access.
+          {ts('syncOptions.description')}
         </span>
       </div>
 
@@ -4219,10 +4220,10 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
           <Cloud size={16} style={{ color: syncStatus === 'error' ? 'var(--ctp-red)' : syncStatus === 'offline' ? 'var(--ctp-peach)' : 'var(--ctp-green)', flexShrink: 0 }} />
           <div className="flex flex-col gap-0.5 flex-1 min-w-0">
             <span className="text-xs font-medium" style={{ color: 'var(--ctp-text)' }}>
-              {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Sync Error' : syncStatus === 'offline' ? 'Offline — commits pending' : 'Connected'}
+              {syncStatus === 'syncing' ? ts('syncOptions.statusSyncing') : syncStatus === 'error' ? ts('syncOptions.statusError') : syncStatus === 'offline' ? ts('syncOptions.statusOffline') : ts('syncOptions.statusConnected')}
             </span>
             <span className="text-xs" style={{ color: 'var(--ctp-subtext0)' }}>
-              {settings.syncRepoUrl ? settings.syncRepoUrl.replace(/\.git$/, '').replace(/^https:\/\/github\.com\//, '') : 'No repository'} · Last synced {formatAgo(lastSyncTime)}
+              {settings.syncRepoUrl ? settings.syncRepoUrl.replace(/\.git$/, '').replace(/^https:\/\/github\.com\//, '') : ts('syncOptions.noRepository')} · {ts('syncOptions.lastSynced', { time: formatAgo(lastSyncTime) })}
             </span>
           </div>
           <button
@@ -4237,17 +4238,17 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
               opacity: syncStatus === 'syncing' ? 0.5 : 1,
             }}
           >
-            Sync Now
+            {ts('syncOptions.syncNow')}
           </button>
         </div>
       )}
 
       {/* Repository Settings */}
       <div className="flex flex-col gap-3 rounded-lg p-4" style={{ backgroundColor: 'var(--ctp-mantle)', border: '1px solid var(--ctp-surface0)' }}>
-        <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>Repository</span>
+        <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>{ts('syncOptions.repository')}</span>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs" style={{ color: 'var(--ctp-subtext0)' }}>Repository URL</label>
+          <label className="text-xs" style={{ color: 'var(--ctp-subtext0)' }}>{ts('syncOptions.repositoryUrl')}</label>
           <input
             type="text"
             value={settings.syncRepoUrl}
@@ -4258,7 +4259,7 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs" style={{ color: 'var(--ctp-subtext0)' }}>Personal Access Token</label>
+          <label className="text-xs" style={{ color: 'var(--ctp-subtext0)' }}>{ts('syncOptions.personalAccessToken')}</label>
           <div style={{ position: 'relative' }}>
             <input
               type={showPat ? 'text' : 'password'}
@@ -4283,11 +4284,11 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
                 padding: '2px 4px',
               }}
             >
-              {showPat ? 'Hide' : 'Show'}
+              {showPat ? ts('syncOptions.hidePat') : ts('syncOptions.showPat')}
             </button>
           </div>
           <span className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>
-            Generate at GitHub → Settings → Developer settings → Personal access tokens. Requires <strong>repo</strong> scope.
+            {ts('syncOptions.patHintPrefix')}<strong>repo</strong>{ts('syncOptions.patHintSuffix')}
           </span>
         </div>
 
@@ -4304,7 +4305,7 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
               opacity: testing || !settings.syncRepoUrl || !pat ? 0.5 : 1,
             }}
           >
-            {testing ? 'Testing...' : 'Test Connection'}
+            {testing ? ts('syncOptions.testing') : ts('syncOptions.testConnection')}
           </button>
 
           {!isConnected ? (
@@ -4320,7 +4321,7 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
                 opacity: connecting || !settings.syncRepoUrl || !pat ? 0.5 : 1,
               }}
             >
-              {connecting ? 'Connecting...' : 'Connect & Push'}
+              {connecting ? ts('syncOptions.connecting') : ts('syncOptions.connectAndPush')}
             </button>
           ) : (
             <button
@@ -4333,12 +4334,12 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
                 cursor: 'pointer',
               }}
             >
-              Disconnect
+              {ts('syncOptions.disconnect')}
             </button>
           )}
 
-          {testResult === 'success' && <span className="text-xs" style={{ color: 'var(--ctp-green)' }}>Connection successful</span>}
-          {testResult === 'error' && <span className="text-xs" style={{ color: 'var(--ctp-red)' }}>Connection failed</span>}
+          {testResult === 'success' && <span className="text-xs" style={{ color: 'var(--ctp-green)' }}>{ts('syncOptions.connectionSuccessful')}</span>}
+          {testResult === 'error' && <span className="text-xs" style={{ color: 'var(--ctp-red)' }}>{ts('syncOptions.connectionFailed')}</span>}
           {connectResult && (
             <span className="text-xs" style={{ color: connectResult.startsWith('Error') ? 'var(--ctp-red)' : 'var(--ctp-green)' }}>
               {connectResult}
@@ -4349,9 +4350,9 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
 
       {/* Auto-Sync Settings */}
       <div className="flex flex-col gap-3 rounded-lg p-4" style={{ backgroundColor: 'var(--ctp-mantle)', border: '1px solid var(--ctp-surface0)' }}>
-        <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>Auto-Sync</span>
+        <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>{ts('syncOptions.autoSync')}</span>
 
-        <SettingRow label="Automatic sync" description="Periodically sync your vault in the background">
+        <SettingRow label={ts('syncOptions.automaticSync')} description={ts('syncOptions.automaticSyncDesc')}>
           <ToggleSwitch
             checked={settings.syncAutoSync}
             onChange={(v) => update({ syncAutoSync: v })}
@@ -4359,7 +4360,7 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
         </SettingRow>
 
         {settings.syncAutoSync && (
-          <SettingRow label="Sync interval" description="How often to sync automatically">
+          <SettingRow label={ts('syncOptions.syncInterval')} description={ts('syncOptions.syncIntervalDesc')}>
             <select
               value={settings.syncInterval}
               onChange={(e) => update({ syncInterval: Number(e.target.value) })}
@@ -4370,10 +4371,10 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
                 border: '1px solid var(--ctp-surface2)',
               }}
             >
-              <option value={1}>Every minute</option>
-              <option value={5}>Every 5 minutes</option>
-              <option value={10}>Every 10 minutes</option>
-              <option value={30}>Every 30 minutes</option>
+              <option value={1}>{ts('syncOptions.everyMinute')}</option>
+              <option value={5}>{ts('syncOptions.every5Minutes')}</option>
+              <option value={10}>{ts('syncOptions.every10Minutes')}</option>
+              <option value={30}>{ts('syncOptions.every30Minutes')}</option>
             </select>
           </SettingRow>
         )}

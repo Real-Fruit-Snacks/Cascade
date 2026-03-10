@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FilePlus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useFocusTrap } from '../hooks/use-focus-trap';
 import { useCloseAnimation } from '../hooks/use-close-animation';
 
@@ -13,6 +14,7 @@ interface NewFileModalProps {
 }
 
 export function NewFileModal({ open, onClose, onCreate }: NewFileModalProps) {
+  const { t } = useTranslation('common');
   const { shouldRender, isClosing } = useCloseAnimation(open);
   const dialogRef = useRef<HTMLDivElement>(null);
   const trapKeyDown = useFocusTrap(dialogRef, open);
@@ -33,7 +35,7 @@ export function NewFileModal({ open, onClose, onCreate }: NewFileModalProps) {
     const trimmed = value.trim();
     if (!trimmed) return;
     if (INVALID_CHARS.test(trimmed)) {
-      setError('File name contains invalid characters: < > : " | ? *');
+      setError(t('newFileModal.invalidChars'));
       return;
     }
     const path = trimmed.endsWith('.md') ? trimmed : `${trimmed}.md`;
@@ -117,7 +119,7 @@ export function NewFileModal({ open, onClose, onCreate }: NewFileModalProps) {
           {error ? (
             <span style={{ color: 'var(--ctp-red)' }}>{error}</span>
           ) : (
-            <>Enter a file name or path. The <span style={{ color: 'var(--ctp-subtext1)' }}>.md</span> extension is added automatically.</>
+            t('newFileModal.hint')
           )}
         </div>
       </div>

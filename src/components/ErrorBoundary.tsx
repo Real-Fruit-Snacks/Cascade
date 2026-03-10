@@ -1,4 +1,5 @@
 import React, { Component, type ReactNode } from 'react';
+import i18next from 'i18next';
 
 interface Props {
   children: ReactNode;
@@ -32,14 +33,14 @@ export class ErrorBoundary extends Component<Props, State> {
           className="flex flex-col items-center justify-center h-full gap-3 p-8"
           style={{ color: 'var(--ctp-subtext0)' }}
         >
-          <div className="text-lg font-medium" style={{ color: 'var(--ctp-text)' }}>Something went wrong</div>
-          <div className="text-sm max-w-md text-center">{this.state.error?.message || 'An unexpected error occurred'}</div>
+          <div className="text-lg font-medium" style={{ color: 'var(--ctp-text)' }}>{i18next.t('common:somethingWentWrong')}</div>
+          <div className="text-sm max-w-md text-center">{this.state.error?.message || i18next.t('common:unexpectedError')}</div>
           <button
             onClick={() => this.setState({ hasError: false, error: null })}
             className="mt-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
             style={{ backgroundColor: 'var(--ctp-surface0)', color: 'var(--ctp-text)' }}
           >
-            Try Again
+            {i18next.t('common:tryAgain')}
           </button>
         </div>
       );

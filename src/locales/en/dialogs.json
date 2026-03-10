@@ -25,6 +25,16 @@
     "backlinks": "Backlinks",
     "tags": "Tags"
   },
+  "fileConflict": {
+    "title": "File Modified Externally",
+    "message": "was modified outside of Cascade, but you have unsaved changes. What would you like to do?",
+    "keepMine": "Keep my changes",
+    "keepMineDesc": "Ignore external changes. You can save to overwrite.",
+    "loadExternal": "Load external version",
+    "loadExternalDesc": "Discard your edits and reload from disk.",
+    "saveOverwrite": "Save my version now",
+    "saveOverwriteDesc": "Overwrite the external changes with yours."
+  },
   "closeVault": {
     "title": "Close Vault",
     "messageDirty": "You have unsaved changes. Close vault anyway?",

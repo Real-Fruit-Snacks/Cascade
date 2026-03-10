@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Pencil } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useFocusTrap } from '../hooks/use-focus-trap';
 import { useCloseAnimation } from '../hooks/use-close-animation';
 import { useSettingsStore } from '../stores/settings-store';
@@ -19,6 +20,7 @@ interface SetVariableModalProps {
 }
 
 export function SetVariableModal({ open, variableName, currentValue, onClose, onSave }: SetVariableModalProps) {
+  const { t } = useTranslation('common');
   const { shouldRender, isClosing } = useCloseAnimation(open);
   const dialogRef = useRef<HTMLDivElement>(null);
   const trapKeyDown = useFocusTrap(dialogRef, open);
@@ -141,7 +143,7 @@ export function SetVariableModal({ open, variableName, currentValue, onClose, on
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Enter value..."
+            placeholder={t('setVariableModal.enterValuePlaceholder')}
             style={{
               width: '100%',
               padding: '0.875rem 0',
@@ -167,7 +169,7 @@ export function SetVariableModal({ open, variableName, currentValue, onClose, on
         </div>
         <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--ctp-overlay0)' }}>
-            Set value for <span style={{ color: 'var(--ctp-accent)' }}>{variableName}</span>
+            {t('setVariableModal.setValueFor')} <span style={{ color: 'var(--ctp-accent)' }}>{variableName}</span>
           </span>
           <button
             onClick={handleSubmit}
@@ -181,7 +183,7 @@ export function SetVariableModal({ open, variableName, currentValue, onClose, on
               cursor: 'pointer',
             }}
           >
-            Save
+            {t('save')}
           </button>
         </div>
       </div>

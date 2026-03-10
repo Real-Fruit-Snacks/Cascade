@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Folder, FolderOpen } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useVaultStore } from '../stores/vault-store';
 import { flavors } from '../styles/catppuccin-flavors';
@@ -7,6 +8,7 @@ import { flavors } from '../styles/catppuccin-flavors';
 const mod = navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl';
 
 export function OnboardingScreen() {
+  const { t } = useTranslation('common');
   const recentVaults = useVaultStore((s) => s.recentVaults);
   const openVault = useVaultStore((s) => s.openVault);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -63,7 +65,7 @@ export function OnboardingScreen() {
             Cascade
           </h1>
           <p className="text-sm" style={{ color: 'var(--ctp-subtext0)' }}>
-            A beautiful markdown editor
+            {t('onboarding.tagline')}
           </p>
         </div>
       </div>
@@ -79,7 +81,7 @@ export function OnboardingScreen() {
           }}
         >
           <FolderOpen size={16} />
-          Open Vault
+          {t('onboarding.openVault')}
         </button>
         <button
           onClick={handleCreateVault}
@@ -91,7 +93,7 @@ export function OnboardingScreen() {
           }}
         >
           <Folder size={16} />
-          Create New Vault
+          {t('onboarding.createNewVault')}
         </button>
       </div>
 
@@ -102,7 +104,7 @@ export function OnboardingScreen() {
             className="text-xs font-medium mb-2 px-1"
             style={{ color: 'var(--ctp-overlay1)' }}
           >
-            Recent Vaults
+            {t('onboarding.recentVaults')}
           </p>
           <div
             className="rounded-lg overflow-hidden"
@@ -144,9 +146,9 @@ export function OnboardingScreen() {
         className="flex items-center gap-6 mt-12 text-xs"
         style={{ color: 'var(--ctp-overlay0)' }}
       >
-        <span><kbd style={{ fontFamily: 'monospace' }}>{`${mod}+O`}</kbd> Open vault</span>
-        <span><kbd style={{ fontFamily: 'monospace' }}>{`${mod}+N`}</kbd> New file</span>
-        <span><kbd style={{ fontFamily: 'monospace' }}>{`${mod}+P`}</kbd> Command palette</span>
+        <span><kbd style={{ fontFamily: 'monospace' }}>{`${mod}+O`}</kbd> {t('onboarding.shortcutOpenVault')}</span>
+        <span><kbd style={{ fontFamily: 'monospace' }}>{`${mod}+N`}</kbd> {t('onboarding.shortcutNewFile')}</span>
+        <span><kbd style={{ fontFamily: 'monospace' }}>{`${mod}+P`}</kbd> {t('onboarding.shortcutCommandPalette')}</span>
       </div>
     </div>
   );

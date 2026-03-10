@@ -6,21 +6,21 @@ import { useVaultStore } from '../stores/vault-store';
 import { useSettingsStore } from '../stores/settings-store';
 import type { FileEntry } from '../types/index';
 
-function formatRelativeTime(timestamp: number): string {
+function formatRelativeTime(timestamp: number, t: (key: string, opts?: Record<string, unknown>) => string): string {
   const now = Date.now();
   const diff = now - timestamp;
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return t('welcomeView.timeJustNow');
+  if (minutes < 60) return t('welcomeView.timeMinutesAgo', { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t('welcomeView.timeHoursAgo', { count: hours });
   const days = Math.floor(hours / 24);
-  if (days === 1) return 'yesterday';
-  if (days < 7) return `${days}d ago`;
+  if (days === 1) return t('welcomeView.timeYesterday');
+  if (days < 7) return t('welcomeView.timeDaysAgo', { count: days });
   const weeks = Math.floor(days / 7);
-  if (weeks < 5) return `${weeks}w ago`;
+  if (weeks < 5) return t('welcomeView.timeWeeksAgo', { count: weeks });
   const months = Math.floor(days / 30);
-  return `${months}mo ago`;
+  return t('welcomeView.timeMonthsAgo', { count: months });
 }
 
 function buildModifiedMap(tree: FileEntry[], map: Map<string, number> = new Map()): Map<string, number> {
@@ -65,7 +65,7 @@ export function WelcomeView() {
       .map((path) => {
         const name = path.replace(/\\/g, '/').split('/').pop()?.replace(/\.md$/, '') ?? path;
         const modifiedSecs = modifiedMap.get(path);
-        const relTime = modifiedSecs !== undefined ? formatRelativeTime(modifiedSecs * 1000) : null;
+        const relTime = modifiedSecs !== undefined ? formatRelativeTime(modifiedSecs * 1000, t) : null;
         return { path, name, relTime };
       });
   }, [recentFiles, modifiedMap, flatFilesSet]);

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, List, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { VariableMatch } from '../lib/tidemark';
 import { useFocusTrap } from '../hooks/use-focus-trap';
 import { useCloseAnimation } from '../hooks/use-close-animation';
@@ -25,6 +26,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function ListVariablesModal({ open, variables, onClose, onSave }: ListVariablesModalProps) {
+  const { t } = useTranslation('common');
   const { shouldRender, isClosing } = useCloseAnimation(open);
   const dialogRef = useRef<HTMLDivElement>(null);
   const trapKeyDown = useFocusTrap(dialogRef, open);
@@ -136,7 +138,7 @@ export function ListVariablesModal({ open, variables, onClose, onSave }: ListVar
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             onKeyDown={handleFilterKeyDown}
-            placeholder="Filter variables..."
+            placeholder={t('listVariablesModal.filterPlaceholder')}
             className="w-full py-3.5 text-sm outline-none"
             style={{
               backgroundColor: 'transparent',
@@ -158,7 +160,7 @@ export function ListVariablesModal({ open, variables, onClose, onSave }: ListVar
         <div className="overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
           {filtered.length === 0 ? (
             <div className="px-4 py-6 text-center text-xs" style={{ color: 'var(--ctp-overlay0)' }}>
-              {variables.length === 0 ? 'No variables found in document.' : 'No matching variables.'}
+              {variables.length === 0 ? t('listVariablesModal.noVariablesInDoc') : t('listVariablesModal.noMatchingVariables')}
             </div>
           ) : (
             filtered.map((v, i) => {
@@ -193,7 +195,7 @@ export function ListVariablesModal({ open, variables, onClose, onSave }: ListVar
                       {v.status === 'exists'
                         ? v.resolvedValue
                         : v.status === 'has-default'
-                          ? `default: ${v.defaultValue}`
+                          ? t('listVariablesModal.defaultPrefix', { value: v.defaultValue })
                           : '—'}
                     </span>
                   </button>
@@ -217,7 +219,7 @@ export function ListVariablesModal({ open, variables, onClose, onSave }: ListVar
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
                         onKeyDown={handleEditKeyDown}
-                        placeholder="Enter value..."
+                        placeholder={t('setVariableModal.enterValuePlaceholder')}
                         className="flex-1 px-2 py-1 text-xs rounded outline-none"
                         style={{
                           backgroundColor: 'var(--ctp-base)',
@@ -229,7 +231,7 @@ export function ListVariablesModal({ open, variables, onClose, onSave }: ListVar
                         onClick={commitEdit}
                         className="p-1 rounded transition-colors hover:bg-[var(--ctp-surface1)]"
                         style={{ color: 'var(--ctp-green)' }}
-                        title="Save (Enter)"
+                        title={t('listVariablesModal.saveTitleHint')}
                       >
                         <Check size={14} />
                       </button>
@@ -250,10 +252,10 @@ export function ListVariablesModal({ open, variables, onClose, onSave }: ListVar
           }}
         >
           <List size={12} />
-          <span>{variables.length} variable{variables.length !== 1 ? 's' : ''} found</span>
+          <span>{variables.length !== 1 ? t('listVariablesModal.variablesFound_other', { count: variables.length }) : t('listVariablesModal.variablesFound_one', { count: variables.length })}</span>
           {editingName && (
             <span className="ml-auto" style={{ color: 'var(--ctp-subtext0)' }}>
-              Enter to save · Esc to cancel
+              {t('listVariablesModal.enterToSave')}
             </span>
           )}
         </div>

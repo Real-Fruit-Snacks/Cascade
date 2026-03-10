@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useEditorStore } from '../stores/editor-store';
 import { useVaultStore } from '../stores/vault-store';
 import { useFocusTrap } from '../hooks/use-focus-trap';
@@ -11,6 +12,7 @@ interface ConflictInfo {
 }
 
 export function FileConflictDialog() {
+  const { t } = useTranslation('dialogs');
   const [conflict, setConflict] = useState<ConflictInfo | null>(null);
   const { shouldRender, isClosing } = useCloseAnimation(conflict !== null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -120,13 +122,13 @@ export function FileConflictDialog() {
         <div className="flex items-center gap-3 mb-3">
           <AlertTriangle size={20} style={{ color: 'var(--ctp-yellow)', flexShrink: 0 }} />
           <h3 className="text-sm font-medium" style={{ color: 'var(--ctp-text)' }}>
-            File Modified Externally
+            {t('fileConflict.title')}
           </h3>
         </div>
 
         <p className="text-xs mb-4" style={{ color: 'var(--ctp-subtext0)', lineHeight: 1.6 }}>
-          <strong style={{ color: 'var(--ctp-text)' }}>{fileName}</strong> was modified outside of Cascade,
-          but you have unsaved changes. What would you like to do?
+          <strong style={{ color: 'var(--ctp-text)' }}>{fileName}</strong>{' '}
+          {t('fileConflict.message')}
         </p>
 
         <div className="flex flex-col gap-2">
@@ -135,9 +137,9 @@ export function FileConflictDialog() {
             className="w-full px-3 py-2 rounded text-xs text-left transition-colors hover:bg-[var(--ctp-surface1)]"
             style={{ color: 'var(--ctp-text)', backgroundColor: 'var(--ctp-surface0)' }}
           >
-            <strong>Keep my changes</strong>
+            <strong>{t('fileConflict.keepMine')}</strong>
             <span className="block mt-0.5" style={{ color: 'var(--ctp-subtext0)' }}>
-              Ignore external changes. You can save to overwrite.
+              {t('fileConflict.keepMineDesc')}
             </span>
           </button>
 
@@ -146,9 +148,9 @@ export function FileConflictDialog() {
             className="w-full px-3 py-2 rounded text-xs text-left transition-colors hover:bg-[var(--ctp-surface1)]"
             style={{ color: 'var(--ctp-text)', backgroundColor: 'var(--ctp-surface0)' }}
           >
-            <strong>Load external version</strong>
+            <strong>{t('fileConflict.loadExternal')}</strong>
             <span className="block mt-0.5" style={{ color: 'var(--ctp-subtext0)' }}>
-              Discard your edits and reload from disk.
+              {t('fileConflict.loadExternalDesc')}
             </span>
           </button>
 
@@ -157,9 +159,9 @@ export function FileConflictDialog() {
             className="w-full px-3 py-2 rounded text-xs text-left transition-colors hover:bg-[var(--ctp-surface1)]"
             style={{ color: 'var(--ctp-peach)', backgroundColor: 'var(--ctp-surface0)' }}
           >
-            <strong>Save my version now</strong>
+            <strong>{t('fileConflict.saveOverwrite')}</strong>
             <span className="block mt-0.5" style={{ color: 'var(--ctp-subtext0)' }}>
-              Overwrite the external changes with yours.
+              {t('fileConflict.saveOverwriteDesc')}
             </span>
           </button>
         </div>

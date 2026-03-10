@@ -50,6 +50,58 @@
     "restore": "Restore",
     "close": "Close"
   },
+  "onboarding": {
+    "tagline": "A beautiful markdown editor",
+    "openVault": "Open Vault",
+    "createNewVault": "Create New Vault",
+    "recentVaults": "Recent Vaults",
+    "shortcutOpenVault": "Open vault",
+    "shortcutNewFile": "New file",
+    "shortcutCommandPalette": "Command palette"
+  },
+  "featureWiki": {
+    "aboutThisFeature": "About this feature",
+    "overview": "Overview",
+    "howToUse": "How to Use",
+    "tips": "Tips",
+    "keyboardShortcuts": "Keyboard Shortcuts",
+    "syntax": "Syntax"
+  },
+  "newFileModal": {
+    "hint": "Enter a file name or path. The .md extension is added automatically.",
+    "invalidChars": "File name contains invalid characters: < > : \" | ? *"
+  },
+  "listVariablesModal": {
+    "filterPlaceholder": "Filter variables...",
+    "noVariablesInDoc": "No variables found in document.",
+    "noMatchingVariables": "No matching variables.",
+    "variablesFound_one": "{{count}} variable found",
+    "variablesFound_other": "{{count}} variables found",
+    "defaultPrefix": "default: {{value}}",
+    "enterToSave": "Enter to save · Esc to cancel",
+    "saveTitleHint": "Save (Enter)"
+  },
+  "setVariableModal": {
+    "setValueFor": "Set value for",
+    "enterValuePlaceholder": "Enter value..."
+  },
+  "syncStatus": {
+    "syncing": "Syncing...",
+    "syncFailed": "Sync failed",
+    "pending": "Pending: {{count}} commit",
+    "pendingPlural": "Pending: {{count}} commits",
+    "notConnected": "Not connected",
+    "synced": "Synced {{time}}",
+    "never": "never",
+    "justNow": "just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "clickToSync": "Click to sync now",
+    "ariaClickToSync": "{{label}} — click to sync now"
+  },
+  "tryAgain": "Try Again",
+  "somethingWentWrong": "Something went wrong",
+  "unexpectedError": "An unexpected error occurred",
   "noVariableAtCursor": "No variable found at cursor position.",
   "lineCopiedWithVariables": "Line copied with variables replaced.",
   "selectionCopiedWithVariables": "Selection copied with variables replaced.",

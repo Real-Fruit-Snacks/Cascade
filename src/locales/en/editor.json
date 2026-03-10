@@ -74,7 +74,12 @@
     "newFile": "New file",
     "commandPalette": "Command palette",
     "timeJustNow": "just now",
-    "timeYesterday": "yesterday"
+    "timeMinutesAgo": "{{count}}m ago",
+    "timeHoursAgo": "{{count}}h ago",
+    "timeYesterday": "yesterday",
+    "timeDaysAgo": "{{count}}d ago",
+    "timeWeeksAgo": "{{count}}w ago",
+    "timeMonthsAgo": "{{count}}mo ago"
   },
   "welcomeScreen": {
     "selectFile": "Select a file to start editing",

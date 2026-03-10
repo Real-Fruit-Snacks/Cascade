@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BookOpen, ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { featureWikiContent, type FeatureWikiEntry } from '../data/feature-wiki-content';
 
 interface FeatureWikiProps {
@@ -7,6 +8,7 @@ interface FeatureWikiProps {
 }
 
 export function FeatureWiki({ featureId }: FeatureWikiProps) {
+  const { t } = useTranslation('common');
   const [expanded, setExpanded] = useState(false);
 
   const entry: FeatureWikiEntry | undefined = featureWikiContent[featureId];
@@ -31,7 +33,7 @@ export function FeatureWiki({ featureId }: FeatureWikiProps) {
         }}
       >
         <BookOpen size={14} style={{ color: 'var(--ctp-accent)', flexShrink: 0 }} />
-        <span className="text-xs font-medium flex-1">About this feature</span>
+        <span className="text-xs font-medium flex-1">{t('featureWiki.aboutThisFeature')}</span>
         <ChevronDown
           size={14}
           style={{
@@ -55,13 +57,13 @@ export function FeatureWiki({ featureId }: FeatureWikiProps) {
         <div className="flex flex-col gap-4 p-4">
           {/* Overview */}
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>Overview</span>
+            <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>{t('featureWiki.overview')}</span>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--ctp-subtext0)' }}>{entry.overview}</p>
           </div>
 
           {/* How to Use */}
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>How to Use</span>
+            <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>{t('featureWiki.howToUse')}</span>
             <ol className="flex flex-col gap-1 pl-4 text-xs leading-relaxed" style={{ color: 'var(--ctp-subtext0)', listStyleType: 'decimal' }}>
               {entry.usage.map((step, i) => (
                 <li key={i}>{step}</li>
@@ -72,7 +74,7 @@ export function FeatureWiki({ featureId }: FeatureWikiProps) {
           {/* Tips */}
           {entry.tips && entry.tips.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>Tips</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>{t('featureWiki.tips')}</span>
               <ul className="flex flex-col gap-1 pl-4 text-xs leading-relaxed" style={{ color: 'var(--ctp-subtext0)', listStyleType: 'disc' }}>
                 {entry.tips.map((tip, i) => (
                   <li key={i}>{tip}</li>
@@ -84,7 +86,7 @@ export function FeatureWiki({ featureId }: FeatureWikiProps) {
           {/* Keyboard Shortcuts */}
           {entry.shortcuts && entry.shortcuts.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>Keyboard Shortcuts</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>{t('featureWiki.keyboardShortcuts')}</span>
               <div className="flex flex-col gap-1">
                 {entry.shortcuts.map((s, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs">
@@ -109,7 +111,7 @@ export function FeatureWiki({ featureId }: FeatureWikiProps) {
           {/* Syntax Examples */}
           {entry.syntaxExamples && entry.syntaxExamples.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>Syntax</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>{t('featureWiki.syntax')}</span>
               <div className="flex flex-col gap-2">
                 {entry.syntaxExamples.map((ex, i) => (
                   <div key={i} className="flex flex-col gap-0.5">
