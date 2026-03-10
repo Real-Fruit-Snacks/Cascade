@@ -83,10 +83,19 @@ export function resolveWikiLink(target: string, flatFiles: string[]): string | n
   const withMd = normalized.endsWith('.md') ? normalized : normalized + '.md';
   if (_exactSet!.has(withMd)) return withMd;
 
-  // 3. Case-insensitive
+  // 2b. With .canvas extension
+  const withCanvas = normalized.endsWith('.canvas') ? normalized : normalized + '.canvas';
+  if (_exactSet!.has(withCanvas)) return withCanvas;
+
+  // 3. Case-insensitive with .md
   const lowerTarget = withMd.toLowerCase();
   const ciMatch = _lowerMap!.get(lowerTarget);
   if (ciMatch) return ciMatch;
+
+  // 3b. Case-insensitive with .canvas
+  const lowerCanvas = (normalized.endsWith('.canvas') ? normalized : normalized + '.canvas').toLowerCase();
+  const ciCanvasMatch = _lowerMap!.get(lowerCanvas);
+  if (ciCanvasMatch) return ciCanvasMatch;
 
   // 4. Basename match (for links like [[Note]] matching "subfolder/Note.md")
   const baseName = lowerTarget.split('/').pop()!;

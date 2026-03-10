@@ -234,6 +234,54 @@ pub fn build_index(vault_root: String, fts_state: State<'_, FtsState>) -> Result
         }
     }
 
+    // --- Also scan .canvas files for backlinks (file nodes reference other files) ---
+    for entry in WalkDir::new(&root)
+        .follow_links(false)
+        .into_iter()
+        .filter_entry(|e| !e.file_name().to_string_lossy().starts_with('.'))
+        .filter_map(|e| e.ok())
+    {
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("canvas") {
+            continue;
+        }
+
+        let rel_path = path
+            .strip_prefix(&root)
+            .unwrap_or(path)
+            .to_string_lossy()
+            .replace('\\', "/");
+
+        let content = match std::fs::read_to_string(path) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+
+        // Parse canvas JSON and extract file node references
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+            if let Some(nodes) = json.get("nodes").and_then(|n| n.as_array()) {
+                for node in nodes {
+                    if node.get("type").and_then(|t| t.as_str()) == Some("file") {
+                        if let Some(file_ref) = node.get("file").and_then(|f| f.as_str()) {
+                            // Normalize the referenced file path as backlink target
+                            let target = file_ref
+                                .to_lowercase()
+                                .trim_end_matches(".md")
+                                .to_string();
+                            backlink_index
+                                .entry(target)
+                                .or_default()
+                                .push(rel_path.clone());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Deduplicate (a file may have multiple occurrences of the same tag/link)
     for files in tag_index.values_mut() {
         files.sort();
