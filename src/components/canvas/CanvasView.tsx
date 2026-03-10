@@ -3,6 +3,7 @@ import { useCanvasStore } from '../../stores/canvas-store';
 import { readFile, writeFile } from '../../lib/tauri-commands';
 import type { CanvasData } from '../../types/canvas';
 import { CanvasBackground } from './CanvasBackground';
+import { CanvasCards } from './CanvasCards';
 
 interface CanvasViewProps {
   filePath: string;
@@ -15,8 +16,6 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   const isDirty = useCanvasStore((s) => s.isDirty);
   const markClean = useCanvasStore((s) => s.markClean);
   const toJSON = useCanvasStore((s) => s.toJSON);
-  const nodes = useCanvasStore((s) => s.nodes);
-  const edges = useCanvasStore((s) => s.edges);
   const viewport = useCanvasStore((s) => s.viewport);
   const setViewport = useCanvasStore((s) => s.setViewport);
   const clearSelection = useCanvasStore((s) => s.clearSelection);
@@ -193,14 +192,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       {containerSize.width > 0 && (
         <CanvasBackground width={containerSize.width} height={containerSize.height} />
       )}
-      <div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ color: 'var(--ctp-overlay0)', pointerEvents: 'none' }}
-      >
-        <span className="text-sm select-none">
-          Canvas: {nodes.length} nodes, {edges.length} edges
-        </span>
-      </div>
+      <CanvasCards vaultPath={vaultPath} containerWidth={containerSize.width} containerHeight={containerSize.height} />
     </div>
   );
 }
