@@ -8,6 +8,7 @@ pub enum CascadeError {
     InvalidPath(String),
     InvalidRegex(String),
     Import(String),
+    Git(String),
 }
 
 impl fmt::Display for CascadeError {
@@ -23,6 +24,7 @@ impl fmt::Display for CascadeError {
             CascadeError::InvalidPath(msg) => write!(f, "Invalid path: {}", msg),
             CascadeError::InvalidRegex(msg) => write!(f, "Invalid regex: {}", msg),
             CascadeError::Import(msg) => write!(f, "Import error: {}", msg),
+            CascadeError::Git(msg) => write!(f, "Git error: {}", msg),
         }
     }
 }
@@ -45,6 +47,12 @@ impl From<std::io::Error> for CascadeError {
 impl From<zip::result::ZipError> for CascadeError {
     fn from(e: zip::result::ZipError) -> Self {
         CascadeError::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+    }
+}
+
+impl From<git2::Error> for CascadeError {
+    fn from(e: git2::Error) -> Self {
+        CascadeError::Git(e.message().to_string())
     }
 }
 
