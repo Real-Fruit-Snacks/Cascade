@@ -1,4 +1,5 @@
 import { useCanvasStore } from '../../stores/canvas-store';
+import { useSettingsStore } from '../../stores/settings-store';
 import { CANVAS_COLORS } from '../../types/canvas';
 import type { CanvasNode } from '../../types/canvas';
 import { anchorPoint, sideDirection, getComputedColor } from './canvas-utils';
@@ -31,8 +32,11 @@ export async function exportCanvasToPNG(scale = 2): Promise<Blob> {
   const ctx = canvas.getContext('2d')!;
 
   // Background
-  ctx.fillStyle = getComputedColor('var(--ctp-base)');
-  ctx.fillRect(0, 0, w, h);
+  const showBg = useSettingsStore.getState().canvasExportBackground;
+  if (showBg) {
+    ctx.fillStyle = getComputedColor('var(--ctp-base)');
+    ctx.fillRect(0, 0, w, h);
+  }
 
   ctx.save();
   ctx.scale(scale, scale);
@@ -233,8 +237,11 @@ export async function exportCanvasToSVG(): Promise<string> {
   const surfaceColor = getComputedColor('var(--ctp-surface0)');
   const borderColor = getComputedColor('var(--ctp-surface1)');
 
+  const showBgSvg = useSettingsStore.getState().canvasExportBackground;
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n`;
-  svg += `<rect width="${w}" height="${h}" fill="${bgColor}"/>\n`;
+  if (showBgSvg) {
+    svg += `<rect width="${w}" height="${h}" fill="${bgColor}"/>\n`;
+  }
   svg += `<g transform="translate(${ox},${oy})">\n`;
 
   // Edges

@@ -3740,7 +3740,6 @@ function CanvasOptionsPage() {
   const canvasShowMinimap = useSettingsStore((s) => s.canvasShowMinimap);
   const canvasAutoLayout = useSettingsStore((s) => s.canvasAutoLayout);
   const canvasEdgeStyle = useSettingsStore((s) => s.canvasEdgeStyle);
-  const canvasSnapSensitivity = useSettingsStore((s) => s.canvasSnapSensitivity);
   const canvasShowEdgeLabels = useSettingsStore((s) => s.canvasShowEdgeLabels);
   const canvasExportBackground = useSettingsStore((s) => s.canvasExportBackground);
   const update = useSettingsStore((s) => s.update);
@@ -3788,17 +3787,6 @@ function CanvasOptionsPage() {
         />
       </SettingRow>
 
-      <SettingRow label={ts('canvasOptions.snapSensitivity.label')} description={ts('canvasOptions.snapSensitivity.description')}>
-        <input
-          type="number"
-          min={1}
-          max={50}
-          value={canvasSnapSensitivity}
-          onChange={(e) => update({ canvasSnapSensitivity: Math.max(1, Math.min(50, Number(e.target.value) || 10)) })}
-          className="text-xs px-2 py-1 rounded outline-none w-16 text-center"
-          style={inputStyle}
-        />
-      </SettingRow>
 
       <SettingRow label={ts('canvasOptions.defaultCardWidth.label')} description={ts('canvasOptions.defaultCardWidth.description')}>
         <input

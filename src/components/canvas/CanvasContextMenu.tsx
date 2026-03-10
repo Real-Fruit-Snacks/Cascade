@@ -2,6 +2,7 @@ import { Type, FileText, Link, Square, Trash2, Copy, Palette, Tag, ZoomIn, XCirc
 import { downloadExport } from './CanvasExport';
 import { gridLayout, treeLayout, forceLayout } from './CanvasAutoLayout';
 import { fitNodeToContent } from './canvas-fit-to-content';
+import { useSettingsStore } from '../../stores/settings-store';
 import { ContextMenu } from '../sidebar/ContextMenu';
 import type { MenuItem } from '../sidebar/ContextMenu';
 import { useCanvasStore } from '../../stores/canvas-store';
@@ -65,6 +66,9 @@ export function CanvasContextMenu({
 }: CanvasContextMenuProps) {
   const store = useCanvasStore.getState();
   const locked = store.canvasLocked;
+  const settings = useSettingsStore.getState();
+  const defaultW = settings.canvasDefaultCardWidth || 260;
+  const defaultH = settings.canvasDefaultCardHeight || 140;
 
   // --- Node context menu ---
   if (targetNodeId) {
@@ -275,10 +279,10 @@ export function CanvasContextMenu({
           store.addNode({
             type: 'text',
             text: '',
-            x: worldX - 150,
-            y: worldY - 100,
-            width: 300,
-            height: 200,
+            x: worldX - defaultW / 2,
+            y: worldY - defaultH / 2,
+            width: defaultW,
+            height: defaultH,
           } as Omit<TextNode, 'id'>);
         },
       },
@@ -289,10 +293,10 @@ export function CanvasContextMenu({
           store.addNode({
             type: 'text',
             text: '```\n\n```',
-            x: worldX - 150,
-            y: worldY - 100,
-            width: 300,
-            height: 200,
+            x: worldX - defaultW / 2,
+            y: worldY - defaultH / 2,
+            width: defaultW,
+            height: defaultH,
           } as Omit<TextNode, 'id'>);
         },
       },
@@ -305,10 +309,10 @@ export function CanvasContextMenu({
             store.addNode({
               type: 'link',
               url,
-              x: worldX - 150,
-              y: worldY - 60,
-              width: 300,
-              height: 120,
+              x: worldX - defaultW / 2,
+              y: worldY - 50,
+              width: defaultW,
+              height: 100,
             } as Omit<LinkNode, 'id'>);
           }
         },
@@ -319,8 +323,8 @@ export function CanvasContextMenu({
         onClick: () => {
           store.addNode({
             type: 'group',
-            x: worldX - 150,
-            y: worldY - 100,
+            x: worldX - 200,
+            y: worldY - 150,
             width: 400,
             height: 300,
           } as Omit<GroupNode, 'id'>);

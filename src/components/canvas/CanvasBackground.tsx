@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useCanvasStore } from '../../stores/canvas-store';
+import { useSettingsStore } from '../../stores/settings-store';
 import type { EdgeSide, CanvasColor } from '../../types/canvas';
 import { CANVAS_COLORS } from '../../types/canvas';
 import { anchorPoint, sideDirection, resolveCssVar } from './canvas-utils';
@@ -71,6 +72,9 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
   const edges = useCanvasStore((s) => s.edges);
   const selectedEdgeIds = useCanvasStore((s) => s.selectedEdgeIds);
   const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
+  const canvasGridSize = useSettingsStore((s) => s.canvasGridSize);
+  const canvasEdgeStyle = useSettingsStore((s) => s.canvasEdgeStyle);
+  const canvasShowEdgeLabels = useSettingsStore((s) => s.canvasShowEdgeLabels);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -89,7 +93,7 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
     const { x, y, zoom } = viewport;
 
     // ── Grid dots ────────────────────────────────────────────────────────────
-    const gridSize = 20 * zoom;
+    const gridSize = (canvasGridSize || 20) * zoom;
     if (gridSize >= 5) {
       const dotColor = getComputedStyle(document.documentElement)
         .getPropertyValue('--ctp-surface1')
@@ -201,7 +205,16 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
 
       ctx.beginPath();
       ctx.moveTo(from.sx, from.sy);
-      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, to.sx, to.sy);
+      if (canvasEdgeStyle === 'straight') {
+        ctx.lineTo(to.sx, to.sy);
+      } else if (canvasEdgeStyle === 'step') {
+        const midX = (from.sx + to.sx) / 2;
+        ctx.lineTo(midX, from.sy);
+        ctx.lineTo(midX, to.sy);
+        ctx.lineTo(to.sx, to.sy);
+      } else {
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, to.sx, to.sy);
+      }
       ctx.stroke();
 
       // Reset line dash for arrowheads
@@ -236,7 +249,7 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
       }
 
       // Label at bezier midpoint (t=0.5)
-      if (edge.label) {
+      if (edge.label && canvasShowEdgeLabels) {
         const t = 0.5;
         const mt = 1 - t;
         const labelX =
@@ -342,7 +355,7 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
         ctx.fill();
       }
     }
-  }, [width, height, viewport, nodes, edges, selectedEdgeIds, selectedNodeIds, connectDrag, marqueeDrag]);
+  }, [width, height, viewport, nodes, edges, selectedEdgeIds, selectedNodeIds, connectDrag, marqueeDrag, canvasGridSize, canvasEdgeStyle, canvasShowEdgeLabels]);
 
   return (
     <canvas

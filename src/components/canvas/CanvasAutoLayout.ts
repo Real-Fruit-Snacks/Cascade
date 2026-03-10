@@ -1,11 +1,13 @@
 import type { CanvasNode, CanvasEdge } from '../../types/canvas';
+import { useSettingsStore } from '../../stores/settings-store';
 
-const GRID = 20;
+const DEFAULT_GRID = 20;
 const PAD_X = 40;
 const PAD_Y = 40;
 
 function snap(v: number): number {
-  return Math.round(v / GRID) * GRID;
+  const grid = useSettingsStore.getState().canvasGridSize || DEFAULT_GRID;
+  return Math.round(v / grid) * grid;
 }
 
 /** Arrange nodes in a grid layout */

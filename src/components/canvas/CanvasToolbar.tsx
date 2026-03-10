@@ -1,5 +1,6 @@
 import { Type, FileText, Link, Square, ZoomOut, ZoomIn, Maximize2, Code, Lock, Pencil, Hand, MousePointer } from 'lucide-react';
 import { useCanvasStore } from '../../stores/canvas-store';
+import { useSettingsStore } from '../../stores/settings-store';
 import type { CanvasNode } from '../../types/canvas';
 
 export interface CanvasToolbarProps {
@@ -18,6 +19,8 @@ export function CanvasToolbar({ containerWidth, containerHeight }: CanvasToolbar
   const setCanvasLocked = useCanvasStore((s) => s.setCanvasLocked);
   const canvasTool = useCanvasStore((s) => s.canvasTool);
   const setCanvasTool = useCanvasStore((s) => s.setCanvasTool);
+  const defaultW = useSettingsStore((s) => s.canvasDefaultCardWidth) || 260;
+  const defaultH = useSettingsStore((s) => s.canvasDefaultCardHeight) || 140;
 
   const getCenter = (w: number, h: number) => {
     const cx = containerWidth / 2 / viewport.zoom - viewport.x;
@@ -26,25 +29,27 @@ export function CanvasToolbar({ containerWidth, containerHeight }: CanvasToolbar
   };
 
   const addText = () => {
-    const { x, y } = getCenter(300, 200);
-    addNode({ type: 'text', text: '', x, y, width: 300, height: 200 } as Omit<CanvasNode, 'id'>);
+    const { x, y } = getCenter(defaultW, defaultH);
+    addNode({ type: 'text', text: '', x, y, width: defaultW, height: defaultH } as Omit<CanvasNode, 'id'>);
   };
 
   const addFile = () => {
-    const { x, y } = getCenter(400, 300);
-    addNode({ type: 'file', file: '', x, y, width: 400, height: 300 } as Omit<CanvasNode, 'id'>);
+    const w = Math.max(defaultW, 300);
+    const h = Math.max(defaultH, 200);
+    const { x, y } = getCenter(w, h);
+    addNode({ type: 'file', file: '', x, y, width: w, height: h } as Omit<CanvasNode, 'id'>);
   };
 
   const addLink = () => {
     const url = prompt('Enter URL:');
     if (!url) return;
-    const { x, y } = getCenter(400, 100);
-    addNode({ type: 'link', url, x, y, width: 400, height: 100 } as Omit<CanvasNode, 'id'>);
+    const { x, y } = getCenter(defaultW, 100);
+    addNode({ type: 'link', url, x, y, width: defaultW, height: 100 } as Omit<CanvasNode, 'id'>);
   };
 
   const addCode = () => {
-    const { x, y } = getCenter(300, 200);
-    addNode({ type: 'text', text: '```\n\n```', x, y, width: 300, height: 200 } as Omit<CanvasNode, 'id'>);
+    const { x, y } = getCenter(defaultW, defaultH);
+    addNode({ type: 'text', text: '```\n\n```', x, y, width: defaultW, height: defaultH } as Omit<CanvasNode, 'id'>);
   };
 
   const addGroup = () => {

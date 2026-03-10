@@ -9,6 +9,8 @@ import { CanvasContextMenu } from './CanvasContextMenu';
 import { CanvasSearch } from './CanvasSearch';
 import { CanvasMinimap } from './CanvasMinimap';
 import { anchorPoint, sideDirection } from './canvas-utils';
+import { gridLayout, treeLayout, forceLayout } from './CanvasAutoLayout';
+import { useSettingsStore } from '../../stores/settings-store';
 
 interface CanvasViewProps {
   filePath: string;
@@ -75,7 +77,7 @@ const MIN_CARD_H = 60;
 const EDGE_HIT_RADIUS = 8;
 const BEZIER_SAMPLE_COUNT = 30;
 const CTRL_OFFSET = 80; // world-space pixels, must match CanvasBackground
-const GRID_SIZE = 20;
+const DEFAULT_GRID_SIZE = 20;
 
 // Module-level clipboard for copy/paste
 interface ClipboardData {
@@ -148,6 +150,11 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   const canvasLocked = useCanvasStore((s) => s.canvasLocked);
   const canvasTool = useCanvasStore((s) => s.canvasTool);
 
+  const canvasSnapToGrid = useSettingsStore((s) => s.canvasSnapToGrid);
+  const canvasGridSize = useSettingsStore((s) => s.canvasGridSize);
+  const canvasShowMinimap = useSettingsStore((s) => s.canvasShowMinimap);
+  const GRID_SIZE = canvasGridSize || DEFAULT_GRID_SIZE;
+
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -201,6 +208,19 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
 
       if (!cancelled) {
         loadCanvas(filePath, data);
+        // Apply auto-layout if configured
+        const autoLayout = useSettingsStore.getState().canvasAutoLayout;
+        if (autoLayout && autoLayout !== 'none' && data.nodes.length > 0) {
+          const store = useCanvasStore.getState();
+          const layoutFn = autoLayout === 'grid' ? gridLayout
+            : autoLayout === 'tree' ? treeLayout
+            : autoLayout === 'force' ? forceLayout
+            : null;
+          if (layoutFn) {
+            store.applyLayout((nodes, edges) => layoutFn(nodes, edges));
+            store.zoomToFit();
+          }
+        }
       }
     }
 
@@ -333,7 +353,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
           const pastedNodeIds: string[] = [];
           for (const node of canvasClipboard.nodes) {
             const { id: oldId, ...rest } = node;
-            store.addNode({ ...rest, x: node.x + GRID_SIZE, y: node.y + GRID_SIZE }, true);
+            store.addNode({ ...rest, x: node.x + DEFAULT_GRID_SIZE, y: node.y + DEFAULT_GRID_SIZE }, true);
             const newId = useCanvasStore.getState().nodes.at(-1)?.id;
             if (newId) {
               idMap.set(oldId, newId);
@@ -715,8 +735,8 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
           const rawY = orig.y + dy;
           return {
             ...n,
-            x: Math.round(rawX / GRID_SIZE) * GRID_SIZE,
-            y: Math.round(rawY / GRID_SIZE) * GRID_SIZE,
+            x: canvasSnapToGrid ? Math.round(rawX / GRID_SIZE) * GRID_SIZE : rawX,
+            y: canvasSnapToGrid ? Math.round(rawY / GRID_SIZE) * GRID_SIZE : rawY,
           };
         }),
         isDirty: true,
@@ -1044,7 +1064,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       {showSearch && (
         <CanvasSearch onClose={() => setShowSearch(false)} />
       )}
-      {containerSize.width > 0 && (
+      {canvasShowMinimap && containerSize.width > 0 && (
         <CanvasMinimap
           containerWidth={containerSize.width}
           containerHeight={containerSize.height}
