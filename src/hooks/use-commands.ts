@@ -281,6 +281,19 @@ export function useCommands(options: {
       });
     }
 
+    // Split pane
+    reg('pane.split-right', i18n.t('commands:labels.splitRight'), 'Ctrl+\\', () => {
+      useEditorStore.getState().splitPane('horizontal');
+    });
+
+    reg('pane.split-down', i18n.t('commands:labels.splitDown'), 'Ctrl+Shift+\\', () => {
+      useEditorStore.getState().splitPane('vertical');
+    });
+
+    reg('pane.close-split', i18n.t('commands:labels.closeSplit'), undefined, () => {
+      useEditorStore.getState().closeSplit();
+    });
+
     // Periodic Notes
     if (enableDailyNotes) {
       reg('daily.open-today', i18n.t('commands:labels.openTodayDailyNote'), 'Alt+D', () => {

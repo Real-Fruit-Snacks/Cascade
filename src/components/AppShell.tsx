@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { TitleBar } from './TitleBar';
 import { Sidebar } from './sidebar/Sidebar';
-import { EditorPane } from './EditorPane';
+import { SplitPaneContainer } from './SplitPaneContainer';
 import { ErrorBoundary } from './ErrorBoundary';
 import { QuickOpen } from './QuickOpen';
 import type { QuickOpenMode } from './QuickOpen';
@@ -621,7 +621,7 @@ export function AppShell() {
         {sidebarEl}
         <div className="flex flex-col flex-1 min-w-0" style={{ order: 1 }}>
           <ErrorBoundary name="editor">
-            <EditorPane />
+            <SplitPaneContainer />
           </ErrorBoundary>
         </div>
       </div>

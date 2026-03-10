@@ -31,6 +31,14 @@ export interface Tab {
   type?: TabType;
 }
 
+export type SplitDirection = 'horizontal' | 'vertical';
+
+export interface Pane {
+  tabs: Tab[];
+  activeTabIndex: number;
+  editorViewRef: { current: EditorView | null };
+}
+
 interface EditorState {
   tabs: Tab[];
   activeTabIndex: number;
@@ -44,6 +52,11 @@ interface EditorState {
   pendingScrollBlockId: string | null;
   focusModeActive: boolean;
   dirtyPaths: Set<string>;
+
+  // Split pane state
+  panes: Pane[];
+  activePaneIndex: number;
+  splitDirection: SplitDirection | null;
 }
 
 interface EditorActions {
@@ -67,6 +80,18 @@ interface EditorActions {
   setViewMode: (mode: ViewMode) => void;
   setEditorView: (view: EditorView | null) => void;
   toggleFocusMode: () => void;
+
+  // Split pane actions
+  splitPane: (direction: SplitDirection) => void;
+  closeSplit: () => void;
+  setActivePaneIndex: (index: number) => void;
+  openFileInPane: (paneIndex: number, vaultRoot: string, path: string, newTab?: boolean) => Promise<void>;
+  switchPaneTab: (paneIndex: number, tabIndex: number) => void;
+  closePaneTab: (paneIndex: number, tabIndex: number, force?: boolean) => void;
+  updatePaneContent: (paneIndex: number, content: string) => void;
+  savePaneFile: (paneIndex: number, vaultRoot: string) => Promise<void>;
+  setPaneEditorView: (paneIndex: number, view: EditorView | null) => void;
+  moveTabToPane: (tabIndex: number, fromPane: number, toPane: number) => void;
 }
 
 // Derived values — computed from tabs[activeTabIndex]
@@ -128,6 +153,11 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
   pendingScrollBlockId: null,
   focusModeActive: false,
   dirtyPaths: new Set<string>(),
+
+  // Split pane state
+  panes: [],
+  activePaneIndex: 0,
+  splitDirection: null,
 
   // Derived values (recomputed on every state change that touches tabs/activeTabIndex)
   activeFilePath: null,
@@ -318,7 +348,9 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
   },
 
   hasDirtyTabs: () => {
-    return get().tabs.some((t) => t.isDirty);
+    const { tabs, panes } = get();
+    if (tabs.some((t) => t.isDirty)) return true;
+    return panes.some((p) => p.tabs.some((t) => t.isDirty));
   },
 
   closeTab: (index: number, force?: boolean) => {
@@ -579,6 +611,286 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
   toggleFocusMode: () => {
     set((s) => ({ focusModeActive: !s.focusModeActive }));
   },
+
+  // --- Split pane actions ---
+
+  splitPane: (direction: SplitDirection) => {
+    const { panes, tabs, activeTabIndex, activeFilePath, editorViewRef } = get();
+
+    // Already split — max 2 panes
+    if (panes.length === 2) return;
+
+    if (panes.length === 0) {
+      // First split: migrate current single-pane state into panes[0], create panes[1]
+      const pane0: Pane = {
+        tabs: [...tabs],
+        activeTabIndex,
+        editorViewRef,
+      };
+      // Second pane: open the same file as the first pane (or empty)
+      const pane1Tabs: Tab[] = [];
+      let pane1Active = -1;
+      if (activeFilePath && activeTabIndex >= 0 && tabs[activeTabIndex]) {
+        const tab = tabs[activeTabIndex];
+        pane1Tabs.push({ ...tab });
+        pane1Active = 0;
+      }
+      const pane1: Pane = {
+        tabs: pane1Tabs,
+        activeTabIndex: pane1Active,
+        editorViewRef: { current: null },
+      };
+      set({ panes: [pane0, pane1], activePaneIndex: 1, splitDirection: direction });
+    } else {
+      // panes.length === 1 — add a second pane
+      const activePaneTabs = panes[0].tabs;
+      const activePaneIdx = panes[0].activeTabIndex;
+      const activeTab = activePaneTabs[activePaneIdx];
+      const pane1Tabs: Tab[] = activeTab ? [{ ...activeTab }] : [];
+      const pane1: Pane = {
+        tabs: pane1Tabs,
+        activeTabIndex: pane1Tabs.length > 0 ? 0 : -1,
+        editorViewRef: { current: null },
+      };
+      set({ panes: [...panes, pane1], activePaneIndex: 1, splitDirection: direction });
+    }
+  },
+
+  closeSplit: () => {
+    const { panes, activePaneIndex } = get();
+    if (panes.length < 2) {
+      // No split active — reset to single pane mode
+      if (panes.length === 1) {
+        set({
+          tabs: panes[0].tabs,
+          activeTabIndex: panes[0].activeTabIndex,
+          editorViewRef: panes[0].editorViewRef,
+          panes: [],
+          activePaneIndex: 0,
+          splitDirection: null,
+          ...derived(panes[0].tabs, panes[0].activeTabIndex),
+        });
+      }
+      return;
+    }
+
+    // Keep the active pane, discard the other
+    const keepIdx = activePaneIndex;
+    const kept = panes[keepIdx];
+    set({
+      tabs: kept.tabs,
+      activeTabIndex: kept.activeTabIndex,
+      editorViewRef: kept.editorViewRef,
+      panes: [],
+      activePaneIndex: 0,
+      splitDirection: null,
+      ...derived(kept.tabs, kept.activeTabIndex),
+    });
+  },
+
+  setActivePaneIndex: (index: number) => {
+    const { panes } = get();
+    if (index < 0 || index >= panes.length) return;
+    set({ activePaneIndex: index });
+  },
+
+  openFileInPane: async (paneIndex: number, vaultRoot: string, path: string, newTab?: boolean) => {
+    const { panes } = get();
+    if (paneIndex < 0 || paneIndex >= panes.length) return;
+    const pane = panes[paneIndex];
+
+    // Check if already open in this pane
+    const existing = pane.tabs.findIndex((t) => t.path === path);
+    if (existing !== -1) {
+      const newPanes = panes.map((p, i) => i === paneIndex ? { ...p, activeTabIndex: existing } : p);
+      set({ panes: newPanes, activePaneIndex: paneIndex });
+      return;
+    }
+
+    const tabType = getTabType(path);
+    let tab: Tab;
+
+    if (tabType !== 'markdown' && useSettingsStore.getState().enableMediaViewer) {
+      tab = { path, content: '', savedContent: '', isDirty: false, type: tabType };
+    } else {
+      try {
+        const text = await cmd.readFile(vaultRoot, path);
+        const FILE_SIZE_LIMIT = 5 * 1024 * 1024;
+        if (text.length > FILE_SIZE_LIMIT) {
+          useToastStore.getState().addToast(`File is too large to open`, 'warning');
+          return;
+        }
+        const draft = consumeDraft(path);
+        const hasDraft = draft !== null && draft !== text;
+        tab = { path, content: hasDraft ? draft : text, savedContent: text, isDirty: hasDraft };
+      } catch (e) {
+        console.error('Failed to open file in pane:', path, e);
+        return;
+      }
+    }
+
+    // Re-read panes after async
+    const currentPanes = get().panes;
+    if (paneIndex >= currentPanes.length) return;
+    const currentPane = currentPanes[paneIndex];
+
+    let newPaneTabs: Tab[];
+    let newPaneActiveIdx: number;
+    if (newTab || currentPane.tabs.length === 0) {
+      newPaneTabs = [...currentPane.tabs, tab];
+      newPaneActiveIdx = newPaneTabs.length - 1;
+    } else {
+      newPaneTabs = currentPane.tabs.map((t, i) => i === currentPane.activeTabIndex ? tab : t);
+      newPaneActiveIdx = currentPane.activeTabIndex;
+    }
+
+    const newPanes = currentPanes.map((p, i) =>
+      i === paneIndex ? { ...p, tabs: newPaneTabs, activeTabIndex: newPaneActiveIdx } : p
+    );
+    set({ panes: newPanes, activePaneIndex: paneIndex });
+    get().addRecentFile(vaultRoot, path);
+  },
+
+  switchPaneTab: (paneIndex: number, tabIndex: number) => {
+    const { panes } = get();
+    if (paneIndex < 0 || paneIndex >= panes.length) return;
+    const pane = panes[paneIndex];
+    if (tabIndex < 0 || tabIndex >= pane.tabs.length) return;
+
+    // Save cursor/scroll from current editor view before switching
+    const view = pane.editorViewRef.current;
+    let updatedTabs = pane.tabs;
+    if (view && pane.activeTabIndex >= 0 && pane.activeTabIndex < pane.tabs.length) {
+      updatedTabs = [...pane.tabs];
+      updatedTabs[pane.activeTabIndex] = {
+        ...updatedTabs[pane.activeTabIndex],
+        cursorPos: view.state.selection.main.head,
+        scrollTop: view.scrollDOM.scrollTop,
+      };
+    }
+
+    const newPanes = panes.map((p, i) =>
+      i === paneIndex ? { ...p, tabs: updatedTabs, activeTabIndex: tabIndex } : p
+    );
+    set({ panes: newPanes, activePaneIndex: paneIndex });
+  },
+
+  closePaneTab: (paneIndex: number, tabIndex: number, force?: boolean) => {
+    const { panes } = get();
+    if (paneIndex < 0 || paneIndex >= panes.length) return;
+    const pane = panes[paneIndex];
+    if (tabIndex < 0 || tabIndex >= pane.tabs.length) return;
+
+    const tab = pane.tabs[tabIndex];
+    if (tab.isPinned) return;
+    if (tab.isDirty && !force) return;
+
+    const newTabs = pane.tabs.filter((_, i) => i !== tabIndex);
+    let newActive = pane.activeTabIndex;
+    if (newTabs.length === 0) {
+      newActive = -1;
+    } else if (tabIndex < pane.activeTabIndex) {
+      newActive = pane.activeTabIndex - 1;
+    } else if (tabIndex === pane.activeTabIndex) {
+      newActive = Math.min(pane.activeTabIndex, newTabs.length - 1);
+    }
+
+    const newPanes = panes.map((p, i) =>
+      i === paneIndex ? { ...p, tabs: newTabs, activeTabIndex: newActive } : p
+    );
+    set({ panes: newPanes });
+  },
+
+  updatePaneContent: (paneIndex: number, newContent: string) => {
+    set((s) => {
+      if (paneIndex < 0 || paneIndex >= s.panes.length) return s;
+      const pane = s.panes[paneIndex];
+      if (pane.activeTabIndex === -1) return s;
+      const tab = pane.tabs[pane.activeTabIndex];
+      if (tab.content === newContent) return s;
+      const newDirty = newContent !== tab.savedContent;
+      const newTabs = pane.tabs.slice();
+      newTabs[pane.activeTabIndex] = { ...tab, content: newContent, isDirty: newDirty };
+      let dirtyPaths = s.dirtyPaths;
+      if (newDirty !== tab.isDirty) {
+        dirtyPaths = new Set(s.dirtyPaths);
+        if (newDirty) dirtyPaths.add(tab.path);
+        else dirtyPaths.delete(tab.path);
+      }
+      const newPanes = s.panes.map((p, i) =>
+        i === paneIndex ? { ...p, tabs: newTabs } : p
+      );
+      return { panes: newPanes, dirtyPaths };
+    });
+  },
+
+  savePaneFile: async (paneIndex: number, vaultRoot: string) => {
+    const { panes } = get();
+    if (paneIndex < 0 || paneIndex >= panes.length) return;
+    const pane = panes[paneIndex];
+    if (pane.activeTabIndex === -1) return;
+    let tab = pane.tabs[pane.activeTabIndex];
+    if (!tab) return;
+    if (tab.type && tab.type !== 'markdown') return;
+
+    try {
+      await cmd.writeFile(vaultRoot, tab.path, tab.content);
+    } catch (e) {
+      console.error('Failed to save file:', tab.path, e);
+      const fileName = tab.path.replace(/\\/g, '/').split('/').pop() ?? tab.path;
+      useToastStore.getState().addToast(`Failed to save "${fileName}"`, 'error');
+      return;
+    }
+    const updated: Tab = { ...tab, savedContent: tab.content, isDirty: false };
+    // Re-read panes after async
+    const currentPanes = get().panes;
+    if (paneIndex >= currentPanes.length) return;
+    const currentPane = currentPanes[paneIndex];
+    const newTabs = currentPane.tabs.map((t, i) => (i === currentPane.activeTabIndex ? updated : t));
+    const dirtyPaths = new Set(get().dirtyPaths);
+    dirtyPaths.delete(tab.path);
+    const newPanes = currentPanes.map((p, i) =>
+      i === paneIndex ? { ...p, tabs: newTabs } : p
+    );
+    set({ panes: newPanes, dirtyPaths });
+    clearDraft(tab.path);
+    useVaultStore.getState().updateFileTags(tab.path, tab.content);
+    useVaultStore.getState().updateFileLinks(tab.path, tab.content);
+  },
+
+  setPaneEditorView: (paneIndex: number, view: EditorView | null) => {
+    const { panes } = get();
+    if (paneIndex < 0 || paneIndex >= panes.length) return;
+    panes[paneIndex].editorViewRef.current = view;
+  },
+
+  moveTabToPane: (tabIndex: number, fromPane: number, toPane: number) => {
+    const { panes } = get();
+    if (fromPane === toPane) return;
+    if (fromPane < 0 || fromPane >= panes.length || toPane < 0 || toPane >= panes.length) return;
+    const srcPane = panes[fromPane];
+    if (tabIndex < 0 || tabIndex >= srcPane.tabs.length) return;
+
+    const tab = srcPane.tabs[tabIndex];
+    const newSrcTabs = srcPane.tabs.filter((_, i) => i !== tabIndex);
+    let newSrcActive = srcPane.activeTabIndex;
+    if (newSrcTabs.length === 0) {
+      newSrcActive = -1;
+    } else if (tabIndex <= srcPane.activeTabIndex) {
+      newSrcActive = Math.max(0, srcPane.activeTabIndex - 1);
+    }
+
+    const dstPane = panes[toPane];
+    const newDstTabs = [...dstPane.tabs, tab];
+    const newDstActive = newDstTabs.length - 1;
+
+    const newPanes = panes.map((p, i) => {
+      if (i === fromPane) return { ...p, tabs: newSrcTabs, activeTabIndex: newSrcActive };
+      if (i === toPane) return { ...p, tabs: newDstTabs, activeTabIndex: newDstActive };
+      return p;
+    });
+    set({ panes: newPanes, activePaneIndex: toPane });
+  },
 }));
 
 // --- Auto-save drafts to localStorage ---
@@ -592,12 +904,17 @@ function getDrafts(): Record<string, string> {
 }
 
 function saveDrafts() {
-  const { tabs } = useEditorStore.getState();
+  const { tabs, panes } = useEditorStore.getState();
   const drafts = getDrafts();
   let changed = false;
 
+  // Collect all tabs from both single-pane and split-pane modes
+  const allTabs = panes.length > 0
+    ? panes.flatMap((p) => p.tabs)
+    : tabs;
+
   // Save dirty tabs (skip non-markdown tabs)
-  for (const tab of tabs) {
+  for (const tab of allTabs) {
     if (tab.isDirty && !tab.path.startsWith('__') && (!tab.type || tab.type === 'markdown')) {
       if (drafts[tab.path] !== tab.content) {
         drafts[tab.path] = tab.content;

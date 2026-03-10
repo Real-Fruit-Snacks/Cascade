@@ -124,29 +124,52 @@ const VIEW_MODES: { mode: ViewMode; icon: typeof Pencil; labelKey: string }[] = 
   { mode: 'reading', icon: BookOpen, labelKey: 'viewModes.reading' },
 ];
 
-export function EditorPane() {
+export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
   const { t } = useTranslation('editor');
+  const isPane = paneIndex !== undefined;
   const specialTabLabel = (path: string): string | undefined => {
     if (path === '__graph__') return t('specialTabs.graph');
     return undefined;
   };
-  const tabPaths = useEditorStore(useShallow((s) => s.tabs.map((t) => t.path)));
-  const tabDirty = useEditorStore(useShallow((s) => s.tabs.map((t) => t.isDirty)));
-  const tabPinned = useEditorStore(useShallow((s) => s.tabs.map((t) => !!t.isPinned)));
-  const tabTypes = useEditorStore(useShallow((s) => s.tabs.map((t) => t.type ?? getTabType(t.path))));
+
+  // Helper selectors: read from panes[paneIndex] when in split mode, else top-level
+  const selectTabs = useCallback((s: ReturnType<typeof useEditorStore.getState>) => {
+    if (isPane && paneIndex < s.panes.length) return s.panes[paneIndex].tabs;
+    return s.tabs;
+  }, [isPane, paneIndex]);
+
+  const selectActiveTabIndex = useCallback((s: ReturnType<typeof useEditorStore.getState>) => {
+    if (isPane && paneIndex < s.panes.length) return s.panes[paneIndex].activeTabIndex;
+    return s.activeTabIndex;
+  }, [isPane, paneIndex]);
+
+  const tabPaths = useEditorStore(useShallow((s) => selectTabs(s).map((t) => t.path)));
+  const tabDirty = useEditorStore(useShallow((s) => selectTabs(s).map((t) => t.isDirty)));
+  const tabPinned = useEditorStore(useShallow((s) => selectTabs(s).map((t) => !!t.isPinned)));
+  const tabTypes = useEditorStore(useShallow((s) => selectTabs(s).map((t) => t.type ?? getTabType(t.path))));
   const tabsMeta = useMemo(
     () => tabPaths.map((path, i) => ({ path, isDirty: tabDirty[i], isPinned: tabPinned[i], type: tabTypes[i] })),
     [tabPaths, tabDirty, tabPinned, tabTypes],
   );
-  const activeTabIndex = useEditorStore((s) => s.activeTabIndex);
-  const activeFilePath = useEditorStore((s) => s.activeFilePath);
+  const activeTabIndex = useEditorStore(selectActiveTabIndex);
+  const activeFilePath = useEditorStore((s) => {
+    const tabs = selectTabs(s);
+    const idx = selectActiveTabIndex(s);
+    return tabs[idx]?.path ?? null;
+  });
   const activeTabType = useEditorStore((s) => {
-    const tab = s.tabs[s.activeTabIndex];
+    const tabs = selectTabs(s);
+    const idx = selectActiveTabIndex(s);
+    const tab = tabs[idx];
     return tab?.type ?? (tab ? getTabType(tab.path) : 'markdown');
   });
   const isFileLoading = useEditorStore((s) => s.isFileLoading);
   const viewMode = useEditorStore((s) => s.viewMode);
   const setViewMode = useEditorStore((s) => s.setViewMode);
+
+  // Track if this pane is the active pane (for focus styling)
+  const isActivePane = useEditorStore((s) => !isPane || s.activePaneIndex === paneIndex);
+  const hasSplit = useEditorStore((s) => s.panes.length >= 2);
   const enableStatusBar = useSettingsStore((s) => s.enableStatusBar);
   const showWelcomeView = useSettingsStore((s) => s.showWelcomeView);
   const enableCanvas = useSettingsStore((s) => s.enableCanvas);
@@ -178,8 +201,12 @@ export function EditorPane() {
       const confirmed = await ask(t('dialogs.unsavedChangesMessage', { name }), { title: t('dialogs.unsavedChangesTitle'), kind: 'warning' });
       if (!confirmed) return;
     }
-    useEditorStore.getState().closeTab(index, true);
-  }, [tabsMeta, t]);
+    if (isPane) {
+      useEditorStore.getState().closePaneTab(paneIndex, index, true);
+    } else {
+      useEditorStore.getState().closeTab(index, true);
+    }
+  }, [tabsMeta, t, isPane, paneIndex]);
 
   // Mouse-based tab reordering state
   // insertSlot: insertion point index (0 = before first tab, n = after last tab)
@@ -391,7 +418,11 @@ export function EditorPane() {
           useEditorStore.getState().moveTab(index, targetIndex);
         }
       } else if (!didDrag.current) {
-        useEditorStore.getState().switchTab(index);
+        if (isPane) {
+          useEditorStore.getState().switchPaneTab(paneIndex, index);
+        } else {
+          useEditorStore.getState().switchTab(index);
+        }
       }
     };
 
@@ -525,6 +556,7 @@ export function EditorPane() {
   }, [tabMenu, tabsMeta, closeTab]);
 
   const setEditorView = useEditorStore((s) => s.setEditorView);
+  const setPaneEditorView = useEditorStore((s) => s.setPaneEditorView);
   const { editorRef, setValue, getView } = useCodeMirror();
 
   // Editor context menu — capture click position for variable detection and spellcheck
@@ -751,9 +783,13 @@ export function EditorPane() {
 
   // Expose CM view via store for commands (e.g., find/replace from command palette)
   useEffect(() => {
+    if (isPane) {
+      setPaneEditorView(paneIndex, getView());
+      return () => { setPaneEditorView(paneIndex, null); };
+    }
     setEditorView(getView());
     return () => { setEditorView(null); };
-  }, [getView, setEditorView]);
+  }, [getView, setEditorView, setPaneEditorView, isPane, paneIndex]);
 
   // Listen for plugin views requesting a tab
   useEffect(() => {
@@ -836,8 +872,21 @@ export function EditorPane() {
   // Only sync on file switch, not every keystroke (CM manages its own content via updateContent)
   }, [activeFilePath, setValue, getView]);
 
+  const handlePaneFocus = useCallback(() => {
+    if (isPane) {
+      useEditorStore.getState().setActivePaneIndex(paneIndex);
+    }
+  }, [isPane, paneIndex]);
+
   return (
-    <div className="relative flex flex-col flex-1 h-full overflow-hidden" style={{ backgroundColor: 'var(--ctp-base)' }}>
+    <div
+      className="relative flex flex-col flex-1 h-full overflow-hidden"
+      style={{
+        backgroundColor: 'var(--ctp-base)',
+        ...(isPane && hasSplit ? { outline: isActivePane ? '2px solid var(--ctp-accent)' : 'none', outlineOffset: '-2px' } : {}),
+      }}
+      onMouseDown={handlePaneFocus}
+    >
       {focusModeActive && focusModeDimParagraphs && <style>{FOCUS_DIM_STYLE}</style>}
       {/* Tab bar — hidden in focus mode */}
       {!focusModeActive && <div
@@ -978,7 +1027,11 @@ export function EditorPane() {
                         key={tab.path}
                         className="flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-colors hover:bg-[var(--ctp-surface0)]"
                         onClick={() => {
-                          useEditorStore.getState().switchTab(tab.originalIndex);
+                          if (isPane) {
+                            useEditorStore.getState().switchPaneTab(paneIndex, tab.originalIndex);
+                          } else {
+                            useEditorStore.getState().switchTab(tab.originalIndex);
+                          }
                           setOverflowMenuOpen(false);
                         }}
                         onContextMenu={(e) => {

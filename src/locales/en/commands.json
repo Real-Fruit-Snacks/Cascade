@@ -54,6 +54,9 @@
     "openMonthlyNote": "Open This Month's Note",
     "openQuarterlyNote": "Open This Quarter's Note",
     "openYearlyNote": "Open This Year's Note",
-    "newCanvas": "New Canvas"
+    "newCanvas": "New Canvas",
+    "splitRight": "Split Right",
+    "splitDown": "Split Down",
+    "closeSplit": "Close Split Pane"
   }
 }
