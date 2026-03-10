@@ -22,7 +22,8 @@ export type PluginPermission =
   | 'editor.read' | 'editor.write'
   | 'ui.commands' | 'ui.sidebar' | 'ui.statusbar' | 'ui.contextmenu' | 'ui.ribbon' | 'ui.views' | 'ui.settings'
   | 'events'
-  | 'templates';
+  | 'templates'
+  | 'settings';
 
 export interface PluginContext {
   vault: VaultAPI;

@@ -489,7 +489,9 @@ export class PluginSandbox {
       }
       case 'ui.addSidebarPanel': {
         requirePermission(this.permissions, 'ui.sidebar');
-        const { id, html } = args[0] as { id: string; html: string };
+        const arg = args[0];
+        const id = typeof arg === 'string' ? arg : (arg as { id: string; html?: string }).id;
+        const html = typeof arg === 'object' ? (arg as { html?: string }).html ?? '' : '';
         usePluginStore.getState().addSidebarPanel(id, this.pluginId, html);
         const unsub = () => usePluginStore.getState().removeSidebarPanel(id);
         this.cleanups.push(unsub);
@@ -610,19 +612,28 @@ export class PluginSandbox {
 
       // ── Settings API ──
       case 'settings.get': {
+        requirePermission(this.permissions, 'settings');
+        const key = args[0] as string;
+        if (typeof key !== 'string' || !/^[a-zA-Z0-9_.-]+$/.test(key)) {
+          throw new Error(`Invalid settings key: ${key}`);
+        }
         const settingsPath = `.cascade/plugins/${this.pluginId}/settings.json`;
         const vaultPath = useVaultStore.getState().vaultPath;
         if (!vaultPath) return args[1]; // default value
         try {
           const raw = await cmd.readFile(vaultPath, settingsPath);
           const data = JSON.parse(raw);
-          const key = args[0] as string;
           return key in data ? data[key] : args[1];
         } catch {
           return args[1];
         }
       }
       case 'settings.set': {
+        requirePermission(this.permissions, 'settings');
+        const key = args[0] as string;
+        if (typeof key !== 'string' || !/^[a-zA-Z0-9_.-]+$/.test(key)) {
+          throw new Error(`Invalid settings key: ${key}`);
+        }
         const settingsPath = `.cascade/plugins/${this.pluginId}/settings.json`;
         const vaultPath = useVaultStore.getState().vaultPath;
         if (!vaultPath) return undefined;
@@ -631,11 +642,12 @@ export class PluginSandbox {
           const raw = await cmd.readFile(vaultPath, settingsPath);
           data = JSON.parse(raw);
         } catch { /* new settings file */ }
-        data[args[0] as string] = args[1];
+        data[key] = args[1];
         await cmd.writeFile(vaultPath, settingsPath, JSON.stringify(data, null, 2));
         return undefined;
       }
       case 'settings.getAll': {
+        requirePermission(this.permissions, 'settings');
         const settingsPath = `.cascade/plugins/${this.pluginId}/settings.json`;
         const vaultPath = useVaultStore.getState().vaultPath;
         if (!vaultPath) return {};
