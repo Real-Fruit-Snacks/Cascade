@@ -70,6 +70,14 @@ export function parseWikiTarget(target: string): { file: string; heading: string
  * Tries: exact match, with .md, case-insensitive, basename match.
  * Returns the matched path or null if not found.
  */
+/** Clear the wiki-link resolution cache. Useful when vault contents change externally. */
+export function clearWikiLinkCache() {
+  _cachedFiles = null;
+  _exactSet = null;
+  _lowerMap = null;
+  _baseMap = null;
+}
+
 export function resolveWikiLink(target: string, flatFiles: string[]): string | null {
   ensureIndex(flatFiles);
   // Strip heading anchor before resolving file path

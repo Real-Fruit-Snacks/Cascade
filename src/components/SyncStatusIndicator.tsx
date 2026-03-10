@@ -2,6 +2,7 @@ import { Cloud, CloudOff, Loader2, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSyncStore } from '../stores/sync-store';
 import { useSettingsStore } from '../stores/settings-store';
+import { formatAgo } from '../lib/format-utils';
 
 export function SyncStatusIndicator() {
   const { t } = useTranslation('common');
@@ -13,15 +14,8 @@ export function SyncStatusIndicator() {
 
   if (!syncEnabled) return null;
 
-  const formatAgo = (ts: number | null) => {
-    if (!ts) return t('syncStatus.never');
-    const secs = Math.floor((Date.now() - ts) / 1000);
-    if (secs < 60) return t('syncStatus.justNow');
-    const mins = Math.floor(secs / 60);
-    if (mins < 60) return t('syncStatus.minutesAgo', { count: mins });
-    const hrs = Math.floor(mins / 60);
-    return t('syncStatus.hoursAgo', { count: hrs });
-  };
+  const formatSyncAgo = (ts: number | null) =>
+    formatAgo(ts, (key, opts) => t(`syncStatus.${key}`, opts));
 
   let icon: React.ReactNode;
   let label: string;
@@ -54,7 +48,7 @@ export function SyncStatusIndicator() {
       break;
     default: // idle
       icon = <Cloud size={12} />;
-      label = t('syncStatus.synced', { time: formatAgo(lastSyncTime) });
+      label = t('syncStatus.synced', { time: formatSyncAgo(lastSyncTime) });
       color = 'var(--ctp-green)';
       break;
   }

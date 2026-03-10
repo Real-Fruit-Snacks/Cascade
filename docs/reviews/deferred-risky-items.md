@@ -1,75 +1,81 @@
 # Deferred Risky Items
 
-Items deemed too risky to fix during the review pass. These require architectural changes,
-new UI components, or large refactors that could introduce regressions.
+Items deemed too risky to fix during the review pass, ordered from highest to lowest priority.
+These require architectural changes, new UI components, or large refactors that could introduce regressions.
 
-## Large Component Refactors
-- [ ] AppShell.tsx (740+ lines) — extract variables option-building (duplicated 7 times), extract shortcut handling into dedicated hook
-- [ ] GraphPanel.tsx (~900 lines) — separate simulation logic, canvas rendering, settings UI, and mouse handling into sub-modules
-- [ ] ExportModal.tsx (~1080 lines) — extract `markdownToHtml`, `markdownToDocx`, `performBatchExport` into `src/lib/export-utils.ts`
-- [ ] QuickOpen.tsx — heavy inline markdown preview parser runs on every selection change; extract to shared preview utility
+---
 
-## i18n Gaps (8 components)
-- [ ] FileConflictDialog — all strings hardcoded English
-- [ ] OnboardingScreen — section labels hardcoded English (beyond shortcuts which were fixed)
-- [ ] FeatureWiki — all section labels hardcoded English
-- [ ] NewFileModal — hardcoded English
-- [ ] ListVariablesModal — hardcoded English
-- [ ] SetVariableModal — hardcoded English
-- [ ] ErrorBoundary — hardcoded English
-- [ ] ToastContainer — hardcoded English
-- [ ] WelcomeView `formatRelativeTime` — returns hardcoded English strings ("just now", "yesterday", etc.)
+## Priority 1: Security & Data Integrity
 
-## Architectural Changes
-- [ ] PDF export — currently uses browser print dialog via iframe instead of actual PDF generation; user picks save path that is never used
-- [ ] PdfViewer — creates all page canvases upfront; needs virtualization for large PDFs
-- [ ] Canvas `forceLayout` — O(n²) × 50 iterations on main thread; needs Web Worker offloading for >100 nodes
-- [ ] Canvas `structuredClone` in `pushUndo` — deep-clones entire state on every mutation; consider structural sharing or immutable data
-- [ ] Canvas dirty-rect tracking — `CanvasBackground` re-renders everything on any change; separate static grid from dynamic layer
-- [ ] Canvas copy/paste — uses module-level variable instead of system clipboard; needs Tauri clipboard API integration
-- [ ] ErrorBoundary — only wraps AppShell; individual feature UIs should have their own error boundaries
+- [x] PDF export — replaced iframe/print with direct HTML file export via export-utils.ts
+- [x] Asset protocol scope — narrowed from `"C:/**"` to `["$APPDATA/**", "$HOME/**"]` in tauri.conf.json
+- [x] CSP — tightened to `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' asset: https://asset.localhost blob: data:; connect-src ipc: http://ipc.localhost`
+- [x] Plugin settings RPC — added `'settings'` permission type and permission checks + key validation
+- [x] Sandbox bootstrap `addSidebarPanel` — fixed API contract mismatch, implemented `ui.removeCommand`
+- [x] Registry fetch — added `isValidRegistryPlugin()` runtime validation function
+- [x] Canvas copy/paste — replaced module-level variable with navigator.clipboard API
 
-## UX Improvements Requiring New UI
-- [ ] Canvas `prompt()` for link URLs and edge labels — should use in-app modal/inline input instead
-- [ ] Canvas drag past edge — dragging node past canvas boundary cancels operation; should continue tracking
-- [ ] Canvas double-click empty space — new text node should auto-enter edit mode
-- [ ] Tag rename in TagPanel — commits on blur with no visible cancel affordance besides Escape
-- [ ] FileTreeItem renders modals for every tree item — should lazy-render (only mount when that item's modal is open)
-- [ ] Modal z-index inconsistency — some modals use `createPortal` to document.body, others render inline
+## Priority 2: Performance & Scalability
 
-## Security (Area 10)
-- [ ] Asset protocol scope includes `"C:/**"` and `"D:/**"` — overly broad, but required for Tauri asset loading from arbitrary vault paths on Windows; restricting to vault-only scope would break image/attachment loading
-- [ ] CSP `style-src 'unsafe-inline'` — required for Tailwind runtime styles and inline `style` props; removing would break all dynamic styling
+- [x] Canvas `forceLayout` — moved to Web Worker (`src/workers/force-layout.worker.ts`)
+- [x] Canvas `structuredClone` in `pushUndo` — replaced with shallow array copies in undo/redo
+- [ ] Canvas dirty-rect tracking — separate static grid from dynamic layer (low priority, canvas performs well)
+- [x] PdfViewer — added IntersectionObserver-based page virtualization
+- [x] QuickOpen.tsx — moved `previewCache` to `useRef` (Task 8.9)
+- [x] FileTreeItem — wrapped 5 modal components in conditional guards for lazy rendering
 
-## Test Coverage (Area 10)
-- [ ] No tests for `daily-notes.ts` — requires mocking Tauri `invoke`, Zustand store state (`useSettingsStore`, `useEditorStore`), and `navigator.clipboard`; complex integration test setup
+## Priority 3: Error Handling & Resilience
 
-## Plugin System (Area 8)
-- [ ] Sandbox bootstrap `addSidebarPanel(id, component)` sends only the id to host RPC, but host destructures `{ id, html }` from `args[0]` — API contract mismatch requires coordinated sandbox bootstrap JS, RPC handler, and type changes
-- [ ] `ui.removeCommand` is unimplemented — commands can be added but not individually removed at runtime; cleanup-on-destroy works, but runtime removal requires command registry changes
-- [ ] Plugin settings RPC (`settings.get`/`settings.set`) has no permission gate — any plugin can read/write its own settings without declaring a permission; adding a new permission type would be a breaking API change
-- [ ] Registry fetch (`plugin-registry.ts`) does not validate individual plugin/theme objects from JSON — malformed entries with missing fields are cast via `as RegistryPlugin` without runtime checks
+- [x] ErrorBoundary — added ErrorBoundary around CanvasView in EditorPane
+- [x] Conflict resolution UX — added MergeConflictDialog with side-by-side diff view and Keep Mine/Keep Theirs resolution
+- [x] `ensure_gitignore` — changed to return `Result` to propagate failure
+- [x] `ui.removeCommand` — implemented via command-registry `unregister()` method
+- [x] Import progress feedback — added `import://progress` events from all 3 importers + progress UI in ImportWizard
 
-## Git Sync (Area 9)
-- [ ] Conflict resolution UX — currently auto-resolves by keeping local version and writing `.conflict.md` for remote; users have no merge UI to compare and choose
-- [ ] `ensure_gitignore` silently ignores write errors — low risk but should propagate failure on repo init
-- [ ] `unpushedCommits` offline tracking is approximate (increments per sync cycle) — needs accurate revwalk count after reconnect
-- [ ] `formatAgo` utility duplicated in `SyncStatusIndicator.tsx` and `SettingsModal.tsx` — extract to shared `src/lib/format-utils.ts`
-- [ ] SyncOptionsPage and SyncStatusIndicator strings are hardcoded English — needs i18n treatment
+## Priority 4: Large Component Refactors
 
-## Importer Infrastructure (Area 7)
-- [ ] `ImportResult` struct duplicated in `bear_importer.rs`, `notion_importer.rs`, and `roam_importer.rs` — should be defined once in `importer.rs` and re-exported; touching all three modules risks merge conflicts
-- [ ] No progress feedback during import — all three importers run synchronously on the Tauri command thread with no events emitted to the frontend; adding async streaming requires Tauri event channel plumbing and frontend listener UI
-- [ ] Bear tag regex `#([^#\n]+)#` can false-match content inside inline code or between unrelated `#` characters — fixing requires context-aware parsing (skip code spans/blocks) which is a significant rewrite of `convert_bear_markdown`
+- [x] ExportModal.tsx — extracted `markdownToHtml`, `markdownToDocx`, `performBatchExport` into `src/lib/export-utils.ts`
+- [x] GraphPanel.tsx — split into `GraphTypes.ts`, `GraphRenderer.ts`, `GraphMouseHandlers.ts`, `GraphSettingsPanel.tsx`
+- [x] AppShell.tsx — extracted variables option-building into `src/hooks/use-variables-options.ts`
 
-## Minor Items
-- [ ] QuickOpen `previewCache` is module-level Map persisting across mount/unmount
-- [ ] wiki-link-resolver cache uses referential equality (works only because store replaces array)
-- [ ] ContextMenu `onClose` in useEffect deps causes listener churn if parent doesn't memoize
-- [ ] CSS inconsistency — mix of Tailwind utility classes and inline style objects across shell components
-- [ ] Tooltip `tooltip-fade-in`/`tooltip-fade-out` animations reference undefined @keyframes
-- [ ] SetVariableModal duplicates sidebar localStorage key constants
-- [ ] `HEADING_STYLES` in live-preview helpers.ts duplicates heading values from theme.ts
-- [ ] `renderMarkdownPreview` uses fragile regex-based markdown parsing (acceptable for transclusion previews)
-- [ ] Canvas `CanvasMinimap` has duplicate `resolveCssVar` helper differing from `canvas-utils.ts` version
-- [ ] Canvas resize handle DOM duplicated across TextCard, FileCard, LinkCard, GroupCard
+## Priority 5: i18n Gaps
+
+- [x] FileConflictDialog — internationalized
+- [x] OnboardingScreen — internationalized
+- [x] FeatureWiki — internationalized
+- [x] NewFileModal — internationalized
+- [x] ListVariablesModal — internationalized
+- [x] SetVariableModal — internationalized
+- [x] ErrorBoundary — internationalized (using `i18next.t()` for class component)
+- [ ] ToastContainer — hardcoded English (toast messages are generated at call sites, not in container)
+- [x] WelcomeView `formatRelativeTime` — internationalized
+- [x] SyncOptionsPage and SyncStatusIndicator — internationalized
+
+## Priority 6: UX Improvements Requiring New UI
+
+- [x] Canvas `prompt()` — replaced with in-app `CanvasInputModal` and `requestInput` callback
+- [x] Canvas drag past edge — verified no boundary check exists; canvas already allows free movement
+- [x] Canvas double-click empty space — auto-enter edit mode on new text node
+- [x] Tag rename in TagPanel — added "Esc to cancel" hint
+- [x] Modal z-index — added CSS variable scale (`--z-dropdown`, `--z-modal`, `--z-toast`, `--z-tooltip`, `--z-context-menu`) to theme.css
+
+## Priority 7: Test Coverage
+
+- [x] daily-notes.ts tests — added comprehensive unit tests with mocked Tauri/Zustand
+- [x] Bear tag regex — made context-aware, skips code blocks and inline code spans
+
+## Priority 8: Code Quality & Minor Items
+
+- [x] `ImportResult` struct — deduplicated into `importer.rs`, imported by all three importers
+- [x] `formatAgo` utility — extracted to `src/lib/format-utils.ts`, imported in both consumers
+- [x] `unpushedCommits` — already uses revwalk count after reconnect; offline increment is best-effort
+- [x] Canvas resize handle — extracted shared `ResizeHandles` component, used in TextCard, FileCard, LinkCard
+- [x] Canvas `CanvasMinimap` `resolveCssVar` — deduplicated, now delegates to `canvas-utils.ts`
+- [x] Tooltip keyframes — already defined in `index.css` (`tooltip-fade-in`, `tooltip-fade-out`)
+- [x] `HEADING_STYLES` — added cross-reference comment linking helpers.ts and theme.ts
+- [ ] SetVariableModal localStorage key constants — keys already defined as constants near usage; centralizing adds complexity for minimal benefit
+- [x] QuickOpen `previewCache` — moved to `useRef` inside component
+- [x] wiki-link-resolver cache — added `clearWikiLinkCache()` export for explicit invalidation
+- [x] ContextMenu `onClose` — stabilized with `useRef` to prevent listener churn
+- [ ] CSS inconsistency — light normalization pass deferred; inline styles needed for CSS variable values
+- [x] `renderMarkdownPreview` — documented as intentional regex-based approach for performance

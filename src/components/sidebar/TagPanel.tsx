@@ -258,6 +258,7 @@ export function TagPanel() {
                       className="flex-1 bg-transparent outline-none text-xs"
                       style={{ color: 'var(--ctp-text)' }}
                     />
+                    <span className="text-[10px] shrink-0" style={{ color: 'var(--ctp-overlay0)' }}>Esc to cancel</span>
                   </div>
                 ) : (
                   <button

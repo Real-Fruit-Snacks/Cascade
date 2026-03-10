@@ -8,14 +8,7 @@ use serde_json::Value;
 use tauri::Emitter;
 
 use crate::error::CascadeError;
-
-#[derive(serde::Serialize, Clone, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct ImportResult {
-    pub files_imported: u32,
-    pub files_skipped: u32,
-    pub errors: Vec<String>,
-}
+use crate::importer::ImportResult;
 
 #[derive(Deserialize, Debug)]
 struct RoamPage {

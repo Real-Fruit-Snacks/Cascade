@@ -8,14 +8,7 @@ use scraper::{ElementRef, Html, Selector};
 use tauri::Emitter;
 
 use crate::error::CascadeError;
-
-#[derive(serde::Serialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct ImportResult {
-    pub files_imported: u32,
-    pub files_skipped: u32,
-    pub errors: Vec<String>,
-}
+use crate::importer::ImportResult;
 
 /// Strip Notion UUID suffix from a filename stem.
 /// e.g. "My Page abc123def456abc123def456abc123de" → "My Page"

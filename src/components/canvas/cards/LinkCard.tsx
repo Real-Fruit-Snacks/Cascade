@@ -4,6 +4,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { useCanvasStore } from '../../../stores/canvas-store';
 import { CANVAS_COLORS, type LinkNode } from '../../../types/canvas';
 import type { ResizeCorner } from '../CanvasCards';
+import { ResizeHandles } from './ResizeHandle';
 
 interface LinkCardProps {
   node: LinkNode;
@@ -57,64 +58,7 @@ export function LinkCard({ node, selected, style, onMouseDown, onResizeMouseDown
         <div className="text-xs truncate" style={{ color: 'var(--ctp-overlay0)' }}>{node.url}</div>
       </div>
       {selected && onResizeMouseDown && (
-        <>
-          <div
-            style={{
-              position: 'absolute',
-              bottom: -4,
-              right: -4,
-              width: 8,
-              height: 8,
-              backgroundColor: 'var(--ctp-accent)',
-              borderRadius: 2,
-              cursor: 'nwse-resize',
-              zIndex: 10,
-            }}
-            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('br', e); }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              bottom: -4,
-              left: -4,
-              width: 8,
-              height: 8,
-              backgroundColor: 'var(--ctp-accent)',
-              borderRadius: 2,
-              cursor: 'nesw-resize',
-              zIndex: 10,
-            }}
-            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('bl', e); }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: -4,
-              right: -4,
-              width: 8,
-              height: 8,
-              backgroundColor: 'var(--ctp-accent)',
-              borderRadius: 2,
-              cursor: 'nesw-resize',
-              zIndex: 10,
-            }}
-            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('tr', e); }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: -4,
-              left: -4,
-              width: 8,
-              height: 8,
-              backgroundColor: 'var(--ctp-accent)',
-              borderRadius: 2,
-              cursor: 'nwse-resize',
-              zIndex: 10,
-            }}
-            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('tl', e); }}
-          />
-        </>
+        <ResizeHandles onResizeMouseDown={onResizeMouseDown} />
       )}
     </div>
   );

@@ -8,14 +8,7 @@ use walkdir::WalkDir;
 use tauri::Emitter;
 
 use crate::error::CascadeError;
-
-#[derive(serde::Serialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct ImportResult {
-    pub files_imported: u32,
-    pub files_skipped: u32,
-    pub errors: Vec<String>,
-}
+use crate::importer::ImportResult;
 
 /// Characters not allowed in Windows filenames.
 const INVALID_FILENAME_CHARS: &[char] = &['/', '\\', ':', '*', '?', '"', '<', '>', '|'];
@@ -29,6 +22,34 @@ fn sanitize_filename(name: &str) -> String {
     sanitized.chars().take(200).collect()
 }
 
+/// Apply Bear tag conversion (#tag# → #tag) to a single line, skipping inline code spans.
+/// Splits the line by backtick-delimited spans and only processes non-code segments.
+fn convert_tags_in_line(line: &str, tag_re: &Regex) -> String {
+    let parts: Vec<&str> = line.split('`').collect();
+    let mut result = String::with_capacity(line.len());
+    for (i, part) in parts.iter().enumerate() {
+        if i % 2 == 0 {
+            // Outside a backtick span — apply tag conversion
+            let converted = tag_re.replace_all(part, |caps: &regex::Captures| {
+                let inner = caps[1].trim();
+                let converted: String = inner
+                    .split('/')
+                    .map(|segment| segment.split_whitespace().collect::<Vec<_>>().join("-"))
+                    .collect::<Vec<_>>()
+                    .join("/");
+                format!("#{}", converted)
+            });
+            result.push_str(&converted);
+        } else {
+            // Inside a backtick span — preserve verbatim, restoring the surrounding backticks
+            result.push('`');
+            result.push_str(part);
+            result.push('`');
+        }
+    }
+    result
+}
+
 /// Convert Bear-specific markdown syntax to standard markdown.
 fn convert_bear_markdown(content: &str) -> String {
     // Compile regexes (cheap enough for per-file use; Bear exports are one-off imports)
@@ -37,19 +58,32 @@ fn convert_bear_markdown(content: &str) -> String {
     let attachment_re = Regex::new(r"\[file:([^\]]+)\]").expect("valid regex");
 
     // 1. Convert Bear tags: #tag# or #multi word tag# → #tag or #multi-word-tag
-    let result = tag_re.replace_all(content, |caps: &regex::Captures| {
-        let inner = caps[1].trim();
-        // Kebab-case multi-word tags, preserve slashes for subtags
-        let converted: String = inner
-            .split('/')
-            .map(|segment| segment.split_whitespace().collect::<Vec<_>>().join("-"))
-            .collect::<Vec<_>>()
-            .join("/");
-        format!("#{}", converted)
-    });
+    //    Process line by line, skipping fenced code blocks and inline code spans.
+    let mut tag_converted = String::with_capacity(content.len());
+    let mut in_fence = false;
+    let mut lines = content.split('\n').peekable();
+    while let Some(line) = lines.next() {
+        if line.trim_start().starts_with("```") {
+            in_fence = !in_fence;
+            tag_converted.push_str(line);
+        } else if in_fence {
+            tag_converted.push_str(line);
+        } else {
+            tag_converted.push_str(&convert_tags_in_line(line, &tag_re));
+        }
+        // Re-add the newline separator (split consumed it); omit trailing newline only if the
+        // original content did not end with one.
+        if lines.peek().is_some() {
+            tag_converted.push('\n');
+        }
+    }
+    // Preserve a trailing newline if the original had one.
+    if content.ends_with('\n') {
+        tag_converted.push('\n');
+    }
 
     // 2. Convert ::highlight:: → ==highlight==
-    let result = highlight_re.replace_all(&result, "==$1==");
+    let result = highlight_re.replace_all(&tag_converted, "==$1==");
 
     // 3. Convert Bear [file:path/to/file] attachment references
     let result = attachment_re.replace_all(&result, |caps: &regex::Captures| {
@@ -72,6 +106,21 @@ fn convert_bear_markdown(content: &str) -> String {
     });
 
     result.into_owned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bear_tags_skip_code() {
+        let input = "Hello #tag# and `#not-a-tag#` here\n```\n#code-tag#\n```\nAfter #real#";
+        let result = convert_bear_markdown(input);
+        assert!(result.contains("#tag"));
+        assert!(result.contains("`#not-a-tag#`"));
+        assert!(result.contains("#code-tag#"));
+        assert!(result.contains("#real"));
+    }
 }
 
 /// Process a single Bear .md file: convert syntax and write to vault.

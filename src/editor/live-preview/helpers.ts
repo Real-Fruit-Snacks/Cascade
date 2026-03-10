@@ -238,7 +238,8 @@ export function extractBlockSection(content: string, blockId: string): string | 
   return null;
 }
 
-// Heading colors matching the editor's live preview theme
+// Heading colors matching the editor's live preview theme (see also theme.ts .cm-line.cm-heading-*)
+// These are inline CSS strings for HTML rendering; theme.ts defines the CM6 class-based equivalents.
 export const HEADING_STYLES: Record<number, string> = {
   1: 'font-size:2em;line-height:1.4;color:var(--ctp-red);font-weight:bold;margin:0.6em 0 0.3em',
   2: 'font-size:1.6em;line-height:1.4;color:var(--ctp-peach);font-weight:bold;margin:0.5em 0 0.3em',

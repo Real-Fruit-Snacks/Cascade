@@ -6,9 +6,10 @@ import type { CanvasNode } from '../../types/canvas';
 export interface CanvasToolbarProps {
   containerWidth: number;
   containerHeight: number;
+  requestInput: (title: string, defaultValue?: string) => Promise<string | null>;
 }
 
-export function CanvasToolbar({ containerWidth, containerHeight }: CanvasToolbarProps) {
+export function CanvasToolbar({ containerWidth, containerHeight, requestInput }: CanvasToolbarProps) {
   const addNode = useCanvasStore((s) => s.addNode);
   const viewport = useCanvasStore((s) => s.viewport);
   const setViewport = useCanvasStore((s) => s.setViewport);
@@ -40,8 +41,8 @@ export function CanvasToolbar({ containerWidth, containerHeight }: CanvasToolbar
     addNode({ type: 'file', file: '', x, y, width: w, height: h } as Omit<CanvasNode, 'id'>);
   };
 
-  const addLink = () => {
-    const url = prompt('Enter URL:');
+  const addLink = async () => {
+    const url = await requestInput('Enter URL:');
     if (!url) return;
     const { x, y } = getCenter(defaultW, 100);
     addNode({ type: 'link', url, x, y, width: defaultW, height: 100 } as Omit<CanvasNode, 'id'>);

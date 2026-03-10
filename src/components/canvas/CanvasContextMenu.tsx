@@ -19,6 +19,7 @@ interface CanvasContextMenuProps {
   worldY: number;
   vaultPath: string;
   onClose: () => void;
+  requestInput: (title: string, defaultValue?: string) => Promise<string | null>;
 }
 
 const COLOR_LABELS: Record<CanvasColor, string> = {
@@ -63,6 +64,7 @@ export function CanvasContextMenu({
   worldY,
   vaultPath,
   onClose,
+  requestInput,
 }: CanvasContextMenuProps) {
   const store = useCanvasStore.getState();
   const locked = store.canvasLocked;
@@ -226,8 +228,8 @@ export function CanvasContextMenu({
       {
         label: edge.label ? 'Edit Label' : 'Add Label',
         icon: <Tag size={14} />,
-        onClick: () => {
-          const text = prompt('Edge label:', edge.label ?? '');
+        onClick: async () => {
+          const text = await requestInput('Edge label:', edge.label ?? '');
           if (text !== null) {
             store.updateEdge(targetEdgeId, { label: text });
           }
@@ -303,8 +305,8 @@ export function CanvasContextMenu({
       {
         label: 'New Link Card',
         icon: <Link size={14} />,
-        onClick: () => {
-          const url = prompt('URL:');
+        onClick: async () => {
+          const url = await requestInput('URL:');
           if (url) {
             store.addNode({
               type: 'link',

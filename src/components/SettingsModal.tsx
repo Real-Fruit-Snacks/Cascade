@@ -15,6 +15,7 @@ import { useSyncStore } from '../stores/sync-store';
 import type { ViewMode } from '../types/index';
 import { FeatureWiki } from './FeatureWiki';
 import { reloadCustomDictionary } from '../editor/spellcheck-engine';
+import { formatAgo } from '../lib/format-utils';
 
 const FONT_OPTIONS = [
   '"JetBrains Mono", ui-monospace, monospace',
@@ -4188,15 +4189,8 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
     outline: 'none',
   };
 
-  const formatAgo = (time: number | null) => {
-    if (!time) return ts('syncOptions.never');
-    const secs = Math.floor((Date.now() - time) / 1000);
-    if (secs < 60) return ts('syncOptions.justNow');
-    const mins = Math.floor(secs / 60);
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    return `${hrs}h ago`;
-  };
+  const formatSyncAgo = (time: number | null) =>
+    formatAgo(time, (key, opts) => ts(`syncOptions.${key}`, opts));
 
   return (
     <div className="flex flex-col gap-5">
@@ -4223,7 +4217,7 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
               {syncStatus === 'syncing' ? ts('syncOptions.statusSyncing') : syncStatus === 'error' ? ts('syncOptions.statusError') : syncStatus === 'offline' ? ts('syncOptions.statusOffline') : ts('syncOptions.statusConnected')}
             </span>
             <span className="text-xs" style={{ color: 'var(--ctp-subtext0)' }}>
-              {settings.syncRepoUrl ? settings.syncRepoUrl.replace(/\.git$/, '').replace(/^https:\/\/github\.com\//, '') : ts('syncOptions.noRepository')} · {ts('syncOptions.lastSynced', { time: formatAgo(lastSyncTime) })}
+              {settings.syncRepoUrl ? settings.syncRepoUrl.replace(/\.git$/, '').replace(/^https:\/\/github\.com\//, '') : ts('syncOptions.noRepository')} · {ts('syncOptions.lastSynced', { time: formatSyncAgo(lastSyncTime) })}
             </span>
           </div>
           <button

@@ -1,6 +1,13 @@
 :root {
   transition: background-color 0.15s ease, color 0.15s ease;
 
+  /* Z-index scale */
+  --z-dropdown: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+  --z-tooltip: 70;
+  --z-context-menu: 100;
+
   /* Catppuccin Mocha */
   --ctp-rosewater: #f5e0dc;
   --ctp-flamingo: #f2cdcd;

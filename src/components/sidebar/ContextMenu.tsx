@@ -19,15 +19,17 @@ interface ContextMenuProps {
 
 export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     const handle = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        onClose();
+        onCloseRef.current();
       }
     };
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'End') {
         e.preventDefault();
         const buttons = Array.from(
@@ -53,7 +55,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
       window.removeEventListener('mousedown', handle);
       window.removeEventListener('keydown', handleKey);
     };
-  }, [onClose]);
+  }, []);
 
   // Keep menu within viewport
   useEffect(() => {

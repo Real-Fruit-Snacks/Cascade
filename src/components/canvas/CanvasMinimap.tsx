@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useCanvasStore } from '../../stores/canvas-store';
+import { resolveCssVar as resolveCssVarWrapped } from './canvas-utils';
 
 interface CanvasMinimapProps {
   containerWidth: number;
@@ -12,7 +13,7 @@ const MINIMAP_PAD = 10;
 
 /** Resolve a CSS custom property to its computed value. */
 function resolveCssVar(varName: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return resolveCssVarWrapped(`var(${varName})`);
 }
 
 export function CanvasMinimap({ containerWidth, containerHeight }: CanvasMinimapProps) {

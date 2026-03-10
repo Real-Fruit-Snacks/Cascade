@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCanvasStore } from '../../stores/canvas-store';
 import { readFile, writeFile } from '../../lib/tauri-commands';
 import type { CanvasData, CanvasEdge, EdgeSide, CanvasNode, TextNode } from '../../types/canvas';
 import { CanvasBackground, type ConnectDragState, type MarqueeDragState } from './CanvasBackground';
 import { CanvasCards, type ResizeCorner } from './CanvasCards';
 import { CanvasToolbar } from './CanvasToolbar';
+import { CanvasInputModal } from './CanvasInputModal';
 import { CanvasContextMenu } from './CanvasContextMenu';
 import { CanvasSearch } from './CanvasSearch';
 import { CanvasMinimap } from './CanvasMinimap';
@@ -198,6 +199,17 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
   const [showSearch, setShowSearch] = useState(false);
+  const [inputModal, setInputModal] = useState<{ title: string; defaultValue?: string; onSubmit: (v: string) => void } | null>(null);
+
+  const requestInput = useCallback((title: string, defaultValue?: string): Promise<string | null> => {
+    return new Promise((resolve) => {
+      setInputModal({
+        title,
+        defaultValue,
+        onSubmit: (v) => { setInputModal(null); resolve(v); },
+      });
+    });
+  }, []);
 
   const spaceDown = useRef(false);
 
@@ -954,6 +966,11 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       width: 300,
       height: 200,
     } as Omit<TextNode, 'id'>);
+    // Auto-enter edit mode on the newly created node
+    const newNode = useCanvasStore.getState().nodes.at(-1);
+    if (newNode) {
+      useCanvasStore.getState().setEditingNode(newNode.id);
+    }
   };
 
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -1084,6 +1101,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       <CanvasToolbar
         containerWidth={containerSize.width}
         containerHeight={containerSize.height}
+        requestInput={requestInput}
       />
       {contextMenu && (
         <CanvasContextMenu
@@ -1095,10 +1113,19 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
           worldY={contextMenu.worldY}
           vaultPath={vaultPath}
           onClose={() => setContextMenu(null)}
+          requestInput={requestInput}
         />
       )}
       {showSearch && (
         <CanvasSearch onClose={() => setShowSearch(false)} />
+      )}
+      {inputModal && (
+        <CanvasInputModal
+          title={inputModal.title}
+          defaultValue={inputModal.defaultValue}
+          onSubmit={inputModal.onSubmit}
+          onCancel={() => setInputModal(null)}
+        />
       )}
       {canvasShowMinimap && containerSize.width > 0 && (
         <CanvasMinimap

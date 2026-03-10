@@ -7,6 +7,7 @@ import { readFile, writeFile } from '../../../lib/tauri-commands';
 import { useCanvasCodeMirror } from './use-canvas-codemirror';
 import { fitNodeToContent } from '../canvas-fit-to-content';
 import type { ResizeCorner } from '../CanvasCards';
+import { ResizeHandles } from './ResizeHandle';
 
 interface FileCardProps {
   node: FileNode;
@@ -227,64 +228,7 @@ export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResi
         />
       )}
       {selected && !isEditing && onResizeMouseDown && (
-        <>
-          <div
-            style={{
-              position: 'absolute',
-              bottom: -4,
-              right: -4,
-              width: 8,
-              height: 8,
-              backgroundColor: 'var(--ctp-accent)',
-              borderRadius: 2,
-              cursor: 'nwse-resize',
-              zIndex: 10,
-            }}
-            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('br', e); }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              bottom: -4,
-              left: -4,
-              width: 8,
-              height: 8,
-              backgroundColor: 'var(--ctp-accent)',
-              borderRadius: 2,
-              cursor: 'nesw-resize',
-              zIndex: 10,
-            }}
-            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('bl', e); }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: -4,
-              right: -4,
-              width: 8,
-              height: 8,
-              backgroundColor: 'var(--ctp-accent)',
-              borderRadius: 2,
-              cursor: 'nesw-resize',
-              zIndex: 10,
-            }}
-            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('tr', e); }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: -4,
-              left: -4,
-              width: 8,
-              height: 8,
-              backgroundColor: 'var(--ctp-accent)',
-              borderRadius: 2,
-              cursor: 'nwse-resize',
-              zIndex: 10,
-            }}
-            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('tl', e); }}
-          />
-        </>
+        <ResizeHandles onResizeMouseDown={onResizeMouseDown} />
       )}
     </div>
   );

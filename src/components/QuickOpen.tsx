@@ -113,7 +113,8 @@ function renderFrontmatterPanel(props: Record<string, string | string[]>): React
   );
 }
 
-// Styled markdown preview renderer
+// Regex-based markdown preview renderer — intentionally avoids a full parser for performance.
+// This runs on every keystroke in QuickOpen, so speed matters more than completeness.
 function renderMarkdownPreview(text: string): React.ReactNode[] {
   const elements: React.ReactNode[] = [];
 

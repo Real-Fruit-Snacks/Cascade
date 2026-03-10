@@ -3,6 +3,14 @@ use std::path::PathBuf;
 
 use crate::error::CascadeError;
 
+#[derive(Debug, serde::Serialize, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportResult {
+    pub files_imported: u32,
+    pub files_skipped: u32,
+    pub errors: Vec<String>,
+}
+
 #[derive(serde::Serialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ObsidianConfig {
