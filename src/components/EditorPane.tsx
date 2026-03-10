@@ -9,6 +9,7 @@ const CanvasView = lazy(() => import('./canvas/CanvasView').then((m) => ({ defau
 import { useVaultStore } from '../stores/vault-store';
 import { useSettingsStore } from '../stores/settings-store';
 import { WelcomeView } from './WelcomeView';
+import { ErrorBoundary } from './ErrorBoundary';
 import { SkeletonLine } from './Skeleton';
 import { useShallow } from 'zustand/react/shallow';
 import { useCodeMirror } from '../editor/use-codemirror';
@@ -1175,9 +1176,11 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
       {/* Canvas view */}
       {activeFilePath && activeTabType === 'canvas' && vaultPath && !isFileLoading && (
         enableCanvas ? (
-          <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-6 h-6 border-2 border-[var(--ctp-surface2)] border-t-[var(--ctp-accent)] rounded-full animate-spin" /></div>}>
-            <CanvasView filePath={activeFilePath} vaultPath={vaultPath} />
-          </Suspense>
+          <ErrorBoundary name="canvas" fallback={<div className="flex items-center justify-center h-full p-4" style={{ color: 'var(--ctp-red)' }}>Canvas failed to load</div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-6 h-6 border-2 border-[var(--ctp-surface2)] border-t-[var(--ctp-accent)] rounded-full animate-spin" /></div>}>
+              <CanvasView filePath={activeFilePath} vaultPath={vaultPath} />
+            </Suspense>
+          </ErrorBoundary>
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: 'var(--ctp-overlay0)' }}>
             <LayoutGrid size={48} style={{ color: 'var(--ctp-surface2)' }} />
