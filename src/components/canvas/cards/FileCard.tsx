@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FileText, Image as ImageIcon, FileDown, Loader2 } from 'lucide-react';
 import { useCanvasStore } from '../../../stores/canvas-store';
 import { useEditorStore } from '../../../stores/editor-store';
 import { CANVAS_COLORS, type FileNode } from '../../../types/canvas';
-import { readFile } from '../../../lib/tauri-commands';
-import { useMarkdown } from './useMarkdown';
+import { readFile, writeFile } from '../../../lib/tauri-commands';
+import { useCanvasCodeMirror } from './use-canvas-codemirror';
 import type { ResizeCorner } from '../CanvasCards';
 
 interface FileCardProps {
@@ -21,14 +21,62 @@ const MARKDOWN_EXTS = new Set(['.md', '.markdown', '.mdx']);
 
 export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResizeMouseDown }: FileCardProps) {
   const selectNode = useCanvasStore((s) => s.selectNode);
-  const [preview, setPreview] = useState<string>('');
+  const editingNodeId = useCanvasStore((s) => s.editingNodeId);
+  const setEditingNode = useCanvasStore((s) => s.setEditingNode);
+  const [content, setContent] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const ext = node.file.slice(node.file.lastIndexOf('.')).toLowerCase();
   const isImage = IMAGE_EXTS.has(ext);
   const isPdf = ext === '.pdf';
   const isMarkdown = MARKDOWN_EXTS.has(ext);
+  const isEditing = editingNodeId === node.id;
 
+  // -- Debounced auto-save refs --
+  const pendingContentRef = useRef<string>(content);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushSave = useCallback(() => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    writeFile(vaultPath, node.file, pendingContentRef.current).catch(() => {
+      // silent — file-watcher will reconcile
+    });
+  }, [vaultPath, node.file]);
+
+  const handleContentChange = useCallback((newContent: string) => {
+    pendingContentRef.current = newContent;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
+      writeFile(vaultPath, node.file, pendingContentRef.current).catch(() => {});
+    }, 500);
+  }, [vaultPath, node.file]);
+
+  // Flush save when editing ends
+  const wasEditingRef = useRef(false);
+  useEffect(() => {
+    if (isEditing) {
+      wasEditingRef.current = true;
+    } else if (wasEditingRef.current) {
+      wasEditingRef.current = false;
+      flushSave();
+    }
+  }, [isEditing, flushSave]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  // -- Load file content --
   useEffect(() => {
     if (isImage || isPdf) {
       setLoading(false);
@@ -37,9 +85,10 @@ export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResi
     let cancelled = false;
     setLoading(true);
     setError(null);
-    readFile(vaultPath, node.file).then((content) => {
+    readFile(vaultPath, node.file).then((c) => {
       if (!cancelled) {
-        setPreview(content);
+        setContent(c);
+        pendingContentRef.current = c;
         setLoading(false);
       }
     }).catch(() => {
@@ -51,17 +100,36 @@ export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResi
     return () => { cancelled = true; };
   }, [node.file, vaultPath, isImage, isPdf]);
 
-  const markdownHtml = useMarkdown(isMarkdown ? preview : undefined);
+  // -- CM6 hook --
+  const { editorRef } = useCanvasCodeMirror({
+    content,
+    editing: isEditing && isMarkdown,
+    onContentChange: handleContentChange,
+  });
 
+  // -- Interaction handlers --
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isEditing) return; // let CM6 handle clicks
     selectNode(node.id, e.ctrlKey || e.metaKey);
-  }, [node.id, selectNode]);
+  }, [node.id, selectNode, isEditing]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    useEditorStore.getState().openFile(vaultPath, node.file, true);
-  }, [node.file, vaultPath]);
+    if (isMarkdown) {
+      setEditingNode(node.id);
+    } else {
+      useEditorStore.getState().openFile(vaultPath, node.file, true);
+    }
+  }, [node.id, node.file, vaultPath, isMarkdown, setEditingNode]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isEditing) {
+      e.stopPropagation();
+      return;
+    }
+    onMouseDown?.(e);
+  }, [isEditing, onMouseDown]);
 
   const fileName = node.file.split('/').pop() || node.file;
   const colorVar = node.color ? CANVAS_COLORS[node.color] : undefined;
@@ -85,11 +153,11 @@ export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResi
       }}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
-      onMouseDown={onMouseDown}
+      onMouseDown={handleMouseDown}
     >
       {/* Header */}
       <div
-        className="flex items-center gap-2 px-3 py-2 text-xs font-medium"
+        className="flex items-center gap-2 px-3 py-2 text-xs font-medium shrink-0"
         style={{
           backgroundColor: 'var(--ctp-mantle)',
           borderBottom: '1px solid var(--ctp-surface1)',
@@ -100,7 +168,7 @@ export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResi
         <span className="truncate">{fileName}</span>
       </div>
       {/* Body */}
-      <div className="flex-1 overflow-y-auto p-2" style={{ minHeight: 0 }}>
+      <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
         {loading ? (
           <div className="flex items-center justify-center h-full" style={{ color: 'var(--ctp-overlay0)' }}>
             <Loader2 size={18} className="animate-spin" />
@@ -116,18 +184,14 @@ export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResi
             className="w-full h-full object-contain"
           />
         ) : isMarkdown ? (
-          <div
-            className="canvas-markdown prose prose-sm text-sm"
-            style={{ color: 'var(--ctp-text)', wordBreak: 'break-word', overflow: 'hidden' }}
-            dangerouslySetInnerHTML={{ __html: markdownHtml }}
-          />
+          <div ref={editorRef} className="h-full" />
         ) : (
-          <pre className="text-xs h-full whitespace-pre-wrap" style={{ color: 'var(--ctp-text)' }}>
-            {preview}
+          <pre className="text-xs h-full whitespace-pre-wrap p-2 overflow-y-auto" style={{ color: 'var(--ctp-text)' }}>
+            {content}
           </pre>
         )}
       </div>
-      {selected && onResizeMouseDown && (
+      {selected && !isEditing && onResizeMouseDown && (
         <>
           <div
             style={{
