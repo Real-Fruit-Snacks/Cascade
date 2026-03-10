@@ -101,28 +101,63 @@ export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResi
   }, [node.file, vaultPath, isImage, isPdf]);
 
   // -- CM6 hook --
-  const { editorRef } = useCanvasCodeMirror({
+  const updateNode = useCanvasStore((s) => s.updateNode);
+  const { editorRef, viewRef } = useCanvasCodeMirror({
     content,
     editing: isEditing && isMarkdown,
     onContentChange: handleContentChange,
     onEscape: () => setEditingNode(null),
   });
 
+  // Double-click bottom edge to auto-fit card height to content
+  const handleAutoFitHeight = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const view = viewRef.current;
+    if (!view) return;
+    // Shrink to minimum so scrollHeight reflects true content overflow
+    updateNode(node.id, { height: 80 });
+    requestAnimationFrame(() => setTimeout(() => {
+      const applyFit = (pass: number) => {
+        const v = viewRef.current;
+        if (!v) return;
+        const cardEl = document.querySelector(`[data-node-id="${node.id}"]`);
+        const headerEl = cardEl?.querySelector('[data-card-header]') as HTMLElement | null;
+        const headerHeight = headerEl ? headerEl.offsetHeight : 36;
+        const borderOverhead = 4;
+        const newHeight = Math.round(Math.max(v.scrollDOM.scrollHeight + headerHeight + borderOverhead, 80));
+        const current = useCanvasStore.getState().nodes.find((n) => n.id === node.id);
+        if (!current || Math.abs(newHeight - current.height) <= 2) return;
+        updateNode(node.id, { height: newHeight });
+        if (pass < 2) {
+          requestAnimationFrame(() => setTimeout(() => applyFit(pass + 1), 50));
+        }
+      };
+      applyFit(1);
+    }, 50));
+  }, [node.id, updateNode, viewRef]);
+
   // -- Interaction handlers --
+  const canvasLocked = useCanvasStore((s) => s.canvasLocked);
+  const canvasTool = useCanvasStore((s) => s.canvasTool);
+
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    if (canvasTool === 'hand') return;
     if (isEditing) return; // let CM6 handle clicks
     selectNode(node.id, e.ctrlKey || e.metaKey);
-  }, [node.id, selectNode, isEditing]);
+  }, [node.id, selectNode, isEditing, canvasTool]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    if (canvasTool === 'hand') return;
+    if (canvasLocked || node.locked) return;
     if (isMarkdown) {
       setEditingNode(node.id);
     } else {
       useEditorStore.getState().openFile(vaultPath, node.file, true);
     }
-  }, [node.id, node.file, vaultPath, isMarkdown, setEditingNode]);
+  }, [node.id, node.file, node.locked, vaultPath, isMarkdown, setEditingNode, canvasLocked, canvasTool]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (isEditing) {
@@ -158,6 +193,7 @@ export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResi
     >
       {/* Header */}
       <div
+        data-card-header
         className="flex items-center gap-2 px-3 py-2 text-xs font-medium shrink-0"
         style={{
           backgroundColor: 'var(--ctp-mantle)',
@@ -192,6 +228,25 @@ export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResi
           </pre>
         )}
       </div>
+      {/* Block pointer events on card content when hand tool or locked */}
+      {(canvasTool === 'hand' || ((canvasLocked || node.locked) && !isEditing)) && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
+      )}
+      {/* Auto-fit height zone — double-click bottom edge */}
+      {isMarkdown && !loading && !error && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 8,
+            right: 8,
+            height: 6,
+            cursor: 'row-resize',
+            zIndex: 5,
+          }}
+          onDoubleClick={handleAutoFitHeight}
+        />
+      )}
       {selected && !isEditing && onResizeMouseDown && (
         <>
           <div

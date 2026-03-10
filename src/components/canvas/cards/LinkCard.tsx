@@ -15,12 +15,14 @@ interface LinkCardProps {
 
 export function LinkCard({ node, selected, style, onMouseDown, onResizeMouseDown }: LinkCardProps) {
   const selectNode = useCanvasStore((s) => s.selectNode);
+  const canvasTool = useCanvasStore((s) => s.canvasTool);
   const colorVar = node.color ? CANVAS_COLORS[node.color] : undefined;
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    if (canvasTool === 'hand') return;
     selectNode(node.id, e.ctrlKey || e.metaKey);
-  }, [node.id, selectNode]);
+  }, [node.id, selectNode, canvasTool]);
 
   let domain = '';
   try { domain = new URL(node.url).hostname; } catch { domain = node.url; }
@@ -45,7 +47,7 @@ export function LinkCard({ node, selected, style, onMouseDown, onResizeMouseDown
         cursor: 'default',
       }}
       onClick={handleClick}
-      onDoubleClick={() => openUrl(node.url).catch(() => window.open(node.url, '_blank'))}
+      onDoubleClick={() => { if (canvasTool !== 'hand') openUrl(node.url).catch(() => window.open(node.url, '_blank')); }}
       onMouseDown={onMouseDown}
     >
       <ExternalLink size={16} style={{ color: 'var(--ctp-accent)', flexShrink: 0 }} />

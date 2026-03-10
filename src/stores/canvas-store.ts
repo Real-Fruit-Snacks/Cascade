@@ -24,6 +24,8 @@ interface CanvasState {
   dragState: DragState;
   viewport: Viewport;
   editingNodeId: string | null;
+  canvasLocked: boolean;
+  canvasTool: 'select' | 'hand';
   isDirty: boolean;
   filePath: string | null;
   undoStack: CanvasData[];
@@ -50,6 +52,8 @@ interface CanvasActions {
   zoomToFit: () => void;
   setDragState: (state: Partial<DragState> & { type: DragType }) => void;
   setEditingNode: (id: string | null) => void;
+  setCanvasLocked: (locked: boolean) => void;
+  setCanvasTool: (tool: 'select' | 'hand') => void;
   pushUndo: () => void;
   undo: () => void;
   redo: () => void;
@@ -75,6 +79,8 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
   dragState: defaultDragState,
   viewport: defaultViewport,
   editingNodeId: null,
+  canvasLocked: true,
+  canvasTool: 'hand',
   isDirty: false,
   filePath: null,
   undoStack: [],
@@ -95,6 +101,8 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
       dragState: defaultDragState,
       viewport: defaultViewport,
       editingNodeId: null,
+      canvasLocked: true,
+      canvasTool: 'hand',
       isDirty: false,
       filePath,
       undoStack: [],
@@ -111,6 +119,8 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
       dragState: defaultDragState,
       viewport: defaultViewport,
       editingNodeId: null,
+      canvasLocked: true,
+      canvasTool: 'hand',
       isDirty: false,
       filePath: null,
       undoStack: [],
@@ -255,6 +265,14 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
 
   setEditingNode: (id) => {
     set({ editingNodeId: id });
+  },
+
+  setCanvasLocked: (locked) => {
+    set({ canvasLocked: locked, editingNodeId: null });
+  },
+
+  setCanvasTool: (tool) => {
+    set({ canvasTool: tool });
   },
 
   pushUndo: () => {

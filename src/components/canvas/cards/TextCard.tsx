@@ -63,28 +63,59 @@ export function TextCard({ node, selected, style, onMouseDown, onResizeMouseDown
   }, []);
 
   // -- CM6 hook --
-  const { editorRef } = useCanvasCodeMirror({
+  const { editorRef, viewRef } = useCanvasCodeMirror({
     content: node.text,
     editing: isEditing,
     onContentChange: handleContentChange,
     onEscape: () => setEditingNode(null),
   });
 
+  // Double-click bottom edge to auto-fit card height to content
+  const handleAutoFitHeight = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const view = viewRef.current;
+    if (!view) return;
+    // Shrink to minimum so scrollHeight reflects true content overflow
+    updateNode(node.id, { height: 60 });
+    requestAnimationFrame(() => setTimeout(() => {
+      const applyFit = (pass: number) => {
+        const v = viewRef.current;
+        if (!v) return;
+        const borderOverhead = 4;
+        const newHeight = Math.round(Math.max(v.scrollDOM.scrollHeight + borderOverhead, 60));
+        const current = useCanvasStore.getState().nodes.find((n) => n.id === node.id);
+        if (!current || Math.abs(newHeight - current.height) <= 2) return;
+        updateNode(node.id, { height: newHeight });
+        if (pass < 2) {
+          requestAnimationFrame(() => setTimeout(() => applyFit(pass + 1), 50));
+        }
+      };
+      applyFit(1);
+    }, 50));
+  }, [node.id, updateNode, viewRef]);
+
   // -- Interaction handlers --
+  const canvasLocked = useCanvasStore((s) => s.canvasLocked);
+  const canvasTool = useCanvasStore((s) => s.canvasTool);
+
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    if (canvasTool === 'hand') return;
     if (isEditing) return; // let CM6 handle clicks
-    if (selected) {
+    if (!canvasLocked && !node.locked && selected) {
       setEditingNode(node.id);
     } else {
       selectNode(node.id, e.ctrlKey || e.metaKey);
     }
-  }, [node.id, selectNode, setEditingNode, selected, isEditing]);
+  }, [node.id, selectNode, setEditingNode, selected, isEditing, canvasLocked, canvasTool]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    if (canvasTool === 'hand') return;
+    if (canvasLocked || node.locked) return;
     setEditingNode(node.id);
-  }, [node.id, setEditingNode]);
+  }, [node.id, node.locked, setEditingNode, canvasLocked, canvasTool]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (isEditing) {
@@ -115,6 +146,22 @@ export function TextCard({ node, selected, style, onMouseDown, onResizeMouseDown
       onMouseDown={handleMouseDown}
     >
       <div ref={editorRef} className="canvas-card-editor h-full" />
+      {(canvasTool === 'hand' || ((canvasLocked || node.locked) && !isEditing)) && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
+      )}
+      {/* Auto-fit height zone — double-click bottom edge */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 8,
+          right: 8,
+          height: 6,
+          cursor: 'row-resize',
+          zIndex: 5,
+        }}
+        onDoubleClick={handleAutoFitHeight}
+      />
       {node.locked && (
         <div
           style={{

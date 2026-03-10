@@ -13,11 +13,13 @@ interface GroupCardProps {
 
 export function GroupCard({ node, selected, style, onMouseDown, onResizeMouseDown }: GroupCardProps) {
   const selectNode = useCanvasStore((s) => s.selectNode);
+  const canvasTool = useCanvasStore((s) => s.canvasTool);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    if (canvasTool === 'hand') return;
     selectNode(node.id, e.ctrlKey || e.metaKey);
-  }, [node.id, selectNode]);
+  }, [node.id, selectNode, canvasTool]);
 
   return (
     <div

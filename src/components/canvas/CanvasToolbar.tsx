@@ -1,4 +1,4 @@
-import { Type, FileText, Link, Square, ZoomOut, ZoomIn, Maximize2, Code } from 'lucide-react';
+import { Type, FileText, Link, Square, ZoomOut, ZoomIn, Maximize2, Code, Lock, Pencil, Hand, MousePointer } from 'lucide-react';
 import { useCanvasStore } from '../../stores/canvas-store';
 import type { CanvasNode } from '../../types/canvas';
 
@@ -14,6 +14,10 @@ export function CanvasToolbar({ containerWidth, containerHeight }: CanvasToolbar
   const zoomToFit = useCanvasStore((s) => s.zoomToFit);
   const nodes = useCanvasStore((s) => s.nodes);
   const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
+  const canvasLocked = useCanvasStore((s) => s.canvasLocked);
+  const setCanvasLocked = useCanvasStore((s) => s.setCanvasLocked);
+  const canvasTool = useCanvasStore((s) => s.canvasTool);
+  const setCanvasTool = useCanvasStore((s) => s.setCanvasTool);
 
   const getCenter = (w: number, h: number) => {
     const cx = containerWidth / 2 / viewport.zoom - viewport.x;
@@ -98,25 +102,54 @@ export function CanvasToolbar({ containerWidth, containerHeight }: CanvasToolbar
       }}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <button className={btnClass} onClick={addText} title="Add text node">
-        <Type size={14} />
-        <span>Text</span>
+      <button
+        className={btnClass}
+        onClick={() => setCanvasLocked(!canvasLocked)}
+        title={canvasLocked ? 'Unlock canvas for editing' : 'Lock canvas (read-only)'}
+      >
+        {canvasLocked ? (
+          <Lock size={14} style={{ color: 'var(--ctp-red)' }} />
+        ) : (
+          <Pencil size={14} style={{ color: 'var(--ctp-green)' }} />
+        )}
       </button>
-      <button className={btnClass} onClick={addFile} title="Add file node">
-        <FileText size={14} />
-        <span>Note</span>
+
+      <button
+        className={btnClass}
+        onClick={() => setCanvasTool(canvasTool === 'hand' ? 'select' : 'hand')}
+        title={canvasTool === 'hand' ? 'Switch to select tool' : 'Switch to hand (pan) tool'}
+      >
+        {canvasTool === 'hand' ? (
+          <Hand size={14} />
+        ) : (
+          <MousePointer size={14} />
+        )}
       </button>
-      <button className={btnClass} onClick={addLink} title="Add link node">
-        <Link size={14} />
-        <span>Link</span>
+
+      <div
+        className="w-px mx-1 self-stretch"
+        style={{ backgroundColor: 'var(--ctp-surface1)' }}
+      />
+
+      <button className={btnClass} onClick={addText} title="Add text node" disabled={canvasLocked}>
+        <Type size={14} style={{ opacity: canvasLocked ? 0.4 : 1 }} />
+        <span style={{ opacity: canvasLocked ? 0.4 : 1 }}>Text</span>
       </button>
-      <button className={btnClass} onClick={addCode} title="Add code block">
-        <Code size={14} />
-        <span>Code</span>
+      <button className={btnClass} onClick={addFile} title="Add file node" disabled={canvasLocked}>
+        <FileText size={14} style={{ opacity: canvasLocked ? 0.4 : 1 }} />
+        <span style={{ opacity: canvasLocked ? 0.4 : 1 }}>Note</span>
       </button>
-      <button className={btnClass} onClick={addGroup} title="Add group">
-        <Square size={14} />
-        <span>Group</span>
+      <button className={btnClass} onClick={addLink} title="Add link node" disabled={canvasLocked}>
+        <Link size={14} style={{ opacity: canvasLocked ? 0.4 : 1 }} />
+        <span style={{ opacity: canvasLocked ? 0.4 : 1 }}>Link</span>
+      </button>
+      <button className={btnClass} onClick={addCode} title="Add code block" disabled={canvasLocked}>
+        <Code size={14} style={{ opacity: canvasLocked ? 0.4 : 1 }} />
+        <span style={{ opacity: canvasLocked ? 0.4 : 1 }}>Code</span>
+      </button>
+      <button className={btnClass} onClick={addGroup} title="Add group" disabled={canvasLocked}>
+        <Square size={14} style={{ opacity: canvasLocked ? 0.4 : 1 }} />
+        <span style={{ opacity: canvasLocked ? 0.4 : 1 }}>Group</span>
       </button>
 
       <div

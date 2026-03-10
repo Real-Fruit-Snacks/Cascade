@@ -63,26 +63,16 @@ export function CanvasContextMenu({
   onClose,
 }: CanvasContextMenuProps) {
   const store = useCanvasStore.getState();
+  const locked = store.canvasLocked;
 
   // --- Node context menu ---
   if (targetNodeId) {
     const node = store.nodes.find((n) => n.id === targetNodeId);
     if (!node) return null;
 
-    const colorItems = buildColorItems((code) => {
-      store.updateNode(targetNodeId, { color: code });
-    });
-
     const items: MenuItem[] = [];
 
-    if (node.type === 'text') {
-      items.push({
-        label: 'Edit',
-        icon: <Type size={14} />,
-        onClick: () => store.setEditingNode(targetNodeId),
-      });
-    }
-
+    // Read-only actions always available
     if (node.type === 'file') {
       items.push({
         label: 'Open in Tab',
@@ -93,57 +83,123 @@ export function CanvasContextMenu({
       });
     }
 
-    items.push({ label: '', separator: true, onClick: () => {} });
-
+    // Auto-fit height (works in locked or unlocked)
     items.push({
-      label: 'Color',
-      icon: <Palette size={14} />,
-      onClick: () => {},
-    });
-    items.push(...colorItems.map((item) => ({ ...item, label: '  ' + item.label })));
-
-    items.push({ label: '', separator: true, onClick: () => {} });
-
-    items.push({
-      label: 'Bring to Front',
-      icon: <ArrowUpToLine size={14} />,
-      onClick: () => store.bringToFront(targetNodeId),
-    });
-    items.push({
-      label: 'Send to Back',
-      icon: <ArrowDownToLine size={14} />,
-      onClick: () => store.sendToBack(targetNodeId),
-    });
-
-    items.push({ label: '', separator: true, onClick: () => {} });
-
-    items.push({
-      label: node.locked ? 'Unlock' : 'Lock',
-      icon: node.locked ? <Unlock size={14} /> : <Lock size={14} />,
-      onClick: () => store.toggleLock([targetNodeId]),
-    });
-
-    items.push({
-      label: 'Duplicate',
-      icon: <Copy size={14} />,
+      label: 'Fit to Content',
+      icon: <ZoomIn size={14} />,
       onClick: () => {
-        const { id: _id, ...rest } = node;
-        store.addNode({ ...rest, x: node.x + 20, y: node.y + 20 });
+        // CM6 uses virtual rendering — scrollHeight changes as more content
+        // becomes visible after resize. We measure, resize, wait for CM6 to
+        // re-render, then measure again to converge on the true height.
+        // Shrink to minimum first so scrollHeight reflects true content overflow,
+        // then expand to fit. Two-pass handles CM6 virtual rendering re-layout.
+        store.updateNode(targetNodeId, { height: 60 });
+        requestAnimationFrame(() => setTimeout(() => {
+          const measure = () => {
+            const cardEl = document.querySelector(`[data-node-id="${targetNodeId}"]`);
+            if (!cardEl) return null;
+            const cmScroller = cardEl.querySelector('.cm-scroller') as HTMLElement | null;
+            if (!cmScroller) return null;
+            const headerEl = cardEl.querySelector('[data-card-header]') as HTMLElement | null;
+            const headerHeight = headerEl ? headerEl.offsetHeight : 0;
+            const borderOverhead = 4;
+            return Math.round(Math.max(cmScroller.scrollHeight + headerHeight + borderOverhead, 60));
+          };
+
+          const applyFit = (pass: number) => {
+            const newHeight = measure();
+            if (newHeight === null) return;
+            const current = useCanvasStore.getState().nodes.find((n: any) => n.id === targetNodeId);
+            if (!current) return;
+            if (Math.abs(newHeight - current.height) > 2) {
+              store.updateNode(targetNodeId, { height: newHeight });
+              if (pass < 2) {
+                requestAnimationFrame(() => setTimeout(() => applyFit(pass + 1), 50));
+              }
+            }
+          };
+          applyFit(1);
+        }, 50));
       },
     });
 
-    items.push({
-      label: 'Delete',
-      icon: <Trash2 size={14} />,
-      danger: true,
-      onClick: () => store.removeNodes([targetNodeId]),
-    });
+    // Mutation actions only when unlocked
+    if (!locked) {
+      if (node.type === 'text') {
+        items.push({
+          label: 'Edit',
+          icon: <Type size={14} />,
+          onClick: () => store.setEditingNode(targetNodeId),
+        });
+      }
+
+      const colorItems = buildColorItems((code) => {
+        store.updateNode(targetNodeId, { color: code });
+      });
+
+      items.push({ label: '', separator: true, onClick: () => {} });
+
+      items.push({
+        label: 'Color',
+        icon: <Palette size={14} />,
+        onClick: () => {},
+      });
+      items.push(...colorItems.map((item) => ({ ...item, label: '  ' + item.label })));
+
+      items.push({ label: '', separator: true, onClick: () => {} });
+
+      items.push({
+        label: 'Bring to Front',
+        icon: <ArrowUpToLine size={14} />,
+        onClick: () => store.bringToFront(targetNodeId),
+      });
+      items.push({
+        label: 'Send to Back',
+        icon: <ArrowDownToLine size={14} />,
+        onClick: () => store.sendToBack(targetNodeId),
+      });
+
+      items.push({ label: '', separator: true, onClick: () => {} });
+
+      items.push({
+        label: node.locked ? 'Unlock' : 'Lock',
+        icon: node.locked ? <Unlock size={14} /> : <Lock size={14} />,
+        onClick: () => store.toggleLock([targetNodeId]),
+      });
+
+      items.push({
+        label: 'Duplicate',
+        icon: <Copy size={14} />,
+        onClick: () => {
+          const { id: _id, ...rest } = node;
+          store.addNode({ ...rest, x: node.x + 20, y: node.y + 20 });
+        },
+      });
+
+      items.push({
+        label: 'Delete',
+        icon: <Trash2 size={14} />,
+        danger: true,
+        onClick: () => store.removeNodes([targetNodeId]),
+      });
+    }
+
+    // If locked and no items (non-file node), show nothing useful — just close
+    if (items.length === 0) {
+      onClose();
+      return null;
+    }
 
     return <ContextMenu x={x} y={y} items={items} onClose={onClose} />;
   }
 
   // --- Edge context menu ---
   if (targetEdgeId) {
+    // When locked, no edge mutations allowed
+    if (locked) {
+      onClose();
+      return null;
+    }
     const edge = store.edges.find((e) => e.id === targetEdgeId);
     if (!edge) return null;
 
@@ -237,101 +293,117 @@ export function CanvasContextMenu({
   }
 
   // --- Canvas (empty area) context menu ---
-  const items: MenuItem[] = [
-    {
-      label: 'New Text Card',
-      icon: <Type size={14} />,
-      onClick: () => {
-        store.addNode({
-          type: 'text',
-          text: '',
-          x: worldX - 150,
-          y: worldY - 100,
-          width: 300,
-          height: 200,
-        } as Omit<TextNode, 'id'>);
-      },
-    },
-    {
-      label: 'New Code Block',
-      icon: <Code size={14} />,
-      onClick: () => {
-        store.addNode({
-          type: 'text',
-          text: '```\n\n```',
-          x: worldX - 150,
-          y: worldY - 100,
-          width: 300,
-          height: 200,
-        } as Omit<TextNode, 'id'>);
-      },
-    },
-    {
-      label: 'New Link Card',
-      icon: <Link size={14} />,
-      onClick: () => {
-        const url = prompt('URL:');
-        if (url) {
+  const items: MenuItem[] = [];
+
+  // Mutation items only when unlocked
+  if (!locked) {
+    items.push(
+      {
+        label: 'New Text Card',
+        icon: <Type size={14} />,
+        onClick: () => {
           store.addNode({
-            type: 'link',
-            url,
+            type: 'text',
+            text: '',
             x: worldX - 150,
-            y: worldY - 60,
+            y: worldY - 100,
             width: 300,
-            height: 120,
-          } as Omit<LinkNode, 'id'>);
-        }
+            height: 200,
+          } as Omit<TextNode, 'id'>);
+        },
       },
-    },
-    {
-      label: 'New Group',
-      icon: <Square size={14} />,
-      onClick: () => {
-        store.addNode({
-          type: 'group',
-          x: worldX - 150,
-          y: worldY - 100,
-          width: 400,
-          height: 300,
-        } as Omit<GroupNode, 'id'>);
+      {
+        label: 'New Code Block',
+        icon: <Code size={14} />,
+        onClick: () => {
+          store.addNode({
+            type: 'text',
+            text: '```\n\n```',
+            x: worldX - 150,
+            y: worldY - 100,
+            width: 300,
+            height: 200,
+          } as Omit<TextNode, 'id'>);
+        },
       },
-    },
-    { label: '', separator: true, onClick: () => {} },
+      {
+        label: 'New Link Card',
+        icon: <Link size={14} />,
+        onClick: () => {
+          const url = prompt('URL:');
+          if (url) {
+            store.addNode({
+              type: 'link',
+              url,
+              x: worldX - 150,
+              y: worldY - 60,
+              width: 300,
+              height: 120,
+            } as Omit<LinkNode, 'id'>);
+          }
+        },
+      },
+      {
+        label: 'New Group',
+        icon: <Square size={14} />,
+        onClick: () => {
+          store.addNode({
+            type: 'group',
+            x: worldX - 150,
+            y: worldY - 100,
+            width: 400,
+            height: 300,
+          } as Omit<GroupNode, 'id'>);
+        },
+      },
+      { label: '', separator: true, onClick: () => {} },
+    );
+  }
+
+  items.push(
     {
       label: 'Zoom to Fit',
       icon: <ZoomIn size={14} />,
       onClick: () => store.zoomToFit(),
     },
-    { label: '', separator: true, onClick: () => {} },
-    {
-      label: 'Auto Layout',
-      icon: <LayoutGrid size={14} />,
-      onClick: () => {},
-    },
-    {
-      label: '  Grid',
-      icon: <LayoutGrid size={14} />,
-      onClick: () => {
-        store.applyLayout((nodes) => gridLayout(nodes));
-        store.zoomToFit();
+  );
+
+  if (!locked) {
+    items.push(
+      { label: '', separator: true, onClick: () => {} },
+      {
+        label: 'Auto Layout',
+        icon: <LayoutGrid size={14} />,
+        onClick: () => {},
       },
-    },
-    {
-      label: '  Tree',
-      icon: <GitBranch size={14} />,
-      onClick: () => {
-        store.applyLayout((nodes, edges) => treeLayout(nodes, edges));
-        store.zoomToFit();
+      {
+        label: '  Grid',
+        icon: <LayoutGrid size={14} />,
+        onClick: () => {
+          store.applyLayout((nodes) => gridLayout(nodes));
+          store.zoomToFit();
+        },
       },
-    },
-    {
-      label: '  Force-Directed',
-      icon: <Waypoints size={14} />,
-      onClick: () => {
-        store.applyLayout((nodes, edges) => forceLayout(nodes, edges));
-        store.zoomToFit();
+      {
+        label: '  Tree',
+        icon: <GitBranch size={14} />,
+        onClick: () => {
+          store.applyLayout((nodes, edges) => treeLayout(nodes, edges));
+          store.zoomToFit();
+        },
       },
-    },
+      {
+        label: '  Force-Directed',
+        icon: <Waypoints size={14} />,
+        onClick: () => {
+          store.applyLayout((nodes, edges) => forceLayout(nodes, edges));
+          store.zoomToFit();
+        },
+      },
+    );
+  }
+
+  items.push(
     { label: '', separator: true, onClick: () => {} },
     {
       label: 'Export',
@@ -348,10 +420,10 @@ export function CanvasContextMenu({
       icon: <Download size={14} />,
       onClick: () => downloadExport('svg'),
     },
-  ];
+  );
 
-  // Add alignment/distribution items when multiple nodes are selected
-  if (store.selectedNodeIds.size > 1) {
+  // Add alignment/distribution items when multiple nodes are selected (unlocked only)
+  if (!locked && store.selectedNodeIds.size > 1) {
     items.push({ label: '', separator: true, onClick: () => {} });
     items.push({
       label: 'Align',
@@ -406,26 +478,28 @@ export function CanvasContextMenu({
     });
   }
 
-  items.push({ label: '', separator: true, onClick: () => {} });
-  items.push({
-    label: 'Clear All',
-    icon: <XCircle size={14} />,
-    danger: true,
-    onClick: () => {
-      const count = store.nodes.length + store.edges.length;
-      if (count === 0) return;
-      const confirmed = window.confirm(
-        `Delete all ${store.nodes.length} card${store.nodes.length !== 1 ? 's' : ''}${store.edges.length > 0 ? ` and ${store.edges.length} connection${store.edges.length !== 1 ? 's' : ''}` : ''}? This cannot be undone.`,
-      );
-      if (!confirmed) return;
-      const filePath = store.filePath;
-      store.clearCanvas();
-      // Re-set filePath so auto-save writes the empty canvas
-      if (filePath) {
-        store.loadCanvas(filePath, { nodes: [], edges: [] });
-      }
-    },
-  });
+  if (!locked) {
+    items.push({ label: '', separator: true, onClick: () => {} });
+    items.push({
+      label: 'Clear All',
+      icon: <XCircle size={14} />,
+      danger: true,
+      onClick: () => {
+        const count = store.nodes.length + store.edges.length;
+        if (count === 0) return;
+        const confirmed = window.confirm(
+          `Delete all ${store.nodes.length} card${store.nodes.length !== 1 ? 's' : ''}${store.edges.length > 0 ? ` and ${store.edges.length} connection${store.edges.length !== 1 ? 's' : ''}` : ''}? This cannot be undone.`,
+        );
+        if (!confirmed) return;
+        const filePath = store.filePath;
+        store.clearCanvas();
+        // Re-set filePath so auto-save writes the empty canvas
+        if (filePath) {
+          store.loadCanvas(filePath, { nodes: [], edges: [] });
+        }
+      },
+    });
+  }
 
   return <ContextMenu x={x} y={y} items={items} onClose={onClose} />;
 }

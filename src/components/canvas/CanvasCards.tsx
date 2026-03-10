@@ -149,6 +149,7 @@ export function CanvasCards({
 
         const wrapperProps = {
           style,
+          'data-node-id': node.id,
           onMouseEnter: () => setHoveredNodeId(node.id),
           onMouseLeave: () => setHoveredNodeId((prev) => (prev === node.id ? null : prev)),
           onContextMenu: (e: React.MouseEvent) => onCardContextMenu(node.id, e),

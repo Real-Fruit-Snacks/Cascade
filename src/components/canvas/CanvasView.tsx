@@ -145,6 +145,8 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   const viewport = useCanvasStore((s) => s.viewport);
   const setViewport = useCanvasStore((s) => s.setViewport);
   const clearSelection = useCanvasStore((s) => s.clearSelection);
+  const canvasLocked = useCanvasStore((s) => s.canvasLocked);
+  const canvasTool = useCanvasStore((s) => s.canvasTool);
 
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -264,6 +266,14 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
 
       const store = useCanvasStore.getState();
       const ctrl = e.ctrlKey || e.metaKey;
+
+      // When canvas is locked, only allow navigation (zoom, select, pan) — block mutations
+      if (store.canvasLocked) {
+        // Allow: Ctrl+A (select all), zoom shortcuts, Escape
+        if (e.key === 'Escape') { store.clearSelection(); return; }
+        if (ctrl && e.key === 'a') { store.selectAll(); e.preventDefault(); return; }
+        return; // Block everything else (delete, paste, cut, undo, redo)
+      }
 
       // Delete / Backspace — remove selected nodes and edges
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -471,6 +481,27 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
     if (e.button !== 0) return;
     e.stopPropagation();
 
+    // Hand tool — pan regardless of what's under cursor
+    if (canvasTool === 'hand') {
+      dragRef.current = {
+        mode: 'pan',
+        startX: e.clientX,
+        startY: e.clientY,
+        vpX: viewport.x,
+        vpY: viewport.y,
+      };
+      setDragMode('pan');
+      e.preventDefault();
+      return;
+    }
+
+    // When locked, allow selection but not dragging
+    if (canvasLocked) {
+      const store = useCanvasStore.getState();
+      store.selectNode(nodeId, e.ctrlKey || e.metaKey);
+      return;
+    }
+
     const store = useCanvasStore.getState();
 
     if (!store.selectedNodeIds.has(nodeId)) {
@@ -516,6 +547,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   // Resize initiated from a resize handle's mousedown
   const onResizeMouseDown = (nodeId: string, corner: ResizeCorner, e: React.MouseEvent) => {
     if (e.button !== 0) return;
+    if (canvasLocked) return;
     e.stopPropagation();
 
     const store = useCanvasStore.getState();
@@ -541,6 +573,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   // Connection handle mousedown — start drawing a new edge
   const onConnectMouseDown = (nodeId: string, side: EdgeSide, e: React.MouseEvent) => {
     if (e.button !== 0) return;
+    if (canvasLocked) return;
     e.stopPropagation();
 
     const rect = containerRef.current?.getBoundingClientRect();
@@ -610,8 +643,9 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     const isMiddle = e.button === 1;
     const isLeftWithSpace = e.button === 0 && spaceDown.current;
+    const isHandTool = e.button === 0 && canvasTool === 'hand';
 
-    if (isMiddle || isLeftWithSpace) {
+    if (isMiddle || isLeftWithSpace || isHandTool) {
       dragRef.current = {
         mode: 'pan',
         startX: e.clientX,
@@ -849,6 +883,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Only on empty canvas (direct target, not a card)
     if (e.target !== e.currentTarget) return;
+    if (canvasLocked) return;
     const rect = containerRef.current?.getBoundingClientRect();
     const sx = rect ? e.clientX - rect.left : e.clientX;
     const sy = rect ? e.clientY - rect.top : e.clientY;
@@ -918,14 +953,15 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
 
   // --- File drag-drop from sidebar ---
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    if (e.dataTransfer.types.includes('cascade/file-path')) {
+    if (e.dataTransfer.types.includes('text/plain') || e.dataTransfer.types.includes('cascade/file-path')) {
       e.preventDefault();
-      e.dataTransfer.dropEffect = 'link';
+      e.dataTransfer.dropEffect = 'move';
     }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    const file = e.dataTransfer.getData('cascade/file-path');
+    if (canvasLocked) return;
+    const file = e.dataTransfer.getData('cascade/file-path') || e.dataTransfer.getData('text/plain');
     if (!file) return;
     e.preventDefault();
 
@@ -947,7 +983,9 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   };
 
   const cursor =
-    dragMode === 'pan' || spaceDown.current
+    dragMode === 'pan'
+      ? 'grabbing'
+      : spaceDown.current || (canvasTool === 'hand' && dragMode === 'none')
       ? 'grab'
       : dragMode === 'move'
       ? 'grabbing'
