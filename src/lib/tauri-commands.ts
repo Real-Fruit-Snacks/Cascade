@@ -233,3 +233,42 @@ export function verifyPluginIntegrity(vaultRoot: string, pluginId: string): Prom
 export function extractPluginZip(vaultRoot: string, pluginId: string, data: number[]): Promise<void> {
   return invoke<void>('extract_plugin_zip', { vaultRoot, pluginId, data });
 }
+
+// ── Git Sync ──────────────────────────────────────────────────
+
+export interface SyncResult {
+  committed_files: string[];
+  conflicts: string[];
+  push_status: 'pushed' | 'nothing_to_push' | 'offline';
+}
+
+export interface GitStatus {
+  is_repo: boolean;
+  has_remote: boolean;
+  changed_files: number;
+  unpushed_commits: number;
+}
+
+export function gitTestConnection(remoteUrl: string, pat: string): Promise<void> {
+  return invoke<void>('git_test_connection', { remoteUrl, pat });
+}
+
+export function gitInitRepo(vaultPath: string, remoteUrl: string, pat: string): Promise<void> {
+  return invoke<void>('git_init_repo', { vaultPath, remoteUrl, pat });
+}
+
+export function gitCloneRepo(vaultPath: string, remoteUrl: string, pat: string): Promise<void> {
+  return invoke<void>('git_clone_repo', { vaultPath, remoteUrl, pat });
+}
+
+export function gitSync(vaultPath: string, pat: string): Promise<SyncResult> {
+  return invoke<SyncResult>('git_sync', { vaultPath, pat });
+}
+
+export function gitStatus(vaultPath: string): Promise<GitStatus> {
+  return invoke<GitStatus>('git_status', { vaultPath });
+}
+
+export function gitDisconnect(vaultPath: string): Promise<void> {
+  return invoke<void>('git_disconnect', { vaultPath });
+}
