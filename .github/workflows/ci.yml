@@ -44,9 +44,6 @@ jobs:
           - platform: macos-latest
             rust-targets: "aarch64-apple-darwin"
             args: "--target aarch64-apple-darwin"
-          - platform: macos-latest
-            rust-targets: "x86_64-apple-darwin"
-            args: "--target x86_64-apple-darwin"
           - platform: windows-latest
             rust-targets: ""
             args: ""
@@ -78,7 +75,9 @@ jobs:
             librsvg2-dev \
             patchelf \
             libssl-dev \
-            libdbus-1-dev
+            libdbus-1-dev \
+            pkg-config \
+            cmake
 
       - run: npm ci
 

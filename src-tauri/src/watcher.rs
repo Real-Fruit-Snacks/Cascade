@@ -4,12 +4,12 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use notify::RecommendedWatcher;
-use notify_debouncer_full::{new_debouncer, DebounceEventResult, Debouncer, FileIdMap};
+use notify_debouncer_full::{new_debouncer, DebounceEventResult, Debouncer, RecommendedCache};
 use tauri::{AppHandle, Emitter, Manager};
 
 use crate::types::{FileEntry, FsChangeEvent};
 
-pub struct WatcherState(pub Mutex<Option<Debouncer<RecommendedWatcher, FileIdMap>>>);
+pub struct WatcherState(pub Mutex<Option<Debouncer<RecommendedWatcher, RecommendedCache>>>);
 /// Per-file suppress map: only suppresses watcher events for files the app recently wrote,
 /// instead of globally dropping all events for 1 second.
 pub struct SuppressTimestamp(pub Mutex<HashMap<PathBuf, Instant>>);
