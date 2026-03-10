@@ -9,17 +9,7 @@ import * as cmd from '../lib/tauri-commands';
 import { fuzzyMatch } from '../lib/fuzzy-match';
 
 const MAX_PREVIEW_LINES = 30;
-
-// Simple LRU cache for file previews to avoid redundant IPC calls
-const previewCache = new Map<string, string>();
 const PREVIEW_CACHE_MAX = 10;
-function cachePreview(path: string, text: string) {
-  if (previewCache.size >= PREVIEW_CACHE_MAX) {
-    const oldest = previewCache.keys().next().value!;
-    previewCache.delete(oldest);
-  }
-  previewCache.set(path, text);
-}
 
 // Parse YAML frontmatter into key-value pairs
 function parseFrontmatter(text: string): { props: Record<string, string | string[]>; bodyStart: number } | null {
@@ -608,6 +598,16 @@ export function QuickOpen({ open, mode = 'open', onClose, onInsertLink }: QuickO
   const dialogRef = useRef<HTMLDivElement>(null);
   const trapKeyDown = useFocusTrap(dialogRef, open);
 
+  // LRU cache scoped to component lifecycle
+  const previewCache = useRef(new Map<string, string>());
+  const cachePreview = useCallback((path: string, text: string) => {
+    if (previewCache.current.size >= PREVIEW_CACHE_MAX) {
+      const oldest = previewCache.current.keys().next().value!;
+      previewCache.current.delete(oldest);
+    }
+    previewCache.current.set(path, text);
+  }, []);
+
   const flatFiles = useVaultStore((s) => s.flatFiles);
   const vaultPath = useVaultStore((s) => s.vaultPath);
   const openFile = useEditorStore((s) => s.openFile);
@@ -653,7 +653,7 @@ export function QuickOpen({ open, mode = 'open', onClose, onInsertLink }: QuickO
   // Reset state when opened
   useEffect(() => {
     if (open) {
-      previewCache.clear();
+      previewCache.current.clear();
       setQuery('');
       setSelectedIndex(0);
       setPreview('');
@@ -673,7 +673,7 @@ export function QuickOpen({ open, mode = 'open', onClose, onInsertLink }: QuickO
     if (!selectedFile || !vaultPath || selectedFile === previewPath) return;
 
     // Check cache first to avoid redundant IPC calls
-    const cached = previewCache.get(selectedFile);
+    const cached = previewCache.current.get(selectedFile);
     if (cached !== undefined) {
       setPreview(cached);
       setPreviewPath(selectedFile);
