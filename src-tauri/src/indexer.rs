@@ -9,7 +9,7 @@ use walkdir::WalkDir;
 use crate::error::CascadeError;
 use crate::fts::{self, FtsState};
 
-static INLINE_TAG_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?:^|\s)#([a-zA-Z][\w\-/]*)").unwrap());
+pub static INLINE_TAG_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?:^|\s)#([a-zA-Z][\w\-/]*)").unwrap());
 static WIKI_LINK_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]").unwrap());
 pub static FRONTMATTER_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)\A---\r?\n(.*?)\r?\n---").unwrap());
 static FM_INLINE_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?m)^(?:tags|categories|keywords)\s*:\s*\[([^\]]*)\]").unwrap());
@@ -150,9 +150,7 @@ pub fn build_index(vault_root: String, fts_state: State<'_, FtsState>) -> Result
             continue;
         }
         let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("md") {
-            continue;
-        }
+        let ext = path.extension().and_then(|e| e.to_str());
 
         let rel_path = path
             .strip_prefix(&root)
@@ -164,6 +162,33 @@ pub fn build_index(vault_root: String, fts_state: State<'_, FtsState>) -> Result
             Ok(c) => c,
             Err(_) => continue,
         };
+
+        // Handle .canvas files — extract file node references as backlinks
+        if ext == Some("canvas") {
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Some(nodes) = json.get("nodes").and_then(|n| n.as_array()) {
+                    for node in nodes {
+                        if node.get("type").and_then(|t| t.as_str()) == Some("file") {
+                            if let Some(file_ref) = node.get("file").and_then(|f| f.as_str()) {
+                                let target = file_ref
+                                    .to_lowercase()
+                                    .trim_end_matches(".md")
+                                    .to_string();
+                                backlink_index
+                                    .entry(target)
+                                    .or_default()
+                                    .push(rel_path.clone());
+                            }
+                        }
+                    }
+                }
+            }
+            continue;
+        }
+
+        if ext != Some("md") {
+            continue;
+        }
 
         fts_entries.push((rel_path.clone(), content.clone()));
 
@@ -231,54 +256,6 @@ pub fn build_index(vault_root: String, fts_state: State<'_, FtsState>) -> Result
                 .entry(target)
                 .or_default()
                 .push(rel_path.clone());
-        }
-    }
-
-    // --- Also scan .canvas files for backlinks (file nodes reference other files) ---
-    for entry in WalkDir::new(&root)
-        .follow_links(false)
-        .into_iter()
-        .filter_entry(|e| !e.file_name().to_string_lossy().starts_with('.'))
-        .filter_map(|e| e.ok())
-    {
-        if !entry.file_type().is_file() {
-            continue;
-        }
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("canvas") {
-            continue;
-        }
-
-        let rel_path = path
-            .strip_prefix(&root)
-            .unwrap_or(path)
-            .to_string_lossy()
-            .replace('\\', "/");
-
-        let content = match std::fs::read_to_string(path) {
-            Ok(c) => c,
-            Err(_) => continue,
-        };
-
-        // Parse canvas JSON and extract file node references
-        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
-            if let Some(nodes) = json.get("nodes").and_then(|n| n.as_array()) {
-                for node in nodes {
-                    if node.get("type").and_then(|t| t.as_str()) == Some("file") {
-                        if let Some(file_ref) = node.get("file").and_then(|f| f.as_str()) {
-                            // Normalize the referenced file path as backlink target
-                            let target = file_ref
-                                .to_lowercase()
-                                .trim_end_matches(".md")
-                                .to_string();
-                            backlink_index
-                                .entry(target)
-                                .or_default()
-                                .push(rel_path.clone());
-                        }
-                    }
-                }
-            }
         }
     }
 

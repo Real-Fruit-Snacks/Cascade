@@ -104,7 +104,7 @@ pub fn start_watcher(app_handle: AppHandle, vault_path: String) {
     // Drop old watcher first
     {
         let watcher_state = app_handle.state::<WatcherState>();
-        let mut guard = watcher_state.0.lock().unwrap();
+        let mut guard = watcher_state.0.lock().unwrap_or_else(|e| e.into_inner());
         *guard = None;
     }
 
@@ -123,7 +123,7 @@ pub fn start_watcher(app_handle: AppHandle, vault_path: String) {
             // Clean up expired entries from per-file suppress map
             {
                 let suppress_state = app_handle_clone.state::<SuppressTimestamp>();
-                let mut guard = suppress_state.0.lock().unwrap();
+                let mut guard = suppress_state.0.lock().unwrap_or_else(|e| e.into_inner());
                 guard.retain(|_, ts| ts.elapsed() < Duration::from_secs(2));
             }
 
@@ -176,7 +176,7 @@ pub fn start_watcher(app_handle: AppHandle, vault_path: String) {
                         // Per-file suppress: skip events for files the app recently wrote
                         {
                             let suppress_state = app_handle_clone.state::<SuppressTimestamp>();
-                            let guard = suppress_state.0.lock().unwrap();
+                            let guard = suppress_state.0.lock().unwrap_or_else(|e| e.into_inner());
                             if let Some(ts) = guard.get(path) {
                                 if ts.elapsed() < Duration::from_secs(1) {
                                     continue;
@@ -262,7 +262,7 @@ pub fn start_watcher(app_handle: AppHandle, vault_path: String) {
         let watch_result = d.watch(&vault_root, notify::RecursiveMode::Recursive);
         if watch_result.is_ok() {
             let watcher_state = app_handle.state::<WatcherState>();
-            let mut guard = watcher_state.0.lock().unwrap();
+            let mut guard = watcher_state.0.lock().unwrap_or_else(|e| e.into_inner());
             *guard = Some(d);
         }
     }

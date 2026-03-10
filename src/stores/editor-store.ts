@@ -101,6 +101,8 @@ interface EditorDerived {
   isDirty: boolean;
 }
 
+const FILE_SIZE_LIMIT = 5 * 1024 * 1024; // 5 MB
+
 let openFileSeq = 0;
 
 /** Apply auto-TOC update to a tab's content before saving. Returns the (possibly updated) tab. */
@@ -304,7 +306,6 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
       const text = await cmd.readFile(vaultRoot, path);
       if (seq !== openFileSeq) return;
       // Warn and abort for very large files (>5MB) to prevent UI freeze
-      const FILE_SIZE_LIMIT = 5 * 1024 * 1024;
       if (text.length > FILE_SIZE_LIMIT) {
         set({ isFileLoading: false });
         const sizeMB = (text.length / (1024 * 1024)).toFixed(1);
@@ -720,7 +721,6 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
     } else {
       try {
         const text = await cmd.readFile(vaultRoot, path);
-        const FILE_SIZE_LIMIT = 5 * 1024 * 1024;
         if (text.length > FILE_SIZE_LIMIT) {
           useToastStore.getState().addToast(`File is too large to open`, 'warning');
           return;

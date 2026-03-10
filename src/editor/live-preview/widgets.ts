@@ -55,6 +55,10 @@ export class TableWidget extends WidgetType {
   }
   eq(other: TableWidget) {
     if (this.headers.length !== other.headers.length || this.rows.length !== other.rows.length) return false;
+    if (this.alignments.length !== other.alignments.length) return false;
+    for (let i = 0; i < this.alignments.length; i++) {
+      if (this.alignments[i] !== other.alignments[i]) return false;
+    }
     for (let i = 0; i < this.headers.length; i++) {
       if (this.headers[i] !== other.headers[i]) return false;
     }
@@ -117,7 +121,7 @@ export class ImageWidget extends WidgetType {
     super();
   }
   eq(other: ImageWidget) {
-    return this.src === other.src && this.from === other.from && this.to === other.to;
+    return this.src === other.src && this.alt === other.alt && this.rawUrl === other.rawUrl && this.from === other.from && this.to === other.to;
   }
   toDOM(view: EditorView) {
     const wrapper = document.createElement('div');
@@ -246,11 +250,16 @@ export class CalloutHeaderWidget extends WidgetType {
     const wrapper = document.createElement('span');
     wrapper.className = `cm-callout-header cm-callout-${this.colorClass}`;
 
+    const iconEl = document.createElement('span');
+    iconEl.className = 'cm-callout-icon';
+    iconEl.textContent = this.icon;
+    wrapper.appendChild(iconEl);
+
     const titleEl = document.createElement('span');
     titleEl.className = 'cm-callout-title';
     titleEl.textContent = this.title;
-
     wrapper.appendChild(titleEl);
+
     return wrapper;
   }
 }

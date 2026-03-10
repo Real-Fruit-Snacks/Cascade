@@ -794,7 +794,11 @@ pub fn list_file_history(
     vault_root_state: tauri::State<VaultRoot>,
 ) -> Result<Vec<HistoryEntry>, CascadeError> {
     let canonical_root = get_canonical_root(&vault_root, &vault_root_state)?;
+    // Validate path to prevent traversal out of history directory
     let sanitized = path.replace('\\', "/");
+    if sanitized.contains("..") || sanitized.starts_with('/') {
+        return Err(CascadeError::InvalidPath("invalid history path".to_string()));
+    }
     let history_dir = canonical_root.join(".cascade").join("history").join(&sanitized);
     if !history_dir.is_dir() {
         return Ok(vec![]);
@@ -850,7 +854,9 @@ pub fn compute_plugin_checksums(
     for entry in walkdir::WalkDir::new(&plugin_dir).into_iter().filter_map(|e| e.ok()) {
         if entry.file_type().is_file() {
             let path = entry.path();
-            let rel = path.strip_prefix(&plugin_dir).unwrap().to_string_lossy().replace('\\', "/");
+            let rel = path.strip_prefix(&plugin_dir)
+                .map_err(|_| CascadeError::InvalidPath("path outside plugin dir".to_string()))?
+                .to_string_lossy().replace('\\', "/");
             if rel == ".integrity.json" {
                 continue;
             }
@@ -878,14 +884,16 @@ pub fn write_integrity_file(
         .join(".integrity.json");
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap()
+        .unwrap_or_default()
         .as_secs();
     let data = serde_json::json!({
         "installedFrom": installed_from,
         "installedAt": now,
         "files": checksums
     });
-    fs::write(&integrity_path, serde_json::to_string_pretty(&data).unwrap())?;
+    let json = serde_json::to_string_pretty(&data)
+        .map_err(|e| CascadeError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+    fs::write(&integrity_path, json)?;
     Ok(())
 }
 
@@ -1011,7 +1019,7 @@ pub fn extract_plugin_zip(
     for i in 0..archive.len() {
         let mut file = archive.by_index(i)?;
         let name = file.name().to_string();
-        if name.contains("..") {
+        if name.contains("..") || name.starts_with('/') || name.starts_with('\\') {
             continue; // path traversal prevention
         }
         let dest = plugin_dir.join(&name);

@@ -4,10 +4,7 @@ use std::path::PathBuf;
 use walkdir::WalkDir;
 
 use crate::error::CascadeError;
-use crate::indexer::{parse_frontmatter_properties, PropertyValue, FRONTMATTER_RE};
-
-static INLINE_TAG_RE: std::sync::LazyLock<regex::Regex> =
-    std::sync::LazyLock::new(|| regex::Regex::new(r"(?:^|\s)#([a-zA-Z][\w\-/]*)").unwrap());
+use crate::indexer::{parse_frontmatter_properties, PropertyValue, FRONTMATTER_RE, INLINE_TAG_RE};
 
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]

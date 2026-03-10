@@ -2,6 +2,7 @@ import type { EditorState } from '@codemirror/state';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { useVaultStore } from '../../stores/vault-store';
 import { useEditorStore } from '../../stores/editor-store';
+import { cursorLineField } from '../cursor-line';
 import type { CalloutInfo } from './types';
 
 // ── Image helpers ──────────────────────────────────────────
@@ -367,8 +368,7 @@ export function renderMarkdownPreview(md: string): string {
 // ── General helpers ────────────────────────────────────────
 
 export function cursorOnLines(state: EditorState, from: number, to: number): boolean {
-  const head = state.selection.main.head;
-  const cursorLine = state.doc.lineAt(head).number;
+  const cursorLine = state.field(cursorLineField);
   const lineFrom = state.doc.lineAt(from).number;
   const lineTo = state.doc.lineAt(to).number;
   return cursorLine >= lineFrom && cursorLine <= lineTo;
