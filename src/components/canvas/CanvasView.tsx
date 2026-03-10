@@ -5,6 +5,7 @@ import type { CanvasData, EdgeSide, CanvasNode, TextNode } from '../../types/can
 import { CanvasBackground, type ConnectDragState } from './CanvasBackground';
 import { CanvasCards, type ResizeCorner } from './CanvasCards';
 import { CanvasToolbar } from './CanvasToolbar';
+import { CanvasContextMenu } from './CanvasContextMenu';
 
 interface CanvasViewProps {
   filePath: string;
@@ -157,6 +158,17 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
 
   // Connect drag state for live canvas preview — updated via setState so canvas redraws
   const [connectDrag, setConnectDrag] = useState<ConnectDragState | null>(null);
+
+  // Context menu state
+  interface ContextMenuState {
+    x: number;
+    y: number;
+    targetNodeId?: string;
+    targetEdgeId?: string;
+    worldX: number;
+    worldY: number;
+  }
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
   const spaceDown = useRef(false);
 
@@ -695,6 +707,46 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
     } as Omit<TextNode, 'id'>);
   };
 
+  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const rect = containerRef.current?.getBoundingClientRect();
+    const sx = rect ? e.clientX - rect.left : e.clientX;
+    const sy = rect ? e.clientY - rect.top : e.clientY;
+    const { zoom, x, y } = viewport;
+    const wx = sx / zoom - x;
+    const wy = sy / zoom - y;
+
+    // Check edge hit first (before node, since edges are below cards in z-order)
+    const edgeId = hitTestEdge(sx, sy);
+
+    // Check node hit
+    const { nodes } = useCanvasStore.getState();
+    const hitNode = [...nodes].reverse().find(
+      (n) => wx >= n.x && wx <= n.x + n.width && wy >= n.y && wy <= n.y + n.height,
+    );
+
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      targetNodeId: hitNode?.id,
+      targetEdgeId: hitNode ? undefined : edgeId ?? undefined,
+      worldX: wx,
+      worldY: wy,
+    });
+  };
+
+  const onCardContextMenu = (nodeId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      targetNodeId: nodeId,
+      worldX: 0,
+      worldY: 0,
+    });
+  };
+
   const handleMouseLeave = () => {
     if (dragRef.current.mode === 'connect') {
       setConnectDrag(null);
@@ -722,6 +774,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
       onDoubleClick={handleDoubleClick}
+      onContextMenu={handleContextMenu}
     >
       {containerSize.width > 0 && (
         <CanvasBackground
@@ -737,11 +790,24 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
         onCardMouseDown={onCardMouseDown}
         onResizeMouseDown={onResizeMouseDown}
         onConnectMouseDown={onConnectMouseDown}
+        onCardContextMenu={onCardContextMenu}
       />
       <CanvasToolbar
         containerWidth={containerSize.width}
         containerHeight={containerSize.height}
       />
+      {contextMenu && (
+        <CanvasContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          targetNodeId={contextMenu.targetNodeId}
+          targetEdgeId={contextMenu.targetEdgeId}
+          worldX={contextMenu.worldX}
+          worldY={contextMenu.worldY}
+          vaultPath={vaultPath}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 }

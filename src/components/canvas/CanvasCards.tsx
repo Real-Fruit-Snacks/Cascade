@@ -15,6 +15,7 @@ interface CanvasCardsProps {
   onCardMouseDown: (nodeId: string, e: React.MouseEvent) => void;
   onResizeMouseDown: (nodeId: string, corner: ResizeCorner, e: React.MouseEvent) => void;
   onConnectMouseDown: (nodeId: string, side: EdgeSide, e: React.MouseEvent) => void;
+  onCardContextMenu: (nodeId: string, e: React.MouseEvent) => void;
 }
 
 const HANDLE_SIDES: EdgeSide[] = ['top', 'right', 'bottom', 'left'];
@@ -47,6 +48,7 @@ export function CanvasCards({
   onCardMouseDown,
   onResizeMouseDown,
   onConnectMouseDown,
+  onCardContextMenu,
 }: CanvasCardsProps) {
   const nodes = useCanvasStore((s) => s.nodes);
   const viewport = useCanvasStore((s) => s.viewport);
@@ -114,6 +116,7 @@ export function CanvasCards({
           style,
           onMouseEnter: () => setHoveredNodeId(node.id),
           onMouseLeave: () => setHoveredNodeId((prev) => (prev === node.id ? null : prev)),
+          onContextMenu: (e: React.MouseEvent) => onCardContextMenu(node.id, e),
         };
 
         switch (node.type) {
