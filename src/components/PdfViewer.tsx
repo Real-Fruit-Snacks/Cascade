@@ -32,6 +32,8 @@ export function PdfViewer({ filePath, vaultPath }: PdfViewerProps) {
   const renderedPages = useRef<Set<string>>(new Set());
   const pageInputRef = useRef<HTMLInputElement>(null);
   const [pageInput, setPageInput] = useState('1');
+  const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set([1, 2]));
+  const pageObserver = useRef<IntersectionObserver | null>(null);
 
   const normalized = vaultPath.replace(/\\/g, '/');
   const rel = filePath.replace(/\\/g, '/');
@@ -83,6 +85,33 @@ export function PdfViewer({ filePath, vaultPath }: PdfViewerProps) {
       }
     };
   }, [src]);
+
+  // IntersectionObserver to track which page placeholders are near the viewport
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    pageObserver.current = new IntersectionObserver(
+      (entries) => {
+        setVisiblePages((prev) => {
+          const next = new Set(prev);
+          for (const entry of entries) {
+            const pageNum = Number((entry.target as HTMLElement).dataset.page);
+            if (entry.isIntersecting) next.add(pageNum);
+            else next.delete(pageNum);
+          }
+          // Add 1-page buffer above and below
+          const expanded = new Set(next);
+          for (const p of next) {
+            if (p > 1) expanded.add(p - 1);
+            if (p < totalPages) expanded.add(p + 1);
+          }
+          return expanded;
+        });
+      },
+      { root: container, rootMargin: '200px 0px' },
+    );
+    return () => { pageObserver.current?.disconnect(); };
+  }, [totalPages]);
 
   // Render a single page to its canvas
   const renderPage = useCallback(async (pageNum: number) => {
@@ -329,18 +358,25 @@ export function PdfViewer({ filePath, vaultPath }: PdfViewerProps) {
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
             <div
               key={pageNum}
+              data-page={pageNum}
+              ref={(el) => {
+                if (el) pageObserver.current?.observe(el);
+              }}
               className="shadow-lg"
               style={{
                 backgroundColor: '#fff',
                 lineHeight: 0,
+                minHeight: 400,
               }}
             >
-              <canvas
-                ref={(el) => {
-                  if (el) canvasRefs.current.set(pageNum, el);
-                  else canvasRefs.current.delete(pageNum);
-                }}
-              />
+              {visiblePages.has(pageNum) && (
+                <canvas
+                  ref={(el) => {
+                    if (el) canvasRefs.current.set(pageNum, el);
+                    else canvasRefs.current.delete(pageNum);
+                  }}
+                />
+              )}
             </div>
           ))}
         </div>
