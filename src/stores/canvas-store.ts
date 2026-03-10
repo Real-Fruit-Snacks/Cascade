@@ -38,7 +38,7 @@ interface CanvasActions {
   clearCanvas: () => void;
   setContainerSize: (size: { width: number; height: number }) => void;
   addNode: (node: Omit<CanvasNode, 'id'> & { id?: string }, skipUndo?: boolean) => void;
-  updateNode: (id: string, updates: Partial<CanvasNode>) => void;
+  updateNode: (id: string, updates: Partial<CanvasNode>, skipUndo?: boolean) => void;
   removeNodes: (ids: string[]) => void;
   addEdge: (edge: Omit<CanvasEdge, 'id'> & { id?: string }) => void;
   updateEdge: (id: string, updates: Partial<CanvasEdge>) => void;
@@ -135,8 +135,8 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
     set((s) => ({ nodes: [...s.nodes, newNode], isDirty: true }));
   },
 
-  updateNode: (id, updates) => {
-    get().pushUndo();
+  updateNode: (id, updates, skipUndo = false) => {
+    if (!skipUndo) get().pushUndo();
     set((s) => ({
       nodes: s.nodes.map((n) => (n.id === id ? { ...n, ...updates } as CanvasNode : n)),
       isDirty: true,

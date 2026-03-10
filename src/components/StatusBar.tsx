@@ -36,7 +36,9 @@ const sharedEditorSub = {
     const d = sharedEditorSub.dom;
     if (!d) return;
     cancelAnimationFrame(sharedEditorSub.rafId);
+    sharedEditorSub.rafId = 0;
     clearTimeout(sharedEditorSub.timerId);
+    sharedEditorSub.timerId = 0;
     d.removeEventListener('keyup', sharedEditorSub.notify);
     d.removeEventListener('mouseup', sharedEditorSub.notify);
     d.removeEventListener('click', sharedEditorSub.notify);

@@ -233,7 +233,7 @@ export function AppShell() {
       }
     });
     return () => { unlisten.then((fn) => fn()); };
-  }, []);
+  }, [t]);
 
   // R1: Consolidated cascade:* event listeners
   useEffect(() => {
@@ -291,7 +291,7 @@ export function AppShell() {
     ];
     for (const [evt, fn] of events) window.addEventListener(evt, fn);
     return () => { for (const [evt, fn] of events) window.removeEventListener(evt, fn); };
-  }, []);
+  }, [t]);
 
   // Variables commands
   useEffect(() => {
@@ -529,7 +529,7 @@ export function AppShell() {
       window.removeEventListener('cascade:variables-copy-selection', handleCopySelectionReplaced);
       window.removeEventListener('cascade:variables-replace-selection', handleReplaceSelection);
     };
-  }, []);
+  }, [t]);
 
   const closeNewFileModal = useCallback(() => {
     setNewFileModalVisible(false);
@@ -545,7 +545,7 @@ export function AppShell() {
       const fileName = path.replace(/\\/g, '/').split('/').pop() ?? path;
       useToastStore.getState().addToast(t('common:failedToCreateFile', { fileName }), 'error');
     });
-  }, []);
+  }, [t]);
 
   const closeNewCanvasModal = useCallback(() => {
     setNewCanvasModalVisible(false);
@@ -564,7 +564,7 @@ export function AppShell() {
       const fileName = canvasPath.replace(/\\/g, '/').split('/').pop() ?? canvasPath;
       useToastStore.getState().addToast(t('common:failedToCreateFile', { fileName }), 'error');
     });
-  }, []);
+  }, [t]);
 
   // Listen for link-picker requests from the editor
   useEffect(() => {
@@ -594,7 +594,7 @@ export function AppShell() {
       view.dispatch({ changes: { from: 0, to: doc.length, insert: newDoc } });
       useToastStore.getState().addToast(t('common:setVariable', { name: setVarModal.name, value }), 'success');
     }
-  }, [setVarModal]);
+  }, [setVarModal, t]);
 
   const handleListVarSave = useCallback(async (name: string, value: string) => {
     const view = useEditorStore.getState().editorViewRef.current;
@@ -625,7 +625,7 @@ export function AppShell() {
     const body = updatedDoc.slice(fm?.bodyStart ?? 0);
     setListVarsModal(scanDocumentVariables(body, frontmatter, opts));
     useToastStore.getState().addToast(t('common:setVariable', { name, value }), 'success');
-  }, []);
+  }, [t]);
 
   const focusModeActive = useEditorStore((s) => s.focusModeActive);
 

@@ -175,7 +175,7 @@ export function FilePropertiesDialog({ open, onClose }: FilePropertiesDialogProp
               color: 'var(--ctp-base)',
             }}
           >
-            Close
+            {t('common:close')}
           </button>
         </div>
       </div>

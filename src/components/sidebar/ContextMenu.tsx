@@ -28,7 +28,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
     };
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'End') {
         e.preventDefault();
         const buttons = Array.from(
           ref.current?.querySelectorAll<HTMLButtonElement>('button[role="menuitem"]') ?? [],
@@ -36,7 +36,11 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
         if (buttons.length === 0) return;
         const focused = document.activeElement as HTMLButtonElement;
         const idx = buttons.indexOf(focused);
-        if (e.key === 'ArrowDown') {
+        if (e.key === 'Home') {
+          buttons[0].focus();
+        } else if (e.key === 'End') {
+          buttons[buttons.length - 1].focus();
+        } else if (e.key === 'ArrowDown') {
           buttons[(idx + 1) % buttons.length].focus();
         } else {
           buttons[(idx - 1 + buttons.length) % buttons.length].focus();

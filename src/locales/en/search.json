@@ -24,7 +24,8 @@
     "titleAll": "Replace in all files (Ctrl+Enter)",
     "success": "Replaced {{replacements}} in {{files}} file",
     "success_plural": "Replaced {{replacements}} in {{files}} files",
-    "failed": "Replace failed"
+    "failed": "Replace failed",
+    "confirmAll": "Replace in {{files}} file(s)? This cannot be undone."
   },
   "preview": {
     "matchCount_one": "{{count}} match",

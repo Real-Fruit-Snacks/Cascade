@@ -105,6 +105,34 @@ const FILE_SIZE_LIMIT = 5 * 1024 * 1024; // 5 MB
 
 let openFileSeq = 0;
 
+/**
+ * Shared save logic used by both saveFile and savePaneFile.
+ * Handles: TOC update, writeFile, error toast, creating updated tab, clearing dirty path/draft, updating indices.
+ * Returns the updated tab on success, or null on failure.
+ */
+async function performSave(
+  tab: Tab,
+  editorView: EditorView | null,
+  vaultRoot: string,
+): Promise<Tab | null> {
+  const updated = await applyTocUpdate(tab, editorView);
+
+  try {
+    await cmd.writeFile(vaultRoot, updated.path, updated.content);
+  } catch (e) {
+    console.error('Failed to save file:', updated.path, e);
+    const fileName = updated.path.replace(/\\/g, '/').split('/').pop() ?? updated.path;
+    useToastStore.getState().addToast(`Failed to save "${fileName}"`, 'error');
+    return null;
+  }
+
+  clearDraft(updated.path);
+  useVaultStore.getState().updateFileTags(updated.path, updated.content);
+  useVaultStore.getState().updateFileLinks(updated.path, updated.content);
+
+  return { ...updated, savedContent: updated.content, isDirty: false };
+}
+
 /** Apply auto-TOC update to a tab's content before saving. Returns the (possibly updated) tab. */
 async function applyTocUpdate(tab: Tab, editorView: EditorView | null): Promise<Tab> {
   const settings = useSettingsStore.getState();
@@ -544,30 +572,19 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
   saveFile: async (vaultRoot: string) => {
     const { tabs, activeTabIndex } = get();
     if (activeTabIndex === -1) return;
-    let tab = tabs[activeTabIndex];
+    const tab = tabs[activeTabIndex];
     if (!tab) return;
     // Skip save for non-markdown tabs (images, PDFs)
     if (tab.type && tab.type !== 'markdown') return;
 
-    tab = await applyTocUpdate(tab, get().editorViewRef.current);
+    const updated = await performSave(tab, get().editorViewRef.current, vaultRoot);
+    if (!updated) return;
 
-    try {
-      await cmd.writeFile(vaultRoot, tab.path, tab.content);
-    } catch (e) {
-      console.error('Failed to save file:', tab.path, e);
-      const fileName = tab.path.replace(/\\/g, '/').split('/').pop() ?? tab.path;
-      useToastStore.getState().addToast(`Failed to save "${fileName}"`, 'error');
-      return;
-    }
-    const updated: Tab = { ...tab, savedContent: tab.content, isDirty: false };
     const newTabs = tabs.map((t, i) => (i === activeTabIndex ? updated : t));
     const dirtyPaths = new Set(get().dirtyPaths);
     dirtyPaths.delete(tab.path);
     set({ tabs: newTabs, justSaved: true, dirtyPaths, ...derived(newTabs, activeTabIndex) });
     setTimeout(() => set({ justSaved: false }), 1500);
-    clearDraft(tab.path);
-    useVaultStore.getState().updateFileTags(tab.path, tab.content);
-    useVaultStore.getState().updateFileLinks(tab.path, tab.content);
   },
 
   handleExternalChange: async (vaultRoot: string, relPath: string) => {
@@ -834,21 +851,13 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
     if (paneIndex < 0 || paneIndex >= panes.length) return;
     const pane = panes[paneIndex];
     if (pane.activeTabIndex === -1) return;
-    let tab = pane.tabs[pane.activeTabIndex];
+    const tab = pane.tabs[pane.activeTabIndex];
     if (!tab) return;
     if (tab.type && tab.type !== 'markdown') return;
 
-    tab = await applyTocUpdate(tab, pane.editorViewRef.current);
+    const updated = await performSave(tab, pane.editorViewRef.current, vaultRoot);
+    if (!updated) return;
 
-    try {
-      await cmd.writeFile(vaultRoot, tab.path, tab.content);
-    } catch (e) {
-      console.error('Failed to save file:', tab.path, e);
-      const fileName = tab.path.replace(/\\/g, '/').split('/').pop() ?? tab.path;
-      useToastStore.getState().addToast(`Failed to save "${fileName}"`, 'error');
-      return;
-    }
-    const updated: Tab = { ...tab, savedContent: tab.content, isDirty: false };
     // Re-read panes after async
     const currentPanes = get().panes;
     if (paneIndex >= currentPanes.length) return;
@@ -860,9 +869,6 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
       i === paneIndex ? { ...p, tabs: newTabs } : p
     );
     set({ panes: newPanes, dirtyPaths });
-    clearDraft(tab.path);
-    useVaultStore.getState().updateFileTags(tab.path, tab.content);
-    useVaultStore.getState().updateFileLinks(tab.path, tab.content);
   },
 
   setPaneEditorView: (paneIndex: number, view: EditorView | null) => {
@@ -911,7 +917,8 @@ function getDrafts(): Record<string, string> {
 }
 
 function saveDrafts() {
-  const { tabs, panes } = useEditorStore.getState();
+  const { tabs, panes, dirtyPaths } = useEditorStore.getState();
+  if (dirtyPaths.size === 0) return;
   const drafts = getDrafts();
   let changed = false;
 

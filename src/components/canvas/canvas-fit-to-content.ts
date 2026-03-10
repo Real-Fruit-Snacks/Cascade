@@ -10,7 +10,9 @@ import { useCanvasStore } from '../../stores/canvas-store';
  */
 export function fitNodeToContent(nodeId: string, minHeight = 60) {
   const store = useCanvasStore.getState();
-  store.updateNode(nodeId, { height: minHeight });
+  // Push undo once before any mutations so the entire fit operation is a single undo step
+  store.pushUndo();
+  store.updateNode(nodeId, { height: minHeight }, true);
 
   requestAnimationFrame(() => setTimeout(() => {
     const applyFit = (pass: number) => {
@@ -27,7 +29,7 @@ export function fitNodeToContent(nodeId: string, minHeight = 60) {
       ));
       const current = useCanvasStore.getState().nodes.find((n) => n.id === nodeId);
       if (!current || Math.abs(newHeight - current.height) <= 2) return;
-      useCanvasStore.getState().updateNode(nodeId, { height: newHeight });
+      useCanvasStore.getState().updateNode(nodeId, { height: newHeight }, true);
       if (pass < 2) {
         requestAnimationFrame(() => setTimeout(() => applyFit(pass + 1), 50));
       }

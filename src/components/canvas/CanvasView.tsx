@@ -24,6 +24,7 @@ interface MoveDragRef {
   startX: number;
   startY: number;
   origPositions: Map<string, { x: number; y: number }>;
+  undoPushed: boolean;
 }
 
 interface ResizeDragRef {
@@ -410,18 +411,32 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
         return;
       }
 
-      // Ctrl+= or Ctrl++ — zoom in
+      // Ctrl+= or Ctrl++ — zoom in (anchored to screen center)
       if (ctrl && (e.key === '=' || e.key === '+')) {
         const vp = store.viewport;
-        store.setViewport({ zoom: Math.min(4, vp.zoom * 1.25) });
+        const cs = store.containerSize;
+        const oldZoom = vp.zoom;
+        const newZoom = Math.min(4, oldZoom * 1.25);
+        const cx = cs.width / 2;
+        const cy = cs.height / 2;
+        const wx = cx / oldZoom - vp.x;
+        const wy = cy / oldZoom - vp.y;
+        store.setViewport({ x: cx / newZoom - wx, y: cy / newZoom - wy, zoom: newZoom });
         e.preventDefault();
         return;
       }
 
-      // Ctrl+- — zoom out
+      // Ctrl+- — zoom out (anchored to screen center)
       if (ctrl && e.key === '-') {
         const vp = store.viewport;
-        store.setViewport({ zoom: Math.max(0.25, vp.zoom * 0.8) });
+        const cs = store.containerSize;
+        const oldZoom = vp.zoom;
+        const newZoom = Math.max(0.25, oldZoom * 0.8);
+        const cx = cs.width / 2;
+        const cy = cs.height / 2;
+        const wx = cx / oldZoom - vp.x;
+        const wy = cy / oldZoom - vp.y;
+        store.setViewport({ x: cx / newZoom - wx, y: cy / newZoom - wy, zoom: newZoom });
         e.preventDefault();
         return;
       }
@@ -436,7 +451,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       }
 
       // Arrow keys — nudge selected nodes
-      const nudge = e.shiftKey ? 1 : 20;
+      const nudge = e.shiftKey ? 20 : 1;
       let dx = 0;
       let dy = 0;
       if (e.key === 'ArrowLeft')  dx = -nudge;
@@ -528,8 +543,6 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       store.selectNode(nodeId, false);
     }
 
-    store.pushUndo();
-
     const selectedIds = useCanvasStore.getState().selectedNodeIds;
     const nodes = useCanvasStore.getState().nodes;
     const origPositions = new Map<string, { x: number; y: number }>();
@@ -560,6 +573,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       startX: e.clientX,
       startY: e.clientY,
       origPositions,
+      undoPushed: false,
     };
     setDragMode('move');
   };
@@ -726,6 +740,12 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       const zoom = useCanvasStore.getState().viewport.zoom;
       const dx = (e.clientX - drag.startX) / zoom;
       const dy = (e.clientY - drag.startY) / zoom;
+
+      // Push undo only once on the first actual movement
+      if (!drag.undoPushed) {
+        useCanvasStore.getState().pushUndo();
+        drag.undoPushed = true;
+      }
 
       useCanvasStore.setState((s) => ({
         nodes: s.nodes.map((n) => {

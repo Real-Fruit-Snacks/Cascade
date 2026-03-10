@@ -63,8 +63,10 @@ export function resolveImageSrc(rawUrl: string): string | null {
 
 /** Parse a markdown table row into cells (splits on | and trims outer pipes). */
 export function parseTableRow(line: string): string[] {
-  const trimmed = line.replace(/^\|/, '').replace(/\|$/, '');
-  return trimmed.split('|');
+  const ESCAPED_PIPE = '\x00PIPE\x00';
+  const escaped = line.replace(/\\\|/g, ESCAPED_PIPE);
+  const trimmed = escaped.replace(/^\|/, '').replace(/\|$/, '');
+  return trimmed.split('|').map((cell) => cell.replaceAll(ESCAPED_PIPE, '\\|'));
 }
 
 /** Parse alignment from delimiter row (e.g. |:---|:---:|---:| ). */

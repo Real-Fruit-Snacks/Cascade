@@ -327,6 +327,13 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
           : [];
       if (filePaths.length === 0) return;
 
+      if (allFiles && filePaths.length > 1) {
+        const confirmed = window.confirm(
+          t('replace.confirmAll', { files: filePaths.length })
+        );
+        if (!confirmed) return;
+      }
+
       try {
         const result: ReplaceResult = await cmd.replaceInFiles(
           vaultPath,

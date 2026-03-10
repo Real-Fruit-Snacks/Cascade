@@ -7,7 +7,6 @@ import { VariablesIcon } from './icons/VariablesIcon';
 import { useSettingsStore, DEFAULTS, type Settings, type FileSortOrder, type StartupBehavior, type AccentColor, type AttachmentLocation, type FolderColorStyle, type IndentGuideStyle } from '../stores/settings-store';
 import { usePluginStore, type PluginEntry } from '../stores/plugin-store';
 import { useVaultStore } from '../stores/vault-store';
-import { useShallow } from 'zustand/react/shallow';
 import { commandRegistry } from '../lib/command-registry';
 import { useFocusTrap } from '../hooks/use-focus-trap';
 import { flavorLabels, registerCustomTheme, unregisterCustomTheme, type CustomTheme, type FlavorColors } from '../styles/catppuccin-flavors';
@@ -134,7 +133,7 @@ interface SettingsModalProps {
 export function SettingsModal({ open, onClose }: SettingsModalProps) {
   const { t: ts } = useTranslation('settings');
   const { shouldRender, isClosing } = useCloseAnimation(open);
-  const settings = useSettingsStore(useShallow((s) => s));
+  const settings = useSettingsStore();
   const [category, setCategory] = useState<SettingsCategory | string>('editor');
   const settingsTabs = usePluginStore((s) => s.settingsTabs);
   const [intervalValue, setIntervalValue] = useState(String(settings.autoSaveInterval / 1000));

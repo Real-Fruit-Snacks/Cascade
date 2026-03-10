@@ -28,7 +28,7 @@ interface PluginState {
 
 interface PluginActions {
   discoverPlugins: (vaultRoot: string) => Promise<void>;
-  enablePlugin: (id: string) => Promise<void>;
+  enablePlugin: (id: string) => void;
   disablePlugin: (id: string) => Promise<void>;
   loadPlugin: (id: string, vaultRoot: string) => Promise<void>;
   unloadPlugin: (id: string) => Promise<void>;
@@ -97,7 +97,7 @@ export const usePluginStore = create<PluginState & PluginActions>((set, get) => 
     }
   },
 
-  enablePlugin: async (id: string) => {
+  enablePlugin: (id: string) => {
     const { plugins } = get();
     const entry = plugins.get(id);
     if (!entry) return;

@@ -4,6 +4,8 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { useVaultStore } from '../stores/vault-store';
 import { flavors } from '../styles/catppuccin-flavors';
 
+const mod = navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl';
+
 export function OnboardingScreen() {
   const recentVaults = useVaultStore((s) => s.recentVaults);
   const openVault = useVaultStore((s) => s.openVault);
@@ -142,9 +144,9 @@ export function OnboardingScreen() {
         className="flex items-center gap-6 mt-12 text-xs"
         style={{ color: 'var(--ctp-overlay0)' }}
       >
-        <span><kbd style={{ fontFamily: 'monospace' }}>Ctrl+O</kbd> Open vault</span>
-        <span><kbd style={{ fontFamily: 'monospace' }}>Ctrl+N</kbd> New file</span>
-        <span><kbd style={{ fontFamily: 'monospace' }}>Ctrl+P</kbd> Command palette</span>
+        <span><kbd style={{ fontFamily: 'monospace' }}>{`${mod}+O`}</kbd> Open vault</span>
+        <span><kbd style={{ fontFamily: 'monospace' }}>{`${mod}+N`}</kbd> New file</span>
+        <span><kbd style={{ fontFamily: 'monospace' }}>{`${mod}+P`}</kbd> Command palette</span>
       </div>
     </div>
   );

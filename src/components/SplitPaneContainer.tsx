@@ -97,6 +97,32 @@ export function SplitPaneContainer() {
       {/* Draggable divider */}
       <div
         onMouseDown={handleMouseDown}
+        tabIndex={0}
+        role="separator"
+        aria-orientation={isVertical ? 'horizontal' : 'vertical'}
+        aria-valuenow={Math.round(ratio)}
+        aria-valuemin={MIN_PANE_PERCENT}
+        aria-valuemax={100 - MIN_PANE_PERCENT}
+        onKeyDown={(e) => {
+          const step = e.shiftKey ? 5 : 1;
+          if (isVertical) {
+            if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setRatio((r) => Math.max(MIN_PANE_PERCENT, r - step));
+            } else if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setRatio((r) => Math.min(100 - MIN_PANE_PERCENT, r + step));
+            }
+          } else {
+            if (e.key === 'ArrowLeft') {
+              e.preventDefault();
+              setRatio((r) => Math.max(MIN_PANE_PERCENT, r - step));
+            } else if (e.key === 'ArrowRight') {
+              e.preventDefault();
+              setRatio((r) => Math.min(100 - MIN_PANE_PERCENT, r + step));
+            }
+          }
+        }}
         style={{
           [isVertical ? 'height' : 'width']: DIVIDER_SIZE,
           [isVertical ? 'width' : 'height']: '100%',

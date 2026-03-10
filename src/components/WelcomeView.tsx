@@ -35,6 +35,8 @@ function buildModifiedMap(tree: FileEntry[], map: Map<string, number> = new Map(
   return map;
 }
 
+const mod = navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl';
+
 export function WelcomeView() {
   const { t } = useTranslation('editor');
   const recentFiles = useEditorStore((s) => s.recentFiles);
@@ -260,7 +262,7 @@ export function WelcomeView() {
               className="text-xs px-1.5 py-0.5 rounded font-mono"
               style={{ backgroundColor: 'var(--ctp-surface1)', color: 'var(--ctp-subtext1)' }}
             >
-              Ctrl+O
+              {`${mod}+O`}
             </kbd>
             <span className="text-xs" style={{ color: 'var(--ctp-overlay1)' }}>{t('welcomeView.openFile')}</span>
           </div>
@@ -269,7 +271,7 @@ export function WelcomeView() {
               className="text-xs px-1.5 py-0.5 rounded font-mono"
               style={{ backgroundColor: 'var(--ctp-surface1)', color: 'var(--ctp-subtext1)' }}
             >
-              Ctrl+N
+              {`${mod}+N`}
             </kbd>
             <span className="text-xs" style={{ color: 'var(--ctp-overlay1)' }}>{t('welcomeView.newFile')}</span>
           </div>
@@ -278,7 +280,7 @@ export function WelcomeView() {
               className="text-xs px-1.5 py-0.5 rounded font-mono"
               style={{ backgroundColor: 'var(--ctp-surface1)', color: 'var(--ctp-subtext1)' }}
             >
-              Ctrl+P
+              {`${mod}+P`}
             </kbd>
             <span className="text-xs" style={{ color: 'var(--ctp-overlay1)' }}>{t('welcomeView.commandPalette')}</span>
           </div>
