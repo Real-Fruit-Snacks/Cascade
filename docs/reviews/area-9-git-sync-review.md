@@ -14,20 +14,20 @@
 - [x] Fixed: `signature()` called `.unwrap()` which could panic — changed to return `Result` with proper error propagation via `?` at all 4 call sites
 - [x] Fixed: fetch error silently swallowed via `.is_err()` — now uses `if let Err(e)` and logs the actual error with `eprintln!`
 - [x] Fixed: push error discarded the error message (`Err(_) => "offline"`) — now logs the error before returning offline status
-- [ ] Deferred: `ensure_gitignore` silently ignores write errors (`let _ = fs::write(...)`) — low-risk since it only runs on first init
-- [ ] Deferred: conflict resolution always keeps "our" side and writes `.conflict.md` for "their" side — works but users have no merge UI to compare/resolve properly
+- [ ] [deferred] `ensure_gitignore` silently ignores write errors (`let _ = fs::write(...)`) — low-risk since it only runs on first init
+- [ ] [deferred] conflict resolution always keeps "our" side and writes `.conflict.md` for "their" side — works but users have no merge UI to compare/resolve properly
 
 ### Sync Store (sync-store.ts)
 
 - [x] Fixed: `refreshStatus()` could overwrite `syncStatus` during an active sync (race condition) — added guard to skip if status is `'syncing'`
 - [x] Fixed: error message matching only checked for `'auth'` — expanded to also detect `'401'`, `'403'`, `'404'`, and `'not found'` patterns with more actionable toast messages
-- [ ] Deferred: `unpushedCommits` tracking when offline is approximate (increments by 1 per sync cycle with changes) — should call `refreshStatus` after reconnecting to get accurate count from git revwalk
+- [ ] [deferred] `unpushedCommits` tracking when offline is approximate — should call `refreshStatus` after reconnecting
 
 ### Sync Status Indicator (SyncStatusIndicator.tsx)
 
 - [x] Fixed: clickable indicator had no keyboard accessibility — added `role="button"`, `tabIndex={0}`, `aria-label`, and `onKeyDown` handler for Enter/Space
 - [x] Fixed: non-clickable states had no semantic role — added `role="status"` for screen readers
-- [ ] Deferred: `formatAgo` function is duplicated in both `SyncStatusIndicator.tsx` and `SettingsModal.tsx` `SyncOptionsPage` — should extract to shared utility
+- [ ] [deferred] `formatAgo` function duplicated in SyncStatusIndicator.tsx and SettingsModal.tsx — should extract to shared utility
 
 ### Auto-Sync Timer (use-sync-timer.ts)
 
