@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { X, Pin, FolderOpen, FileText, Pencil, Code, BookOpen, ChevronRight, Share2, Scissors, Copy, ClipboardPaste, MousePointerClick, Replace, CopyCheck, FileOutput, MoreVertical, Settings, Info, ChevronDown, Image as ImageIcon, BookPlus, EyeOff, SpellCheck } from 'lucide-react';
+import { X, Pin, FolderOpen, FileText, Pencil, Code, BookOpen, ChevronRight, Share2, Scissors, Copy, ClipboardPaste, MousePointerClick, Replace, CopyCheck, FileOutput, MoreVertical, Settings, Info, ChevronDown, Image as ImageIcon, BookPlus, EyeOff, SpellCheck, LayoutGrid } from 'lucide-react';
 import { FilePropertiesDialog } from './FilePropertiesDialog';
 import { ask } from '@tauri-apps/plugin-dialog';
 import { useEditorStore, getTabType } from '../stores/editor-store';
@@ -149,6 +149,7 @@ export function EditorPane() {
   const setViewMode = useEditorStore((s) => s.setViewMode);
   const enableStatusBar = useSettingsStore((s) => s.enableStatusBar);
   const showWelcomeView = useSettingsStore((s) => s.showWelcomeView);
+  const enableCanvas = useSettingsStore((s) => s.enableCanvas);
   const vaultPath = useVaultStore((s) => s.vaultPath);
   const focusModeActive = useEditorStore((s) => s.focusModeActive);
   const focusModeDimParagraphs = useSettingsStore((s) => s.focusModeDimParagraphs);
@@ -1120,9 +1121,23 @@ export function EditorPane() {
 
       {/* Canvas view */}
       {activeFilePath && activeTabType === 'canvas' && vaultPath && !isFileLoading && (
-        <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-6 h-6 border-2 border-[var(--ctp-surface2)] border-t-[var(--ctp-accent)] rounded-full animate-spin" /></div>}>
-          <CanvasView filePath={activeFilePath} vaultPath={vaultPath} />
-        </Suspense>
+        enableCanvas ? (
+          <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-6 h-6 border-2 border-[var(--ctp-surface2)] border-t-[var(--ctp-accent)] rounded-full animate-spin" /></div>}>
+            <CanvasView filePath={activeFilePath} vaultPath={vaultPath} />
+          </Suspense>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: 'var(--ctp-overlay0)' }}>
+            <LayoutGrid size={48} style={{ color: 'var(--ctp-surface2)' }} />
+            <p className="text-sm">Canvas is disabled</p>
+            <button
+              className="text-xs px-3 py-1.5 rounded"
+              style={{ backgroundColor: 'var(--ctp-surface1)', color: 'var(--ctp-text)' }}
+              onClick={() => useSettingsStore.getState().update({ enableCanvas: true })}
+            >
+              Enable in Settings
+            </button>
+          </div>
+        )
       )}
 
       {/* Plugin custom views */}

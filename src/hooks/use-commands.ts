@@ -24,6 +24,7 @@ export function useCommands(options: {
   const enableTags = useSettingsStore((s) => s.enableTags);
   const enableBacklinks = useSettingsStore((s) => s.enableBacklinks);
   const enableOutline = useSettingsStore((s) => s.enableOutline);
+  const enableCanvas = useSettingsStore((s) => s.enableCanvas);
 
   useEffect(() => {
     const unregFns: Array<() => void> = [];
@@ -47,9 +48,11 @@ export function useCommands(options: {
       window.dispatchEvent(new Event('cascade:new-file'));
     });
 
-    reg('file.new-canvas', i18n.t('commands:labels.newCanvas'), '', () => {
-      window.dispatchEvent(new Event('cascade:new-canvas'));
-    });
+    if (enableCanvas) {
+      reg('file.new-canvas', i18n.t('commands:labels.newCanvas'), '', () => {
+        window.dispatchEvent(new Event('cascade:new-canvas'));
+      });
+    }
 
     reg('file.save', i18n.t('commands:labels.save'), 'Ctrl+S', () => {
       const vaultPath = useVaultStore.getState().vaultPath;
@@ -314,5 +317,5 @@ export function useCommands(options: {
     return () => {
       unregFns.forEach((fn) => fn());
     };
-  }, [openCommandPalette, openQuickOpen, toggleSidebar, openSettings, customKeybindings, enableSearch, enableTableOfContents, enableDailyNotes, enableVariables, enableFocusMode, enableBookmarks, enableTags, enableBacklinks, enableOutline]);
+  }, [openCommandPalette, openQuickOpen, toggleSidebar, openSettings, customKeybindings, enableSearch, enableTableOfContents, enableDailyNotes, enableVariables, enableFocusMode, enableBookmarks, enableTags, enableBacklinks, enableOutline, enableCanvas]);
 }

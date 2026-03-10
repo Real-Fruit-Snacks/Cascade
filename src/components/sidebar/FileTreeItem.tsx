@@ -413,7 +413,7 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
   const menuItems: MenuItem[] = entry.isDir
     ? [
         { label: t('contextMenu.newFile'), icon: <FilePlus size={12} />, onClick: () => setNewFileModal(true) },
-        { label: t('contextMenu.newCanvas'), icon: <LayoutGrid size={12} />, onClick: () => setNewCanvasModal(true) },
+        ...(useSettingsStore.getState().enableCanvas ? [{ label: t('contextMenu.newCanvas'), icon: <LayoutGrid size={12} />, onClick: () => setNewCanvasModal(true) }] : []),
         { label: t('contextMenu.newFolder'), icon: <FolderPlus size={12} />, onClick: () => setNewFolderModal(true) },
         { label: t('contextMenu.rename'), icon: <Pencil size={12} />, onClick: startRename },
         { label: t('contextMenu.moveTo'), icon: <FolderInput size={12} />, onClick: () => setMoveModalOpen(true) },
@@ -442,7 +442,7 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
         { label: t('contextMenu.rename'), icon: <Pencil size={12} />, onClick: startRename },
         { label: t('contextMenu.moveTo'), icon: <FolderInput size={12} />, onClick: () => setMoveModalOpen(true) },
         { label: t('contextMenu.newFileHere'), icon: <FilePlus size={12} />, onClick: () => setNewFileModal(true) },
-        { label: t('contextMenu.newCanvasHere'), icon: <LayoutGrid size={12} />, onClick: () => setNewCanvasModal(true) },
+        ...(useSettingsStore.getState().enableCanvas ? [{ label: t('contextMenu.newCanvasHere'), icon: <LayoutGrid size={12} />, onClick: () => setNewCanvasModal(true) }] : []),
         { label: '', icon: undefined, separator: true, onClick: () => {} },
         { label: t('contextMenu.copyPath'), icon: <Copy size={12} />, onClick: () => navigator.clipboard.writeText(entry.path) },
         { label: t('contextMenu.revealInExplorer'), icon: <ExternalLink size={12} />, onClick: () => { if (vaultPath) revealItemInDir(`${vaultPath}/${entry.path}`); } },

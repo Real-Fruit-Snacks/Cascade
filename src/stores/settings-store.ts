@@ -188,6 +188,8 @@ export interface Settings {
   // Table of Contents
   enableTableOfContents: boolean;
   tocAutoUpdate: boolean;
+  // Canvas
+  enableCanvas: boolean;
   // Media Viewer
   enableMediaViewer: boolean;
   pdfDefaultZoom: number;
@@ -335,6 +337,7 @@ export const DEFAULTS: Settings = {
   enableMathPreview: false,
   enableCalloutPreview: true,
   enableMermaidPreview: false,
+  enableCanvas: true,
   enableQueryPreview: false,
   enableTableOfContents: false,
   tocAutoUpdate: false,
@@ -453,3 +456,8 @@ export const useSettingsStore = create<Settings & SettingsActions>((set, get) =>
     }
   },
 }));
+
+// Expose store for e2e testing
+if (typeof window !== 'undefined') {
+  (window as any).__ZUSTAND_SETTINGS_STORE__ = useSettingsStore;
+}

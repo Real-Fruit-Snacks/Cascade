@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCanvasStore } from '../../stores/canvas-store';
 import { readFile, writeFile } from '../../lib/tauri-commands';
-import type { CanvasData, EdgeSide, CanvasNode, TextNode } from '../../types/canvas';
-import { CanvasBackground, type ConnectDragState } from './CanvasBackground';
+import type { CanvasData, CanvasEdge, EdgeSide, CanvasNode, TextNode } from '../../types/canvas';
+import { CanvasBackground, type ConnectDragState, type MarqueeDragState } from './CanvasBackground';
 import { CanvasCards, type ResizeCorner } from './CanvasCards';
 import { CanvasToolbar } from './CanvasToolbar';
 import { CanvasContextMenu } from './CanvasContextMenu';
+import { CanvasSearch } from './CanvasSearch';
+import { CanvasMinimap } from './CanvasMinimap';
+import { anchorPoint, sideDirection } from './canvas-utils';
 
 interface CanvasViewProps {
   filePath: string;
   vaultPath: string;
 }
 
-type DragMode = 'none' | 'pan' | 'move' | 'resize' | 'connect';
+type DragMode = 'none' | 'pan' | 'move' | 'resize' | 'connect' | 'marquee';
 
 interface MoveDragRef {
   mode: 'move';
@@ -55,35 +58,31 @@ interface NoDragRef {
   mode: 'none';
 }
 
-type DragRef = NoDragRef | PanDragRef | MoveDragRef | ResizeDragRef | ConnectDragRef;
+interface MarqueeDragRef {
+  mode: 'marquee';
+  // World coordinates of the marquee rectangle corners
+  startWX: number;
+  startWY: number;
+  currentWX: number;
+  currentWY: number;
+  additive: boolean;
+}
+
+type DragRef = NoDragRef | PanDragRef | MoveDragRef | ResizeDragRef | ConnectDragRef | MarqueeDragRef;
 
 const MIN_CARD_W = 100;
 const MIN_CARD_H = 60;
 const EDGE_HIT_RADIUS = 8;
 const BEZIER_SAMPLE_COUNT = 30;
 const CTRL_OFFSET = 80; // world-space pixels, must match CanvasBackground
+const GRID_SIZE = 20;
 
-// Anchor point in world coords
-function anchorPoint(
-  node: CanvasNode,
-  side: EdgeSide,
-): { x: number; y: number } {
-  switch (side) {
-    case 'top':    return { x: node.x + node.width / 2, y: node.y };
-    case 'bottom': return { x: node.x + node.width / 2, y: node.y + node.height };
-    case 'left':   return { x: node.x, y: node.y + node.height / 2 };
-    case 'right':  return { x: node.x + node.width, y: node.y + node.height / 2 };
-  }
+// Module-level clipboard for copy/paste
+interface ClipboardData {
+  nodes: CanvasNode[];
+  edges: CanvasEdge[];
 }
-
-function sideDirection(side: EdgeSide): { dx: number; dy: number } {
-  switch (side) {
-    case 'top':    return { dx: 0, dy: -1 };
-    case 'bottom': return { dx: 0, dy: 1 };
-    case 'left':   return { dx: -1, dy: 0 };
-    case 'right':  return { dx: 1, dy: 0 };
-  }
-}
+let canvasClipboard: ClipboardData | null = null;
 
 // Sample a cubic bezier at t in [0,1]
 function bezierPoint(
@@ -159,6 +158,9 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   // Connect drag state for live canvas preview — updated via setState so canvas redraws
   const [connectDrag, setConnectDrag] = useState<ConnectDragState | null>(null);
 
+  // Marquee selection drag state — updated via setState so canvas redraws
+  const [marqueeDrag, setMarqueeDrag] = useState<MarqueeDragState | null>(null);
+
   // Context menu state
   interface ContextMenuState {
     x: number;
@@ -169,6 +171,8 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
     worldY: number;
   }
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+
+  const [showSearch, setShowSearch] = useState(false);
 
   const spaceDown = useRef(false);
 
@@ -233,6 +237,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       if (entry) {
         const { width, height } = entry.contentRect;
         setContainerSize({ width, height });
+        useCanvasStore.getState().setContainerSize({ width, height });
       }
     });
 
@@ -242,14 +247,20 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
 
   // Space key tracking + keyboard shortcuts
   useEffect(() => {
+    const isEditableTarget = (t: EventTarget | null): boolean => {
+      if (!t || !(t instanceof HTMLElement)) return false;
+      const tag = t.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable;
+    };
+
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && e.target === document.body) {
+      if (e.code === 'Space' && !isEditableTarget(e.target)) {
         spaceDown.current = true;
         e.preventDefault();
         return;
       }
 
-      if (e.target !== document.body) return;
+      if (isEditableTarget(e.target)) return;
 
       const store = useCanvasStore.getState();
       const ctrl = e.ctrlKey || e.metaKey;
@@ -287,6 +298,60 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
         return;
       }
 
+      // Ctrl+C — copy selected nodes (and internal edges)
+      if (ctrl && e.key === 'c') {
+        const selectedNodes = store.nodes.filter((n) => store.selectedNodeIds.has(n.id));
+        if (selectedNodes.length > 0) {
+          const selectedIds = new Set(selectedNodes.map((n) => n.id));
+          const internalEdges = store.edges.filter(
+            (ed) => selectedIds.has(ed.fromNode) && selectedIds.has(ed.toNode),
+          );
+          canvasClipboard = {
+            nodes: selectedNodes.map((n) => ({ ...n })),
+            edges: internalEdges.map((ed) => ({ ...ed })),
+          };
+          e.preventDefault();
+        }
+        return;
+      }
+
+      // Ctrl+V — paste clipboard nodes offset by (20, 20), with new IDs
+      if (ctrl && e.key === 'v') {
+        if (canvasClipboard && canvasClipboard.nodes.length > 0) {
+          store.pushUndo();
+          const idMap = new Map<string, string>();
+          const pastedNodeIds: string[] = [];
+          for (const node of canvasClipboard.nodes) {
+            const { id: oldId, ...rest } = node;
+            store.addNode({ ...rest, x: node.x + GRID_SIZE, y: node.y + GRID_SIZE }, true);
+            const newId = useCanvasStore.getState().nodes.at(-1)?.id;
+            if (newId) {
+              idMap.set(oldId, newId);
+              pastedNodeIds.push(newId);
+            }
+          }
+          for (const edge of canvasClipboard.edges) {
+            const newFrom = idMap.get(edge.fromNode);
+            const newTo = idMap.get(edge.toNode);
+            if (newFrom && newTo) {
+              store.addEdge({
+                fromNode: newFrom,
+                fromSide: edge.fromSide,
+                toNode: newTo,
+                toSide: edge.toSide,
+              });
+            }
+          }
+          useCanvasStore.setState((s) => ({
+            ...s,
+            selectedNodeIds: new Set(pastedNodeIds),
+            selectedEdgeIds: new Set(),
+          }));
+          e.preventDefault();
+        }
+        return;
+      }
+
       // Ctrl+D — duplicate selected nodes
       if (ctrl && e.key === 'd') {
         const selectedNodes = store.nodes.filter((n) => store.selectedNodeIds.has(n.id));
@@ -294,10 +359,17 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
           store.pushUndo();
           for (const node of selectedNodes) {
             const { id: _id, ...rest } = node;
-            store.addNode({ ...rest, x: node.x + 20, y: node.y + 20 });
+            store.addNode({ ...rest, x: node.x + 20, y: node.y + 20 }, true);
           }
           e.preventDefault();
         }
+        return;
+      }
+
+      // Ctrl+F — open canvas search
+      if (ctrl && e.key === 'f') {
+        setShowSearch(true);
+        e.preventDefault();
         return;
       }
 
@@ -324,6 +396,15 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
         return;
       }
 
+      // Ctrl+L — toggle lock on selected nodes
+      if (ctrl && e.key === 'l') {
+        if (store.selectedNodeIds.size > 0) {
+          store.toggleLock([...store.selectedNodeIds]);
+          e.preventDefault();
+        }
+        return;
+      }
+
       // Arrow keys — nudge selected nodes
       const nudge = e.shiftKey ? 1 : 20;
       let dx = 0;
@@ -336,7 +417,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
         store.pushUndo();
         useCanvasStore.setState((s) => ({
           nodes: s.nodes.map((n) =>
-            s.selectedNodeIds.has(n.id)
+            s.selectedNodeIds.has(n.id) && !n.locked
               ? { ...n, x: n.x + dx, y: n.y + dy }
               : n,
           ),
@@ -402,7 +483,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
     const nodes = useCanvasStore.getState().nodes;
     const origPositions = new Map<string, { x: number; y: number }>();
     for (const node of nodes) {
-      if (selectedIds.has(node.id)) {
+      if (selectedIds.has(node.id) && !node.locked) {
         origPositions.set(node.id, { x: node.x, y: node.y });
       }
     }
@@ -439,7 +520,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
 
     const store = useCanvasStore.getState();
     const node = store.nodes.find((n) => n.id === nodeId);
-    if (!node) return;
+    if (!node || node.locked) return;
 
     store.pushUndo();
 
@@ -552,7 +633,24 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       if (edgeId) {
         useCanvasStore.getState().selectEdge(edgeId);
       } else {
-        clearSelection();
+        // Start marquee selection drag
+        const { zoom, x, y } = viewport;
+        const wx = sx / zoom - x;
+        const wy = sy / zoom - y;
+        const additive = e.ctrlKey || e.metaKey;
+        if (!additive) {
+          clearSelection();
+        }
+        dragRef.current = {
+          mode: 'marquee',
+          startWX: wx,
+          startWY: wy,
+          currentWX: wx,
+          currentWY: wy,
+          additive,
+        };
+        setDragMode('marquee');
+        setMarqueeDrag({ startWX: wx, startWY: wy, currentWX: wx, currentWY: wy });
       }
     }
   };
@@ -579,7 +677,13 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
         nodes: s.nodes.map((n) => {
           const orig = drag.origPositions.get(n.id);
           if (!orig) return n;
-          return { ...n, x: orig.x + dx, y: orig.y + dy };
+          const rawX = orig.x + dx;
+          const rawY = orig.y + dy;
+          return {
+            ...n,
+            x: Math.round(rawX / GRID_SIZE) * GRID_SIZE,
+            y: Math.round(rawY / GRID_SIZE) * GRID_SIZE,
+          };
         }),
         isDirty: true,
       }));
@@ -617,6 +721,20 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
           newX = drag.origX + drag.origW - newW;
           newY = drag.origY + drag.origH - newH;
           break;
+        case 'top':
+          newH = Math.max(MIN_CARD_H, drag.origH - dy);
+          newY = drag.origY + drag.origH - newH;
+          break;
+        case 'bottom':
+          newH = Math.max(MIN_CARD_H, drag.origH + dy);
+          break;
+        case 'left':
+          newW = Math.max(MIN_CARD_W, drag.origW - dx);
+          newX = drag.origX + drag.origW - newW;
+          break;
+        case 'right':
+          newW = Math.max(MIN_CARD_W, drag.origW + dx);
+          break;
       }
 
       useCanvasStore.setState((s) => ({
@@ -644,6 +762,19 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
         currentX: cx,
         currentY: cy,
       });
+      return;
+    }
+
+    if (drag.mode === 'marquee') {
+      const rect = containerRef.current?.getBoundingClientRect();
+      const sx = rect ? e.clientX - rect.left : e.clientX;
+      const sy = rect ? e.clientY - rect.top : e.clientY;
+      const { zoom, x, y } = useCanvasStore.getState().viewport;
+      const wx = sx / zoom - x;
+      const wy = sy / zoom - y;
+      drag.currentWX = wx;
+      drag.currentWY = wy;
+      setMarqueeDrag({ startWX: drag.startWX, startWY: drag.startWY, currentWX: wx, currentWY: wy });
       return;
     }
   };
@@ -682,6 +813,33 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       }
 
       setConnectDrag(null);
+    }
+
+    if (drag.mode === 'marquee') {
+      // Compute the bounding rectangle in world coords
+      const minX = Math.min(drag.startWX, drag.currentWX);
+      const minY = Math.min(drag.startWY, drag.currentWY);
+      const maxX = Math.max(drag.startWX, drag.currentWX);
+      const maxY = Math.max(drag.startWY, drag.currentWY);
+
+      // Only select if the rectangle has some area (avoid single-click deselect race)
+      const MIN_MARQUEE = 4; // world pixels
+      if (maxX - minX > MIN_MARQUEE || maxY - minY > MIN_MARQUEE) {
+        const { nodes } = useCanvasStore.getState();
+        const hitIds = nodes
+          .filter((n) => n.type !== 'group')
+          .filter(
+            (n) =>
+              n.x < maxX &&
+              n.x + n.width > minX &&
+              n.y < maxY &&
+              n.y + n.height > minY,
+          )
+          .map((n) => n.id);
+        useCanvasStore.getState().selectNodes(hitIds, drag.additive);
+      }
+
+      setMarqueeDrag(null);
     }
 
     dragRef.current = { mode: 'none' };
@@ -751,8 +909,41 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
     if (dragRef.current.mode === 'connect') {
       setConnectDrag(null);
     }
+    if (dragRef.current.mode === 'marquee') {
+      setMarqueeDrag(null);
+    }
     dragRef.current = { mode: 'none' };
     setDragMode('none');
+  };
+
+  // --- File drag-drop from sidebar ---
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (e.dataTransfer.types.includes('cascade/file-path')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'link';
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    const file = e.dataTransfer.getData('cascade/file-path');
+    if (!file) return;
+    e.preventDefault();
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    const sx = rect ? e.clientX - rect.left : e.clientX;
+    const sy = rect ? e.clientY - rect.top : e.clientY;
+    const { zoom, x, y } = viewport;
+    const wx = sx / zoom - x;
+    const wy = sy / zoom - y;
+
+    useCanvasStore.getState().addNode({
+      type: 'file',
+      file,
+      x: wx - 150,
+      y: wy - 60,
+      width: 300,
+      height: 120,
+    } as Omit<CanvasNode, 'id'>);
   };
 
   const cursor =
@@ -767,6 +958,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   return (
     <div
       ref={containerRef}
+      data-canvas-container
       className="relative w-full h-full overflow-hidden"
       style={{ backgroundColor: 'var(--ctp-base)', cursor }}
       onMouseDown={handleMouseDown}
@@ -775,12 +967,15 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       onMouseLeave={handleMouseLeave}
       onDoubleClick={handleDoubleClick}
       onContextMenu={handleContextMenu}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       {containerSize.width > 0 && (
         <CanvasBackground
           width={containerSize.width}
           height={containerSize.height}
           connectDrag={connectDrag}
+          marqueeDrag={marqueeDrag}
         />
       )}
       <CanvasCards
@@ -806,6 +1001,15 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
           worldY={contextMenu.worldY}
           vaultPath={vaultPath}
           onClose={() => setContextMenu(null)}
+        />
+      )}
+      {showSearch && (
+        <CanvasSearch onClose={() => setShowSearch(false)} />
+      )}
+      {containerSize.width > 0 && (
+        <CanvasMinimap
+          containerWidth={containerSize.width}
+          containerHeight={containerSize.height}
         />
       )}
     </div>

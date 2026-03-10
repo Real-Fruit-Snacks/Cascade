@@ -6,7 +6,7 @@ import { LinkCard } from './cards/LinkCard';
 import { GroupCard } from './cards/GroupCard';
 import type { EdgeSide } from '../../types/canvas';
 
-export type ResizeCorner = 'tl' | 'tr' | 'bl' | 'br';
+export type ResizeCorner = 'tl' | 'tr' | 'bl' | 'br' | 'top' | 'right' | 'bottom' | 'left';
 
 interface CanvasCardsProps {
   vaultPath: string;
@@ -19,6 +19,24 @@ interface CanvasCardsProps {
 }
 
 const HANDLE_SIDES: EdgeSide[] = ['top', 'right', 'bottom', 'left'];
+
+// Style for edge resize handles (thin bars along each edge)
+function edgeResizeStyle(edge: 'top' | 'right' | 'bottom' | 'left'): React.CSSProperties {
+  const base: React.CSSProperties = {
+    position: 'absolute',
+    zIndex: 15,
+  };
+  switch (edge) {
+    case 'top':
+      return { ...base, top: 0, left: 4, right: 4, height: 4, cursor: 'ns-resize' };
+    case 'bottom':
+      return { ...base, bottom: 0, left: 4, right: 4, height: 4, cursor: 'ns-resize' };
+    case 'left':
+      return { ...base, left: 0, top: 4, bottom: 4, width: 4, cursor: 'ew-resize' };
+    case 'right':
+      return { ...base, right: 0, top: 4, bottom: 4, width: 4, cursor: 'ew-resize' };
+  }
+}
 
 // Position a connection handle dot relative to the card (in world-space percentages / px)
 function handleStyle(side: EdgeSide): React.CSSProperties {
@@ -82,6 +100,7 @@ export function CanvasCards({
       {visibleNodes.map((node) => {
         const isSelected = selectedNodeIds.has(node.id);
         const isHovered = hoveredNodeId === node.id;
+        const nodeIndex = nodes.indexOf(node);
         const style: React.CSSProperties = {
           position: 'absolute',
           left: node.x,
@@ -89,7 +108,7 @@ export function CanvasCards({
           width: node.width,
           height: node.height,
           pointerEvents: 'auto',
-          zIndex: node.type === 'group' ? 0 : 1,
+          zIndex: nodeIndex,
         };
 
         const cardMouseDown = (e: React.MouseEvent) => onCardMouseDown(node.id, e);
@@ -106,6 +125,22 @@ export function CanvasCards({
                 onMouseDown={(e) => {
                   e.stopPropagation();
                   onConnectMouseDown(node.id, side, e);
+                }}
+              />
+            ))}
+          </>
+        );
+
+        // Edge resize handles — shown only when selected
+        const edgeResizeHandles = isSelected && (
+          <>
+            {(['top', 'right', 'bottom', 'left'] as const).map((edge) => (
+              <div
+                key={`resize-${edge}`}
+                style={edgeResizeStyle(edge)}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  resizeMouseDown(edge, e);
                 }}
               />
             ))}
@@ -143,6 +178,7 @@ export function CanvasCards({
                   onResizeMouseDown={resizeMouseDown}
                 />
                 {handles}
+                {edgeResizeHandles}
               </div>
             );
           case 'file':
@@ -157,6 +193,7 @@ export function CanvasCards({
                   onResizeMouseDown={resizeMouseDown}
                 />
                 {handles}
+                {edgeResizeHandles}
               </div>
             );
           case 'link':
@@ -170,6 +207,7 @@ export function CanvasCards({
                   onResizeMouseDown={resizeMouseDown}
                 />
                 {handles}
+                {edgeResizeHandles}
               </div>
             );
           default:

@@ -1,4 +1,6 @@
-import { Type, FileText, Link, Square, Trash2, Copy, Palette, Tag, ZoomIn } from 'lucide-react';
+import { Type, FileText, Link, Square, Trash2, Copy, Palette, Tag, ZoomIn, XCircle, ArrowUpToLine, ArrowDownToLine, Code, ArrowRight, ArrowLeftRight, Minus, MoveRight, MoveLeft, AlignLeft, AlignCenterHorizontal, AlignRight as AlignRightIcon, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, Lock, Unlock, Download, LayoutGrid, GitBranch, Waypoints } from 'lucide-react';
+import { downloadExport } from './CanvasExport';
+import { gridLayout, treeLayout, forceLayout } from './CanvasAutoLayout';
 import { ContextMenu } from '../sidebar/ContextMenu';
 import type { MenuItem } from '../sidebar/ContextMenu';
 import { useCanvasStore } from '../../stores/canvas-store';
@@ -103,6 +105,25 @@ export function CanvasContextMenu({
     items.push({ label: '', separator: true, onClick: () => {} });
 
     items.push({
+      label: 'Bring to Front',
+      icon: <ArrowUpToLine size={14} />,
+      onClick: () => store.bringToFront(targetNodeId),
+    });
+    items.push({
+      label: 'Send to Back',
+      icon: <ArrowDownToLine size={14} />,
+      onClick: () => store.sendToBack(targetNodeId),
+    });
+
+    items.push({ label: '', separator: true, onClick: () => {} });
+
+    items.push({
+      label: node.locked ? 'Unlock' : 'Lock',
+      icon: node.locked ? <Unlock size={14} /> : <Lock size={14} />,
+      onClick: () => store.toggleLock([targetNodeId]),
+    });
+
+    items.push({
       label: 'Duplicate',
       icon: <Copy size={14} />,
       onClick: () => {
@@ -130,6 +151,47 @@ export function CanvasContextMenu({
       store.updateEdge(targetEdgeId, { color: code });
     });
 
+    const arrowItems: MenuItem[] = [
+      {
+        label: '  Both Ends',
+        icon: <ArrowLeftRight size={14} />,
+        onClick: () => store.updateEdge(targetEdgeId, { fromEnd: 'arrow', toEnd: 'arrow' }),
+      },
+      {
+        label: '  Start Only',
+        icon: <MoveLeft size={14} />,
+        onClick: () => store.updateEdge(targetEdgeId, { fromEnd: 'arrow', toEnd: 'none' }),
+      },
+      {
+        label: '  End Only',
+        icon: <MoveRight size={14} />,
+        onClick: () => store.updateEdge(targetEdgeId, { fromEnd: 'none', toEnd: 'arrow' }),
+      },
+      {
+        label: '  No Arrows',
+        icon: <Minus size={14} />,
+        onClick: () => store.updateEdge(targetEdgeId, { fromEnd: 'none', toEnd: 'none' }),
+      },
+    ];
+
+    const lineStyleItems: MenuItem[] = [
+      {
+        label: '  Solid',
+        icon: <Minus size={14} />,
+        onClick: () => store.updateEdge(targetEdgeId, { lineStyle: 'solid' }),
+      },
+      {
+        label: '  Dashed',
+        icon: <Minus size={14} />,
+        onClick: () => store.updateEdge(targetEdgeId, { lineStyle: 'dashed' }),
+      },
+      {
+        label: '  Dotted',
+        icon: <Minus size={14} />,
+        onClick: () => store.updateEdge(targetEdgeId, { lineStyle: 'dotted' }),
+      },
+    ];
+
     const items: MenuItem[] = [
       {
         label: edge.label ? 'Edit Label' : 'Add Label',
@@ -141,6 +203,20 @@ export function CanvasContextMenu({
           }
         },
       },
+      { label: '', separator: true, onClick: () => {} },
+      {
+        label: 'Arrow',
+        icon: <ArrowRight size={14} />,
+        onClick: () => {},
+      },
+      ...arrowItems,
+      { label: '', separator: true, onClick: () => {} },
+      {
+        label: 'Line Style',
+        icon: <Minus size={14} />,
+        onClick: () => {},
+      },
+      ...lineStyleItems,
       { label: '', separator: true, onClick: () => {} },
       {
         label: 'Color',
@@ -169,6 +245,20 @@ export function CanvasContextMenu({
         store.addNode({
           type: 'text',
           text: '',
+          x: worldX - 150,
+          y: worldY - 100,
+          width: 300,
+          height: 200,
+        } as Omit<TextNode, 'id'>);
+      },
+    },
+    {
+      label: 'New Code Block',
+      icon: <Code size={14} />,
+      onClick: () => {
+        store.addNode({
+          type: 'text',
+          text: '```\n\n```',
           x: worldX - 150,
           y: worldY - 100,
           width: 300,
@@ -212,7 +302,130 @@ export function CanvasContextMenu({
       icon: <ZoomIn size={14} />,
       onClick: () => store.zoomToFit(),
     },
+    { label: '', separator: true, onClick: () => {} },
+    {
+      label: 'Auto Layout',
+      icon: <LayoutGrid size={14} />,
+      onClick: () => {},
+    },
+    {
+      label: '  Grid',
+      icon: <LayoutGrid size={14} />,
+      onClick: () => {
+        store.applyLayout((nodes) => gridLayout(nodes));
+        store.zoomToFit();
+      },
+    },
+    {
+      label: '  Tree',
+      icon: <GitBranch size={14} />,
+      onClick: () => {
+        store.applyLayout((nodes, edges) => treeLayout(nodes, edges));
+        store.zoomToFit();
+      },
+    },
+    {
+      label: '  Force-Directed',
+      icon: <Waypoints size={14} />,
+      onClick: () => {
+        store.applyLayout((nodes, edges) => forceLayout(nodes, edges));
+        store.zoomToFit();
+      },
+    },
+    { label: '', separator: true, onClick: () => {} },
+    {
+      label: 'Export',
+      icon: <Download size={14} />,
+      onClick: () => {},
+    },
+    {
+      label: '  Export as PNG',
+      icon: <Download size={14} />,
+      onClick: () => downloadExport('png'),
+    },
+    {
+      label: '  Export as SVG',
+      icon: <Download size={14} />,
+      onClick: () => downloadExport('svg'),
+    },
   ];
+
+  // Add alignment/distribution items when multiple nodes are selected
+  if (store.selectedNodeIds.size > 1) {
+    items.push({ label: '', separator: true, onClick: () => {} });
+    items.push({
+      label: 'Align',
+      icon: <AlignLeft size={14} />,
+      onClick: () => {},
+    });
+    items.push({
+      label: '  Align Left',
+      icon: <AlignLeft size={14} />,
+      onClick: () => store.alignNodes('left'),
+    });
+    items.push({
+      label: '  Align Center',
+      icon: <AlignCenterHorizontal size={14} />,
+      onClick: () => store.alignNodes('center'),
+    });
+    items.push({
+      label: '  Align Right',
+      icon: <AlignRightIcon size={14} />,
+      onClick: () => store.alignNodes('right'),
+    });
+    items.push({
+      label: '  Align Top',
+      icon: <AlignStartVertical size={14} />,
+      onClick: () => store.alignNodes('top'),
+    });
+    items.push({
+      label: '  Align Middle',
+      icon: <AlignCenterVertical size={14} />,
+      onClick: () => store.alignNodes('middle'),
+    });
+    items.push({
+      label: '  Align Bottom',
+      icon: <AlignEndVertical size={14} />,
+      onClick: () => store.alignNodes('bottom'),
+    });
+    items.push({ label: '', separator: true, onClick: () => {} });
+    items.push({
+      label: 'Distribute',
+      icon: <AlignHorizontalDistributeCenter size={14} />,
+      onClick: () => {},
+    });
+    items.push({
+      label: '  Distribute Horizontally',
+      icon: <AlignHorizontalDistributeCenter size={14} />,
+      onClick: () => store.distributeNodes('horizontal'),
+    });
+    items.push({
+      label: '  Distribute Vertically',
+      icon: <AlignVerticalDistributeCenter size={14} />,
+      onClick: () => store.distributeNodes('vertical'),
+    });
+  }
+
+  items.push({ label: '', separator: true, onClick: () => {} });
+  items.push({
+    label: 'Clear All',
+    icon: <XCircle size={14} />,
+    danger: true,
+    onClick: () => {
+      const count = store.nodes.length + store.edges.length;
+      if (count === 0) return;
+      const confirmed = window.confirm(
+        `Delete all ${store.nodes.length} card${store.nodes.length !== 1 ? 's' : ''}${store.edges.length > 0 ? ` and ${store.edges.length} connection${store.edges.length !== 1 ? 's' : ''}` : ''}? This cannot be undone.`,
+      );
+      if (!confirmed) return;
+      const filePath = store.filePath;
+      store.clearCanvas();
+      // Re-set filePath so auto-save writes the empty canvas
+      if (filePath) {
+        store.loadCanvas(filePath, { nodes: [], edges: [] });
+      }
+    },
+  });
 
   return <ContextMenu x={x} y={y} items={items} onClose={onClose} />;
 }

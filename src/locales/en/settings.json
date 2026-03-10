@@ -26,6 +26,7 @@
     "autosave": "Auto-Save",
     "backlinks": "Backlinks",
     "bookmarks": "Bookmarks",
+    "canvas": "Canvas",
     "codeFolding": "Code Folding",
     "dailyNotes": "Daily Notes",
     "focusMode": "Focus Mode",
@@ -249,6 +250,10 @@
     "bookmarks": {
       "label": "Bookmarks",
       "description": "Star files as favorites for quick access"
+    },
+    "canvas": {
+      "label": "Canvas",
+      "description": "Visual whiteboard with draggable cards, connections, and groups"
     },
     "calloutPreview": {
       "label": "Callout Preview",
@@ -783,6 +788,14 @@
     "notifyOnReach": {
       "label": "Notify on Reach",
       "description": "Show a toast notification when the goal is reached"
+    }
+  },
+  "canvasOptions": {
+    "title": "Canvas Options",
+    "description": "Visual whiteboard for spatial thinking with draggable cards, connections, and groups.",
+    "enableCanvas": {
+      "label": "Enable Canvas",
+      "description": "Allow creating and viewing .canvas files as visual whiteboards"
     }
   },
   "bookmarksOptions": {

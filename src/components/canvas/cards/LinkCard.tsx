@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { ExternalLink } from 'lucide-react';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { useCanvasStore } from '../../../stores/canvas-store';
 import { CANVAS_COLORS, type LinkNode } from '../../../types/canvas';
 import type { ResizeCorner } from '../CanvasCards';
@@ -24,14 +25,18 @@ export function LinkCard({ node, selected, style, onMouseDown, onResizeMouseDown
   let domain = '';
   try { domain = new URL(node.url).hostname; } catch { domain = node.url; }
 
+  const baseBorder = selected ? '2px solid var(--ctp-accent)' : '1px solid var(--ctp-surface1)';
+
   return (
     <div
       style={{
         ...style,
         backgroundColor: 'var(--ctp-surface0)',
-        border: selected ? '2px solid var(--ctp-accent)' : '1px solid var(--ctp-surface1)',
+        borderTop: baseBorder,
+        borderRight: baseBorder,
+        borderBottom: baseBorder,
+        borderLeft: colorVar ? `3px solid ${colorVar}` : baseBorder,
         borderRadius: 8,
-        borderLeft: colorVar ? `3px solid ${colorVar}` : undefined,
         overflow: 'hidden',
         display: 'flex',
         alignItems: 'center',
@@ -40,7 +45,7 @@ export function LinkCard({ node, selected, style, onMouseDown, onResizeMouseDown
         cursor: 'default',
       }}
       onClick={handleClick}
-      onDoubleClick={() => window.open(node.url, '_blank')}
+      onDoubleClick={() => openUrl(node.url).catch(() => window.open(node.url, '_blank'))}
       onMouseDown={onMouseDown}
     >
       <ExternalLink size={16} style={{ color: 'var(--ctp-accent)', flexShrink: 0 }} />

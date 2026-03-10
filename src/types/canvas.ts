@@ -9,6 +9,7 @@ export interface CanvasNodeBase {
   width: number;
   height: number;
   color?: CanvasColor;
+  locked?: boolean;
 }
 
 export interface TextNode extends CanvasNodeBase {
@@ -34,6 +35,9 @@ export interface GroupNode extends CanvasNodeBase {
 
 export type CanvasNode = TextNode | FileNode | LinkNode | GroupNode;
 
+export type ArrowEnd = 'none' | 'arrow';
+export type LineStyle = 'solid' | 'dashed' | 'dotted';
+
 export interface CanvasEdge {
   id: string;
   fromNode: string;
@@ -42,6 +46,9 @@ export interface CanvasEdge {
   toSide: EdgeSide;
   color?: CanvasColor;
   label?: string;
+  fromEnd?: ArrowEnd;
+  toEnd?: ArrowEnd;
+  lineStyle?: LineStyle;
 }
 
 export interface CanvasData {

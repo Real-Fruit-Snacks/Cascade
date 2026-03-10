@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
-import { Keyboard, RotateCcw, Search, Settings as SettingsIcon, Type, Sliders, X, Palette, FolderOpen, ToggleRight, Puzzle, Link, Eye, Hash, Network, ArrowLeftRight, List, Paintbrush, Calendar, ChevronsDownUp, Highlighter, FileJson2, PanelBottom, Save, SpellCheck, FileStack, Maximize2, Target, Star, AlignCenter, Columns, Image, ListTree, Database, MonitorPlay } from 'lucide-react';
+import { Keyboard, RotateCcw, Search, Settings as SettingsIcon, Type, Sliders, X, Palette, FolderOpen, ToggleRight, Puzzle, Link, Eye, Hash, Network, ArrowLeftRight, List, Paintbrush, Calendar, ChevronsDownUp, Highlighter, FileJson2, PanelBottom, Save, SpellCheck, FileStack, Maximize2, Target, Star, AlignCenter, Columns, Image, ListTree, Database, MonitorPlay, LayoutGrid } from 'lucide-react';
 import { useCloseAnimation } from '../hooks/use-close-animation';
 import { VariablesIcon } from './icons/VariablesIcon';
 import { useSettingsStore, DEFAULTS, type Settings, type FileSortOrder, type StartupBehavior, type AccentColor, type AttachmentLocation, type FolderColorStyle, type IndentGuideStyle } from '../stores/settings-store';
@@ -81,7 +81,7 @@ function formatKeyCombo(e: KeyboardEvent): string | null {
   return parts.join('+');
 }
 
-type SettingsCategory = 'editor' | 'appearance' | 'files' | 'folder-colors' | 'general' | 'features' | 'shortcuts' | 'plugins' | 'wikilinks-options' | 'livepreview-options' | 'tags-options' | 'graph-options' | 'backlinks-options' | 'outline-options' | 'variables-options' | 'dailynotes-options' | 'codefolding-options' | 'highlight-options' | 'properties-options' | 'statusbar-options' | 'autosave-options' | 'spellcheck-options' | 'templates-options' | 'search-options' | 'focusmode-options' | 'wordcountgoal-options' | 'bookmarks-options' | 'typewriter-options' | 'indentguides-options' | 'imagepreview-options' | 'toc-options' | 'query-options' | 'mediaviewer-options';
+type SettingsCategory = 'editor' | 'appearance' | 'files' | 'folder-colors' | 'general' | 'features' | 'shortcuts' | 'plugins' | 'wikilinks-options' | 'livepreview-options' | 'tags-options' | 'graph-options' | 'backlinks-options' | 'outline-options' | 'variables-options' | 'dailynotes-options' | 'codefolding-options' | 'highlight-options' | 'properties-options' | 'statusbar-options' | 'autosave-options' | 'spellcheck-options' | 'templates-options' | 'search-options' | 'focusmode-options' | 'wordcountgoal-options' | 'bookmarks-options' | 'typewriter-options' | 'indentguides-options' | 'imagepreview-options' | 'toc-options' | 'query-options' | 'mediaviewer-options' | 'canvas-options';
 
 const CATEGORIES: { id: SettingsCategory; labelKey: string; icon: typeof SettingsIcon }[] = [
   { id: 'editor', labelKey: 'categories.editor', icon: Type },
@@ -98,6 +98,7 @@ const FEATURE_OPTION_PAGES: { id: SettingsCategory; labelKey: string; icon: Reac
   { id: 'autosave-options', labelKey: 'featurePages.autosave', icon: Save, settingsKey: 'autoSaveEnabled' },
   { id: 'backlinks-options', labelKey: 'featurePages.backlinks', icon: ArrowLeftRight, settingsKey: 'enableBacklinks' },
   { id: 'bookmarks-options', labelKey: 'featurePages.bookmarks', icon: Star, settingsKey: 'enableBookmarks' },
+  { id: 'canvas-options', labelKey: 'featurePages.canvas', icon: LayoutGrid, settingsKey: 'enableCanvas' },
   { id: 'codefolding-options', labelKey: 'featurePages.codeFolding', icon: ChevronsDownUp, settingsKey: 'enableCodeFolding' },
   { id: 'dailynotes-options', labelKey: 'featurePages.dailyNotes', icon: Calendar, settingsKey: 'enableDailyNotes' },
   { id: 'focusmode-options', labelKey: 'featurePages.focusMode', icon: Maximize2, settingsKey: 'enableFocusMode' },
@@ -589,6 +590,7 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
   { id: 'enableFocusMode', category: 'features', keywords: 'focus mode zen distraction free toggle feature enable disable' },
   { id: 'enableWordCountGoal', category: 'features', keywords: 'word count goal target writing toggle feature enable disable' },
   { id: 'enableBookmarks', category: 'features', keywords: 'bookmarks favorites star files toggle feature enable disable' },
+  { id: 'enableCanvas', category: 'features', keywords: 'canvas whiteboard visual cards nodes edges toggle feature enable disable' },
   { id: 'enableTypewriterMode', category: 'features', keywords: 'typewriter mode cursor center scroll toggle feature enable disable' },
   { id: 'enableIndentGuides', category: 'features', keywords: 'indent guides lines vertical indentation toggle feature enable disable' },
   { id: 'enableImagePreview', category: 'features', keywords: 'image preview inline pictures toggle feature enable disable' },
@@ -600,6 +602,7 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
   { id: 'enableTableOfContents', category: 'features', keywords: 'table of contents toc headings toggle feature enable disable' },
   { id: 'focusmodeOptions', category: 'focusmode-options' as SettingsCategory, keywords: 'focus mode dim paragraphs typewriter zen options' },
   { id: 'wordcountgoalOptions', category: 'wordcountgoal-options' as SettingsCategory, keywords: 'word count goal target status bar notification options' },
+  { id: 'canvasOptions', category: 'canvas-options' as SettingsCategory, keywords: 'canvas whiteboard visual cards nodes edges options' },
   { id: 'bookmarksOptions', category: 'bookmarks-options' as SettingsCategory, keywords: 'bookmarks favorites star files options' },
   { id: 'typewriterOptions', category: 'typewriter-options' as SettingsCategory, keywords: 'typewriter mode offset cursor center scroll options' },
   { id: 'indentguidesOptions', category: 'indentguides-options' as SettingsCategory, keywords: 'indent guides color style solid dashed dotted options' },
@@ -1214,6 +1217,14 @@ function SettingsContent(props: SettingsContentProps) {
               />
             </SettingRow>
           )}
+          {(!visibleFeaturesIds || visibleFeaturesIds.has('enableCanvas')) && (
+            <SettingRow label={ts('features.canvas.label')} description={ts('features.canvas.description')}>
+              <ToggleSwitch
+                checked={settings.enableCanvas}
+                onChange={(v) => settings.update({ enableCanvas: v })}
+              />
+            </SettingRow>
+          )}
           {(!visibleFeaturesIds || visibleFeaturesIds.has('enableCodeFolding')) && (
             <SettingRow label={ts('features.codeFolding.label')} description={ts('features.codeFolding.description')}>
               <ToggleSwitch
@@ -1719,6 +1730,13 @@ function SettingsContent(props: SettingsContentProps) {
         <>
           {isSearching && <SectionHeader label={ts('featurePages.wordCountGoal')} />}
           <WordCountGoalOptionsPage settings={settings} />
+        </>
+      )}
+
+      {shouldShowCategory('canvas-options') && (
+        <>
+          {isSearching && <SectionHeader label={ts('featurePages.canvas')} />}
+          <CanvasOptionsPage />
         </>
       )}
 
@@ -3709,6 +3727,29 @@ function WordCountGoalOptionsPage({ settings }: OptionsPageProps) {
         />
       </SettingRow>
       <FeatureWiki featureId="wordcountgoal-options" />
+    </div>
+  );
+}
+
+function CanvasOptionsPage() {
+  const { t: ts } = useTranslation('settings');
+  const enableCanvas = useSettingsStore((s) => s.enableCanvas);
+  const update = useSettingsStore((s) => s.update);
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-1 mb-1">
+        <span className="text-sm font-medium" style={{ color: 'var(--ctp-accent)' }}>{ts('canvasOptions.title')}</span>
+        <span className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>
+          {ts('canvasOptions.description')}
+        </span>
+      </div>
+      <SettingRow label={ts('canvasOptions.enableCanvas.label')} description={ts('canvasOptions.enableCanvas.description')}>
+        <ToggleSwitch
+          checked={enableCanvas}
+          onChange={(v) => update({ enableCanvas: v })}
+        />
+      </SettingRow>
+      <FeatureWiki featureId="canvas-options" />
     </div>
   );
 }

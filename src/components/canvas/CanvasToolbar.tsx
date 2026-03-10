@@ -1,4 +1,4 @@
-import { Type, FileText, Link, Square, ZoomOut, ZoomIn, Maximize2 } from 'lucide-react';
+import { Type, FileText, Link, Square, ZoomOut, ZoomIn, Maximize2, Code } from 'lucide-react';
 import { useCanvasStore } from '../../stores/canvas-store';
 import type { CanvasNode } from '../../types/canvas';
 
@@ -36,6 +36,11 @@ export function CanvasToolbar({ containerWidth, containerHeight }: CanvasToolbar
     if (!url) return;
     const { x, y } = getCenter(400, 100);
     addNode({ type: 'link', url, x, y, width: 400, height: 100 } as Omit<CanvasNode, 'id'>);
+  };
+
+  const addCode = () => {
+    const { x, y } = getCenter(300, 200);
+    addNode({ type: 'text', text: '```\n\n```', x, y, width: 300, height: 200 } as Omit<CanvasNode, 'id'>);
   };
 
   const addGroup = () => {
@@ -104,6 +109,10 @@ export function CanvasToolbar({ containerWidth, containerHeight }: CanvasToolbar
       <button className={btnClass} onClick={addLink} title="Add link node">
         <Link size={14} />
         <span>Link</span>
+      </button>
+      <button className={btnClass} onClick={addCode} title="Add code block">
+        <Code size={14} />
+        <span>Code</span>
       </button>
       <button className={btnClass} onClick={addGroup} title="Add group">
         <Square size={14} />

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useCanvasStore } from '../../stores/canvas-store';
 import type { EdgeSide, CanvasColor } from '../../types/canvas';
 import { CANVAS_COLORS } from '../../types/canvas';
+import { anchorPoint, sideDirection, resolveCssVar } from './canvas-utils';
 
 export interface ConnectDragState {
   fromNodeId: string;
@@ -12,17 +13,18 @@ export interface ConnectDragState {
   currentY: number;
 }
 
+export interface MarqueeDragState {
+  startWX: number; // world coords
+  startWY: number;
+  currentWX: number;
+  currentWY: number;
+}
+
 interface CanvasBackgroundProps {
   width: number;
   height: number;
   connectDrag?: ConnectDragState | null;
-}
-
-// Resolve a CSS var string like "var(--ctp-red)" to its computed color value
-function resolveCssVar(cssVar: string): string {
-  const match = cssVar.match(/var\((--[^)]+)\)/);
-  if (!match) return cssVar;
-  return getComputedStyle(document.documentElement).getPropertyValue(match[1]).trim();
+  marqueeDrag?: MarqueeDragState | null;
 }
 
 function resolveEdgeColor(color: CanvasColor | undefined): string {
@@ -34,29 +36,6 @@ function resolveEdgeColor(color: CanvasColor | undefined): string {
     }
   }
   return getComputedStyle(document.documentElement).getPropertyValue('--ctp-overlay0').trim() || '#6c7086';
-}
-
-// Compute the anchor point (world coords) for a given side on a node
-function anchorPoint(
-  node: { x: number; y: number; width: number; height: number },
-  side: EdgeSide,
-): { x: number; y: number } {
-  switch (side) {
-    case 'top':    return { x: node.x + node.width / 2, y: node.y };
-    case 'bottom': return { x: node.x + node.width / 2, y: node.y + node.height };
-    case 'left':   return { x: node.x, y: node.y + node.height / 2 };
-    case 'right':  return { x: node.x + node.width, y: node.y + node.height / 2 };
-  }
-}
-
-// Control point offset direction per side (outward from the node)
-function sideDirection(side: EdgeSide): { dx: number; dy: number } {
-  switch (side) {
-    case 'top':    return { dx: 0, dy: -1 };
-    case 'bottom': return { dx: 0, dy: 1 };
-    case 'left':   return { dx: -1, dy: 0 };
-    case 'right':  return { dx: 1, dy: 0 };
-  }
 }
 
 // Draw an arrowhead at (tx, ty) pointing in direction (dx, dy) — normalised
@@ -85,7 +64,7 @@ function drawArrowhead(
   ctx.fill();
 }
 
-export function CanvasBackground({ width, height, connectDrag }: CanvasBackgroundProps) {
+export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: CanvasBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewport = useCanvasStore((s) => s.viewport);
   const nodes = useCanvasStore((s) => s.nodes);
@@ -210,21 +189,51 @@ export function CanvasBackground({ width, height, connectDrag }: CanvasBackgroun
       ctx.lineWidth = isSelected ? 3 * zoom : 2 * zoom;
       ctx.lineCap = 'round';
 
+      // Apply line style (dashed / dotted / solid)
+      const lineStyle = edge.lineStyle ?? 'solid';
+      if (lineStyle === 'dashed') {
+        ctx.setLineDash([8 * zoom, 4 * zoom]);
+      } else if (lineStyle === 'dotted') {
+        ctx.setLineDash([2 * zoom, 4 * zoom]);
+      } else {
+        ctx.setLineDash([]);
+      }
+
       ctx.beginPath();
       ctx.moveTo(from.sx, from.sy);
       ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, to.sx, to.sy);
       ctx.stroke();
 
-      // Arrowhead — direction = tangent at end point (cp2 → to)
+      // Reset line dash for arrowheads
+      ctx.setLineDash([]);
+
       const arrowSize = (isSelected ? 10 : 8) * zoom;
-      drawArrowhead(
-        ctx,
-        to.sx,
-        to.sy,
-        to.sx - cp2x,
-        to.sy - cp2y,
-        arrowSize,
-      );
+      const toEnd = edge.toEnd ?? 'arrow';
+      const fromEnd = edge.fromEnd ?? 'none';
+
+      // Arrowhead at "to" end — direction = tangent at end point (cp2 → to)
+      if (toEnd === 'arrow') {
+        drawArrowhead(
+          ctx,
+          to.sx,
+          to.sy,
+          to.sx - cp2x,
+          to.sy - cp2y,
+          arrowSize,
+        );
+      }
+
+      // Arrowhead at "from" end — direction = tangent at start point (cp1 → from)
+      if (fromEnd === 'arrow') {
+        drawArrowhead(
+          ctx,
+          from.sx,
+          from.sy,
+          from.sx - cp1x,
+          from.sy - cp1y,
+          arrowSize,
+        );
+      }
 
       // Label at bezier midpoint (t=0.5)
       if (edge.label) {
@@ -263,6 +272,33 @@ export function CanvasBackground({ width, height, connectDrag }: CanvasBackgroun
         ctx.fillStyle = color;
         ctx.fillText(edge.label, labelX, labelY);
       }
+    }
+
+    // ── Marquee selection rectangle ───────────────────────────────────────
+    if (marqueeDrag) {
+      const { sx: mx1, sy: my1 } = toScreen(marqueeDrag.startWX, marqueeDrag.startWY);
+      const { sx: mx2, sy: my2 } = toScreen(marqueeDrag.currentWX, marqueeDrag.currentWY);
+      const mrx = Math.min(mx1, mx2);
+      const mry = Math.min(my1, my2);
+      const mrw = Math.abs(mx2 - mx1);
+      const mrh = Math.abs(my2 - my1);
+
+      const accentColor =
+        getComputedStyle(document.documentElement).getPropertyValue('--ctp-accent').trim() ||
+        getComputedStyle(document.documentElement).getPropertyValue('--ctp-blue').trim() ||
+        '#89b4fa';
+
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = accentColor;
+      ctx.fillRect(mrx, mry, mrw, mrh);
+
+      ctx.globalAlpha = 0.6;
+      ctx.strokeStyle = accentColor;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.strokeRect(mrx, mry, mrw, mrh);
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
     }
 
     // ── Temporary connection line during connect drag ─────────────────────
@@ -306,7 +342,7 @@ export function CanvasBackground({ width, height, connectDrag }: CanvasBackgroun
         ctx.fill();
       }
     }
-  }, [width, height, viewport, nodes, edges, selectedEdgeIds, selectedNodeIds, connectDrag]);
+  }, [width, height, viewport, nodes, edges, selectedEdgeIds, selectedNodeIds, connectDrag, marqueeDrag]);
 
   return (
     <canvas
