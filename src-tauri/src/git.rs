@@ -8,9 +8,17 @@ use std::fs;
 use std::path::Path;
 
 #[derive(Debug, Serialize, Clone)]
+pub struct ConflictInfo {
+    pub path: String,
+    pub local_content: String,
+    pub remote_content: String,
+}
+
+#[derive(Debug, Serialize, Clone)]
 pub struct SyncResult {
     pub committed_files: Vec<String>,
     pub conflicts: Vec<String>,
+    pub conflict_details: Vec<ConflictInfo>,
     pub push_status: String,
 }
 
@@ -47,12 +55,14 @@ fn signature() -> Result<Signature<'static>, CascadeError> {
         .map_err(|e| CascadeError::Git(format!("Failed to create git signature: {e}")))
 }
 
-fn ensure_gitignore(vault_path: &Path) {
+fn ensure_gitignore(vault_path: &Path) -> Result<(), CascadeError> {
     let gitignore = vault_path.join(".gitignore");
     if !gitignore.exists() {
         let content = ".cascade/\n.DS_Store\nThumbs.db\n*.tmp\n";
-        let _ = fs::write(&gitignore, content);
+        fs::write(&gitignore, content)
+            .map_err(|e| CascadeError::Git(format!("Failed to write .gitignore: {e}")))?;
     }
+    Ok(())
 }
 
 #[tauri::command]
@@ -70,7 +80,7 @@ pub fn git_init_repo(
     pat: String,
 ) -> Result<(), CascadeError> {
     let path = Path::new(&vault_path);
-    ensure_gitignore(path);
+    ensure_gitignore(path)?;
     let repo = Repository::init(path)?;
     repo.remote("origin", &remote_url)?;
 
@@ -111,6 +121,7 @@ pub fn git_sync(vault_path: String, pat: String) -> Result<SyncResult, CascadeEr
     let path = Path::new(&vault_path);
     let repo = Repository::open(path)?;
     let mut conflicts = Vec::new();
+    let mut conflict_details = Vec::new();
 
     // 1. Fetch
     {
@@ -123,6 +134,7 @@ pub fn git_sync(vault_path: String, pat: String) -> Result<SyncResult, CascadeEr
             return Ok(SyncResult {
                 committed_files: committed,
                 conflicts: vec![],
+                conflict_details: vec![],
                 push_status: "offline".to_string(),
             });
         }
@@ -151,24 +163,40 @@ pub fn git_sync(vault_path: String, pat: String) -> Result<SyncResult, CascadeEr
             };
 
             if has_conflicts {
-                // Collect conflict info and write .conflict.md files
+                // Collect conflict info with both local and remote content
                 {
                     let idx = repo.index()?;
                     let conflict_entries: Vec<_> =
                         idx.conflicts()?.filter_map(|c| c.ok()).collect();
                     for conflict in &conflict_entries {
-                        if let Some(ref their) = conflict.their {
-                            let their_path = String::from_utf8_lossy(&their.path).to_string();
-                            if their_path.ends_with(".md") {
-                                if let Ok(blob) = repo.find_blob(their.id) {
-                                    let conflict_path =
-                                        their_path.replace(".md", ".conflict.md");
-                                    let full_path = path.join(&conflict_path);
-                                    let _ = fs::write(&full_path, blob.content());
-                                    conflicts.push(conflict_path);
-                                }
-                            }
+                        let their_path = conflict.their.as_ref()
+                            .or(conflict.our.as_ref())
+                            .map(|e| String::from_utf8_lossy(&e.path).to_string())
+                            .unwrap_or_default();
+
+                        let local_content = conflict.our.as_ref()
+                            .and_then(|e| repo.find_blob(e.id).ok())
+                            .map(|b| String::from_utf8_lossy(b.content()).to_string())
+                            .unwrap_or_default();
+
+                        let remote_content = conflict.their.as_ref()
+                            .and_then(|e| repo.find_blob(e.id).ok())
+                            .map(|b| String::from_utf8_lossy(b.content()).to_string())
+                            .unwrap_or_default();
+
+                        // Write .conflict.md for backwards compat
+                        if their_path.ends_with(".md") && !remote_content.is_empty() {
+                            let conflict_path = their_path.replace(".md", ".conflict.md");
+                            let full_path = path.join(&conflict_path);
+                            let _ = fs::write(&full_path, &remote_content);
+                            conflicts.push(conflict_path);
                         }
+
+                        conflict_details.push(ConflictInfo {
+                            path: their_path,
+                            local_content,
+                            remote_content,
+                        });
                     }
                 }
 
@@ -243,6 +271,7 @@ pub fn git_sync(vault_path: String, pat: String) -> Result<SyncResult, CascadeEr
     Ok(SyncResult {
         committed_files: committed,
         conflicts,
+        conflict_details,
         push_status,
     })
 }
