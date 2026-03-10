@@ -185,6 +185,8 @@ export interface Settings {
   enableMermaidPreview: boolean;
   // Query Preview (dataview-like)
   enableQueryPreview: boolean;
+  // Embed Preview (![[note]])
+  enableEmbedPreview: boolean;
   // Table of Contents
   enableTableOfContents: boolean;
   tocAutoUpdate: boolean;
@@ -339,6 +341,7 @@ export const DEFAULTS: Settings = {
   enableMermaidPreview: false,
   enableCanvas: true,
   enableQueryPreview: false,
+  enableEmbedPreview: true,
   enableTableOfContents: false,
   tocAutoUpdate: false,
   enableMediaViewer: false,
