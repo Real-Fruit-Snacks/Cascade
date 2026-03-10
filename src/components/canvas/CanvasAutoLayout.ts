@@ -105,79 +105,33 @@ export function treeLayout(nodes: CanvasNode[], edges: CanvasEdge[]): CanvasNode
   return [...groups, ...nonGroup.map((n) => updated.get(n.id) ?? n)];
 }
 
-/** Simple force-directed layout (limited iterations for speed) */
-export function forceLayout(nodes: CanvasNode[], edges: CanvasEdge[], iterations = 50): CanvasNode[] {
+/** Simple force-directed layout offloaded to a Web Worker */
+export async function forceLayout(nodes: CanvasNode[], edges: CanvasEdge[], iterations = 50): Promise<CanvasNode[]> {
   const nonGroup = nodes.filter((n) => n.type !== 'group');
   const groups = nodes.filter((n) => n.type === 'group');
 
   if (nonGroup.length <= 1) return nodes;
 
-  // Initialize positions
-  const pos = new Map<string, { x: number; y: number }>();
-  for (const n of nonGroup) {
-    pos.set(n.id, { x: n.x + n.width / 2, y: n.y + n.height / 2 });
-  }
+  const gridSize = useSettingsStore.getState().canvasGridSize || DEFAULT_GRID;
+  const worker = new Worker(new URL('../../workers/force-layout.worker.ts', import.meta.url), { type: 'module' });
 
-  const REPULSION = 50000;
-  const ATTRACTION = 0.01;
-  const DAMPING = 0.9;
-  const vel = new Map<string, { vx: number; vy: number }>();
-  for (const n of nonGroup) vel.set(n.id, { vx: 0, vy: 0 });
-
-  for (let iter = 0; iter < iterations; iter++) {
-    // Repulsion between all pairs
-    for (let i = 0; i < nonGroup.length; i++) {
-      for (let j = i + 1; j < nonGroup.length; j++) {
-        const a = pos.get(nonGroup[i].id)!;
-        const b = pos.get(nonGroup[j].id)!;
-        let dx = b.x - a.x;
-        let dy = b.y - a.y;
-        const dist = Math.max(Math.sqrt(dx * dx + dy * dy), 10);
-        const force = REPULSION / (dist * dist);
-        dx = (dx / dist) * force;
-        dy = (dy / dist) * force;
-        vel.get(nonGroup[i].id)!.vx -= dx;
-        vel.get(nonGroup[i].id)!.vy -= dy;
-        vel.get(nonGroup[j].id)!.vx += dx;
-        vel.get(nonGroup[j].id)!.vy += dy;
-      }
-    }
-
-    // Attraction along edges
-    for (const edge of edges) {
-      const a = pos.get(edge.fromNode);
-      const b = pos.get(edge.toNode);
-      if (!a || !b) continue;
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const fx = dx * ATTRACTION;
-      const fy = dy * ATTRACTION;
-      if (vel.has(edge.fromNode)) {
-        vel.get(edge.fromNode)!.vx += fx;
-        vel.get(edge.fromNode)!.vy += fy;
-      }
-      if (vel.has(edge.toNode)) {
-        vel.get(edge.toNode)!.vx -= fx;
-        vel.get(edge.toNode)!.vy -= fy;
-      }
-    }
-
-    // Apply velocities
-    for (const n of nonGroup) {
-      const v = vel.get(n.id)!;
-      const p = pos.get(n.id)!;
-      p.x += v.vx;
-      p.y += v.vy;
-      v.vx *= DAMPING;
-      v.vy *= DAMPING;
-    }
-  }
-
-  return [
-    ...groups,
-    ...nonGroup.map((n) => {
-      const p = pos.get(n.id)!;
-      return { ...n, x: snap(p.x - n.width / 2), y: snap(p.y - n.height / 2) };
-    }),
-  ];
+  return new Promise((resolve) => {
+    worker.onmessage = (e: MessageEvent<{ nodes: { id: string; x: number; y: number }[] }>) => {
+      const posMap = new Map(e.data.nodes.map((n) => [n.id, { x: n.x, y: n.y }]));
+      worker.terminate();
+      resolve([
+        ...groups,
+        ...nonGroup.map((n) => {
+          const p = posMap.get(n.id);
+          return p ? { ...n, x: p.x, y: p.y } : n;
+        }),
+      ]);
+    };
+    worker.postMessage({
+      nodes: nonGroup.map((n) => ({ id: n.id, x: n.x, y: n.y, width: n.width, height: n.height })),
+      edges: edges.map((e) => ({ fromNode: e.fromNode, toNode: e.toNode })),
+      iterations,
+      gridSize,
+    });
+  });
 }

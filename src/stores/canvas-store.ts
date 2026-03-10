@@ -62,7 +62,7 @@ interface CanvasActions {
   bringToFront: (id: string) => void;
   sendToBack: (id: string) => void;
   toggleLock: (ids: string[]) => void;
-  applyLayout: (layoutFn: (nodes: CanvasNode[], edges: CanvasEdge[]) => CanvasNode[]) => void;
+  applyLayout: (layoutFn: (nodes: CanvasNode[], edges: CanvasEdge[]) => CanvasNode[] | Promise<CanvasNode[]>) => void;
   toJSON: () => CanvasData;
   markClean: () => void;
 }
@@ -277,7 +277,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
 
   pushUndo: () => {
     const { nodes, edges, undoStack } = get();
-    const snapshot: CanvasData = structuredClone({ nodes, edges });
+    const snapshot: CanvasData = { nodes: [...nodes], edges: [...edges] };
     const next = [...undoStack, snapshot];
     if (next.length > MAX_UNDO) next.shift();
     set({ undoStack: next, redoStack: [] });
@@ -287,7 +287,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
     const { undoStack, nodes, edges, redoStack } = get();
     if (undoStack.length === 0) return;
     const prev = undoStack[undoStack.length - 1];
-    const current: CanvasData = structuredClone({ nodes, edges });
+    const current: CanvasData = { nodes: [...nodes], edges: [...edges] };
     set({
       nodes: prev.nodes,
       edges: prev.edges,
@@ -304,7 +304,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
     const { redoStack, nodes, edges, undoStack } = get();
     if (redoStack.length === 0) return;
     const next = redoStack[redoStack.length - 1];
-    const current: CanvasData = structuredClone({ nodes, edges });
+    const current: CanvasData = { nodes: [...nodes], edges: [...edges] };
     set({
       nodes: next.nodes,
       edges: next.edges,
@@ -455,8 +455,12 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
   applyLayout: (layoutFn) => {
     get().pushUndo();
     const { nodes, edges } = get();
-    const newNodes = layoutFn(nodes, edges);
-    set({ nodes: newNodes, isDirty: true });
+    const result = layoutFn(nodes, edges);
+    if (result instanceof Promise) {
+      result.then((newNodes) => set({ nodes: newNodes, isDirty: true }));
+    } else {
+      set({ nodes: result, isDirty: true });
+    }
   },
 }));
 
