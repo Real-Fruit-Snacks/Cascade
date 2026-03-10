@@ -347,14 +347,14 @@ type ExportFormat = 'html' | 'pdf' | 'markdown' | 'docx';
 
 const FORMAT_EXTENSIONS: Record<ExportFormat, string> = {
   html: 'html',
-  pdf: 'pdf',
+  pdf: 'html',
   markdown: 'md',
   docx: 'docx',
 };
 
 const FORMAT_LABELS: Record<ExportFormat, string> = {
   html: 'HTML',
-  pdf: 'PDF (Print)',
+  pdf: 'Styled HTML',
   markdown: 'Markdown',
   docx: 'Word Document',
 };
@@ -797,22 +797,10 @@ export function ExportModal({ open, onClose, defaultScope }: ExportModalProps) {
         const fullHtml = buildHtmlDocument(fileName, bodyHtml);
         await exportFile(vaultPath, savePath, fullHtml);
       } else if (format === 'pdf') {
+        // Export as styled HTML (true PDF generation requires external tooling)
         const bodyHtml = markdownToHtml(content);
         const fullHtml = buildHtmlDocument(fileName, bodyHtml);
-        // Open print dialog via hidden iframe
-        const iframe = document.createElement('iframe');
-        iframe.style.cssText = 'position:fixed;top:-9999px;width:800px;height:600px;';
-        iframe.sandbox.add('allow-same-origin', 'allow-modals');
-        document.body.appendChild(iframe);
-        const doc = iframe.contentDocument;
-        if (doc) {
-          doc.open();
-          doc.write(fullHtml);
-          doc.close();
-          iframe.contentWindow?.focus();
-          iframe.contentWindow?.print();
-        }
-        setTimeout(() => document.body.removeChild(iframe), 1000);
+        await exportFile(vaultPath, savePath, fullHtml);
       } else if (format === 'docx') {
         const blob = await markdownToDocx(content, fileName);
         const arrayBuf = await blob.arrayBuffer();
