@@ -3733,7 +3733,6 @@ function WordCountGoalOptionsPage({ settings }: OptionsPageProps) {
 
 function CanvasOptionsPage() {
   const { t: ts } = useTranslation('settings');
-  const enableCanvas = useSettingsStore((s) => s.enableCanvas);
   const canvasSnapToGrid = useSettingsStore((s) => s.canvasSnapToGrid);
   const canvasGridSize = useSettingsStore((s) => s.canvasGridSize);
   const canvasDefaultCardWidth = useSettingsStore((s) => s.canvasDefaultCardWidth);
@@ -3768,13 +3767,6 @@ function CanvasOptionsPage() {
           {ts('canvasOptions.description')}
         </span>
       </div>
-
-      <SettingRow label={ts('canvasOptions.enableCanvas.label')} description={ts('canvasOptions.enableCanvas.description')}>
-        <ToggleSwitch
-          checked={enableCanvas}
-          onChange={(v) => update({ enableCanvas: v })}
-        />
-      </SettingRow>
 
       <SettingRow label={ts('canvasOptions.snapToGrid.label')} description={ts('canvasOptions.snapToGrid.description')}>
         <ToggleSwitch
