@@ -209,6 +209,12 @@ export interface Settings {
   // Plugin/Theme Registries
   pluginRegistries: string[];
   themeRegistries: string[];
+  // Sync
+  syncEnabled: boolean;
+  syncRepoUrl: string;
+  syncPat: string;
+  syncAutoSync: boolean;
+  syncInterval: number;
 }
 
 export const DEFAULTS: Settings = {
@@ -369,6 +375,11 @@ export const DEFAULTS: Settings = {
   imageDefaultZoom: 'fit' as const,
   pluginRegistries: [],
   themeRegistries: [],
+  syncEnabled: false,
+  syncRepoUrl: '',
+  syncPat: '',
+  syncAutoSync: true,
+  syncInterval: 5,
 };
 
 // Current vault path for saving settings — set by loadFromVault
