@@ -105,6 +105,7 @@ export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResi
     content,
     editing: isEditing && isMarkdown,
     onContentChange: handleContentChange,
+    onEscape: () => setEditingNode(null),
   });
 
   // -- Interaction handlers --

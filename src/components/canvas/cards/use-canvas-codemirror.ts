@@ -37,6 +37,7 @@ export interface UseCanvasCodeMirrorOptions {
   content: string;
   editing: boolean;
   onContentChange?: (content: string) => void;
+  onEscape?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,13 +70,15 @@ const canvasCardTheme = EditorView.theme({
 // ---------------------------------------------------------------------------
 
 export function useCanvasCodeMirror(options: UseCanvasCodeMirrorOptions) {
-  const { content, editing, onContentChange } = options;
+  const { content, editing, onContentChange, onEscape } = options;
 
   const viewRef = useRef<EditorView | null>(null);
   const containerRef = useRef<HTMLElement | null>(null);
   const contentRef = useRef(content);
   const onContentChangeRef = useRef(onContentChange);
   onContentChangeRef.current = onContentChange;
+  const onEscapeRef = useRef(onEscape);
+  onEscapeRef.current = onEscape;
 
   // Lazily create compartments once per hook instance
   const compsRef = useRef<RenderCompartments | null>(null);
@@ -111,6 +114,13 @@ export function useCanvasCodeMirror(options: UseCanvasCodeMirrorOptions) {
         closeBrackets(),
         history(),
         keymap.of([
+          {
+            key: 'Escape',
+            run: () => {
+              onEscapeRef.current?.();
+              return true;
+            },
+          },
           ...closeBracketsKeymap,
           ...defaultKeymap,
           ...historyKeymap,
