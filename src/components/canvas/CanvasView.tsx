@@ -199,7 +199,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
   const [showSearch, setShowSearch] = useState(false);
-  const [inputModal, setInputModal] = useState<{ title: string; defaultValue?: string; onSubmit: (v: string) => void } | null>(null);
+  const [inputModal, setInputModal] = useState<{ title: string; defaultValue?: string; onSubmit: (v: string) => void; onCancel: () => void } | null>(null);
 
   const requestInput = useCallback((title: string, defaultValue?: string): Promise<string | null> => {
     return new Promise((resolve) => {
@@ -207,6 +207,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
         title,
         defaultValue,
         onSubmit: (v) => { setInputModal(null); resolve(v); },
+        onCancel: () => { setInputModal(null); resolve(null); },
       });
     });
   }, []);
@@ -1124,7 +1125,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
           title={inputModal.title}
           defaultValue={inputModal.defaultValue}
           onSubmit={inputModal.onSubmit}
-          onCancel={() => setInputModal(null)}
+          onCancel={inputModal.onCancel}
         />
       )}
       {canvasShowMinimap && containerSize.width > 0 && (

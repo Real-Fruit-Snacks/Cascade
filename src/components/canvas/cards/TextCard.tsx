@@ -54,12 +54,15 @@ export function TextCard({ node, selected, style, onMouseDown, onResizeMouseDown
     }
   }, [isEditing, flushSave]);
 
-  // Cleanup timer on unmount
+  // Flush pending content and cleanup timer on unmount
+  const flushSaveRef = useRef(flushSave);
+  flushSaveRef.current = flushSave;
   useEffect(() => {
     return () => {
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
         saveTimerRef.current = null;
+        flushSaveRef.current();
       }
     };
   }, []);
