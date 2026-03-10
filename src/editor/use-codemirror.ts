@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef } from 'react';
 import { Compartment, EditorState, Transaction } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, rectangularSelection, crosshairCursor } from '@codemirror/view';
 import { defaultKeymap, historyKeymap, history, redo, indentWithTab } from '@codemirror/commands';
-import { bracketMatching } from '@codemirror/language';
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import { openSearchPanel, search, searchKeymap, highlightSelectionMatches, selectNextOccurrence } from '@codemirror/search';
 import { createSearchPanel } from './search-in-selection';
@@ -12,25 +11,18 @@ import { GFM } from '@lezer/markdown';
 import { createCatppuccinExtensions } from './catppuccin-theme';
 import { searchTheme } from './search-theme';
 import { cursorLineField } from './cursor-line';
-import { livePreview, livePreviewTheme, frontmatterField, markdownLinkClickHandler } from './live-preview/index';
-import { highlightSyntax, highlightSyntaxTheme } from './highlight-syntax';
-import type { AccentColor } from '../stores/settings-store';
 import { wikiLinks, wikiLinkClickHandler, wikiLinkTheme } from './wiki-links';
 import { wikiLinkCompletion } from './wiki-link-completion';
 import { tags, tagTheme, tagClickHandler, tagAutocompletion } from './tags';
 import { tidemarkHighlight, tidemarkTheme } from './tidemark-highlight';
 import { dropHandler } from './drop-handler';
-import { propertiesTheme } from './properties-widget';
-import { typewriterMode, typewriterPadding, focusMode } from './typewriter-mode';
 import { indentGuides } from './indent-guides';
 import { imagePreview } from './image-preview';
-import { imageControls } from './image-controls';
 import { mathPreview, mathPreviewTheme } from './math-preview';
 import { calloutPreview, calloutPreviewTheme } from './callout-preview';
-import { tableEditor, tableEditorTheme } from './table-editor';
-import { footnotePreview, footnotePreviewTheme } from './footnote-preview';
 import { mermaidPreview, mermaidPreviewTheme } from './mermaid-preview';
 import { queryPreview, queryPreviewTheme } from './query-preview';
+import { typewriterMode, typewriterPadding, focusMode } from './typewriter-mode';
 import { customSpellcheck } from './custom-spellcheck';
 import { initDictionary, setVaultPath as setSpellcheckVault } from './spellcheck-engine';
 import { formattingKeymap } from './formatting-commands';
@@ -38,69 +30,38 @@ import { smartListKeymap } from './smart-lists';
 import { useEditorStore } from '../stores/editor-store';
 import { useVaultStore } from '../stores/vault-store';
 import { useSettingsStore } from '../stores/settings-store';
-import type { ViewMode } from '../types/index';
+import {
+  type RenderCompartments,
+  createRenderCompartments,
+  extensionsForMode,
+  buildHighlightSyntaxExtensions,
+  buildRenderExtensions,
+} from './build-extensions';
 
 let contentUpdateTimer: ReturnType<typeof setTimeout> | null = null;
 
-interface Compartments {
-  livePreviewComp: Compartment;
-  readOnlyComp: Compartment;
-  fontSizeComp: Compartment;
-  fontFamilyComp: Compartment;
+interface Compartments extends RenderCompartments {
   lineNumbersComp: Compartment;
-  lineWrappingComp: Compartment;
-  themeComp: Compartment;
   vimComp: Compartment;
-  tabSizeComp: Compartment;
   highlightActiveLineComp: Compartment;
   readableLineLengthComp: Compartment;
   spellcheckComp: Compartment;
-  wikiLinksComp: Compartment;
-  tagsComp: Compartment;
-  tidemarkComp: Compartment;
   codeFoldingComp: Compartment;
   typewriterComp: Compartment;
-  indentGuidesComp: Compartment;
-  imagePreviewComp: Compartment;
-  mathPreviewComp: Compartment;
-  calloutPreviewComp: Compartment;
-  mermaidPreviewComp: Compartment;
-  queryPreviewComp: Compartment;
   focusModeComp: Compartment;
-  highlightSyntaxComp: Compartment;
-  markdownComp: Compartment;
-  tableEditorComp: Compartment;
 }
 
 function createCompartments(): Compartments {
   return {
-    livePreviewComp: new Compartment(),
-    readOnlyComp: new Compartment(),
-    fontSizeComp: new Compartment(),
-    fontFamilyComp: new Compartment(),
+    ...createRenderCompartments(),
     lineNumbersComp: new Compartment(),
-    lineWrappingComp: new Compartment(),
-    themeComp: new Compartment(),
     vimComp: new Compartment(),
-    tabSizeComp: new Compartment(),
     highlightActiveLineComp: new Compartment(),
     readableLineLengthComp: new Compartment(),
     spellcheckComp: new Compartment(),
-    wikiLinksComp: new Compartment(),
-    tagsComp: new Compartment(),
-    tidemarkComp: new Compartment(),
     codeFoldingComp: new Compartment(),
     typewriterComp: new Compartment(),
-    indentGuidesComp: new Compartment(),
-    imagePreviewComp: new Compartment(),
-    mathPreviewComp: new Compartment(),
-    calloutPreviewComp: new Compartment(),
-    mermaidPreviewComp: new Compartment(),
-    queryPreviewComp: new Compartment(),
     focusModeComp: new Compartment(),
-    highlightSyntaxComp: new Compartment(),
-    markdownComp: new Compartment(),
-    tableEditorComp: new Compartment(),
   };
 }
 
@@ -161,18 +122,6 @@ const foldGutterTheme = EditorView.theme({
     color: 'var(--ctp-accent)',
   },
 });
-
-function extensionsForMode(mode: ViewMode, lpEnabled = true) {
-  return {
-    livePreview: lpEnabled && (mode === 'live' || mode === 'reading') ? [livePreview, livePreviewTheme, frontmatterField, footnotePreview, footnotePreviewTheme] : [],
-    readOnly: mode === 'reading' ? EditorView.editable.of(false) : EditorView.editable.of(true),
-  };
-}
-
-function buildHighlightSyntaxExtensions(lpEnabled: boolean, hlEnabled: boolean, color: AccentColor, mode: ViewMode) {
-  const inPreviewMode = lpEnabled && (mode === 'live' || mode === 'reading');
-  return inPreviewMode && hlEnabled ? [highlightSyntax, highlightSyntaxTheme(color)] : [];
-}
 
 // Cache heading fold ranges — single O(N) pass instead of O(N) per heading
 let headingFoldDoc: import('@codemirror/state').Text | null = null;
@@ -244,12 +193,12 @@ export function useCodeMirror() {
   if (!compsRef.current) compsRef.current = createCompartments();
   const {
     livePreviewComp, readOnlyComp, fontSizeComp, fontFamilyComp,
-    lineNumbersComp, lineWrappingComp, themeComp, vimComp, tabSizeComp,
+    lineNumbersComp, themeComp, vimComp, tabSizeComp,
     highlightActiveLineComp, readableLineLengthComp, spellcheckComp,
     wikiLinksComp, tagsComp, tidemarkComp, codeFoldingComp, typewriterComp,
     indentGuidesComp, imagePreviewComp, mathPreviewComp, calloutPreviewComp,
     mermaidPreviewComp, queryPreviewComp, focusModeComp, highlightSyntaxComp,
-    markdownComp, tableEditorComp,
+    markdownComp,
   } = compsRef.current;
 
   const updateContent = useEditorStore((s) => s.updateContent);
@@ -343,45 +292,24 @@ export function useCodeMirror() {
 
     const settings = useSettingsStore.getState();
     const initialMode = useEditorStore.getState().viewMode;
-    const exts = extensionsForMode(initialMode, settings.enableLivePreview);
+
+    // Build shared rendering extensions via the shared builder
+    const renderExts = buildRenderExtensions(compsRef.current!, settings, initialMode);
 
     const state = EditorState.create({
       extensions: [
         cursorLineField,
-        markdownComp.of(markdown({ extensions: [GFM] })),
-        themeComp.of(createCatppuccinExtensions(settings.theme)),
+        // Shared rendering extensions (live preview, wiki-links, tags, math, etc.)
+        ...renderExts,
+        // Editor-specific extensions below
         vimComp.of([]),
-        livePreviewComp.of(exts.livePreview),
-        highlightSyntaxComp.of(buildHighlightSyntaxExtensions(settings.enableLivePreview, settings.enableHighlightSyntax, settings.highlightColor, initialMode)),
-        readOnlyComp.of(exts.readOnly),
-        fontSizeComp.of(EditorView.theme({
-          '.cm-content': { fontSize: settings.fontSize + 'px' },
-          '.cm-gutters': { fontSize: settings.fontSize + 'px' },
-        })),
-        fontFamilyComp.of(EditorView.theme({
-          '.cm-content': { fontFamily: settings.fontFamily },
-          '.cm-scroller': { fontFamily: settings.fontFamily },
-        })),
         lineNumbersComp.of(settings.showLineNumbers ? lineNumbers() : []),
-        lineWrappingComp.of(EditorView.lineWrapping),
-        tabSizeComp.of(EditorState.tabSize.of(settings.tabSize)),
         highlightActiveLineComp.of(settings.highlightActiveLine ? highlightActiveLine() : []),
         readableLineLengthComp.of(settings.readableLineLength > 0 ? EditorView.theme({ '.cm-content': { maxWidth: `${settings.readableLineLength}px`, marginLeft: 'auto', marginRight: 'auto' } }) : []),
         spellcheckComp.of(settings.spellcheck ? customSpellcheck : []),
-        wikiLinksComp.of(settings.enableWikiLinks ? [wikiLinks, wikiLinkClickHandler, wikiLinkTheme, wikiLinkCompletion] : []),
-        tagsComp.of(settings.enableTags ? [tags, tagTheme, tagClickHandler, tagAutocompletion] : []),
-        tidemarkComp.of(settings.enableVariables && settings.variablesHighlight ? [tidemarkHighlight, tidemarkTheme] : []),
         codeFoldingComp.of(buildCodeFoldingExtensions(settings.enableCodeFolding, settings.foldHeadings, settings.foldCodeBlocks, settings.foldMinLevel)),
         typewriterComp.of(settings.enableTypewriterMode ? [typewriterMode(settings.typewriterOffset), typewriterPadding] : []),
         focusModeComp.of(settings.enableFocusMode && settings.focusModeDimParagraphs ? focusMode : []),
-        indentGuidesComp.of(settings.enableIndentGuides ? indentGuides(settings.indentGuideColor, settings.indentGuideStyle) : []),
-        imagePreviewComp.of(settings.enableImagePreview ? imagePreview(settings.imagePreviewMaxHeight) : []),
-        mathPreviewComp.of(settings.enableMathPreview ? [mathPreview, mathPreviewTheme] : []),
-        calloutPreviewComp.of(settings.enableCalloutPreview ? [calloutPreview, calloutPreviewTheme] : []),
-        mermaidPreviewComp.of(settings.enableMermaidPreview ? [mermaidPreview, mermaidPreviewTheme] : []),
-        queryPreviewComp.of(settings.enableQueryPreview ? [queryPreview, queryPreviewTheme] : []),
-        tableEditorComp.of([...tableEditor, tableEditorTheme]),
-        bracketMatching(),
         closeBrackets(),
         rectangularSelection(),
         crosshairCursor(),
@@ -398,8 +326,6 @@ export function useCodeMirror() {
         saveKeymap,
         smartListKeymap,
         formattingKeymap,
-        markdownLinkClickHandler,
-        ...imageControls(),
         dropHandler,
         // Prevent right-click from moving cursor / triggering live preview edit mode
         // Return true to consume for CM6 (no cursor move), but don't preventDefault
@@ -409,7 +335,6 @@ export function useCodeMirror() {
             return false;
           },
         }),
-        propertiesTheme,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             if (contentUpdateTimer) clearTimeout(contentUpdateTimer);
