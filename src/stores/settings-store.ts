@@ -499,5 +499,5 @@ export const useSettingsStore = create<Settings & SettingsActions>((set, get) =>
 
 // Expose store for e2e testing
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  (window as any).__ZUSTAND_SETTINGS_STORE__ = useSettingsStore;
+  (window as unknown as Record<string, unknown>).__ZUSTAND_SETTINGS_STORE__ = useSettingsStore;
 }

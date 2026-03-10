@@ -25,7 +25,7 @@ export function fitNodeToContent(nodeId: string, minHeight = 60) {
         cmScroller.scrollHeight + headerHeight + borderOverhead,
         minHeight,
       ));
-      const current = useCanvasStore.getState().nodes.find((n: any) => n.id === nodeId);
+      const current = useCanvasStore.getState().nodes.find((n) => n.id === nodeId);
       if (!current || Math.abs(newHeight - current.height) <= 2) return;
       useCanvasStore.getState().updateNode(nodeId, { height: newHeight });
       if (pass < 2) {

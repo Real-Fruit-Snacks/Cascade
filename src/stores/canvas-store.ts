@@ -333,7 +333,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
 
     get().pushUndo();
 
-    let updates: Map<string, Partial<CanvasNode>> = new Map();
+    const updates: Map<string, Partial<CanvasNode>> = new Map();
 
     if (direction === 'left') {
       const minX = Math.min(...selected.map((n) => n.x));
@@ -462,5 +462,5 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
 
 // Expose store for e2e testing
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  (window as any).__ZUSTAND_CANVAS_STORE__ = useCanvasStore;
+  (window as unknown as Record<string, unknown>).__ZUSTAND_CANVAS_STORE__ = useCanvasStore;
 }

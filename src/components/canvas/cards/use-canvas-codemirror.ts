@@ -91,7 +91,7 @@ export function useCanvasCodeMirror(options: UseCanvasCodeMirrorOptions) {
     if (node === null) {
       viewRef.current?.destroy();
       viewRef.current = null;
-      if (containerRef.current) (containerRef.current as any).__canvasView = null;
+      if (containerRef.current) (containerRef.current as unknown as Record<string, unknown>).__canvasView = null;
       containerRef.current = null;
       return;
     }
@@ -141,7 +141,7 @@ export function useCanvasCodeMirror(options: UseCanvasCodeMirrorOptions) {
     const view = new EditorView({ state, parent: node });
     viewRef.current = view;
     // Expose view on DOM for external measurement (e.g. context menu fit-to-content)
-    (node as any).__canvasView = view;
+    (node as unknown as Record<string, unknown>).__canvasView = view;
 
     // Lazy-load language-data for code block syntax highlighting
     import('@codemirror/language-data').then(({ languages }) => {
