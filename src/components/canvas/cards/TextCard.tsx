@@ -3,6 +3,7 @@ import { Lock } from 'lucide-react';
 import { useCanvasStore } from '../../../stores/canvas-store';
 import { CANVAS_COLORS, type TextNode } from '../../../types/canvas';
 import { useCanvasCodeMirror } from './use-canvas-codemirror';
+import { fitNodeToContent } from '../canvas-fit-to-content';
 import type { ResizeCorner } from '../CanvasCards';
 
 interface TextCardProps {
@@ -63,7 +64,7 @@ export function TextCard({ node, selected, style, onMouseDown, onResizeMouseDown
   }, []);
 
   // -- CM6 hook --
-  const { editorRef, viewRef } = useCanvasCodeMirror({
+  const { editorRef } = useCanvasCodeMirror({
     content: node.text,
     editing: isEditing,
     onContentChange: handleContentChange,
@@ -74,26 +75,8 @@ export function TextCard({ node, selected, style, onMouseDown, onResizeMouseDown
   const handleAutoFitHeight = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    const view = viewRef.current;
-    if (!view) return;
-    // Shrink to minimum so scrollHeight reflects true content overflow
-    updateNode(node.id, { height: 60 });
-    requestAnimationFrame(() => setTimeout(() => {
-      const applyFit = (pass: number) => {
-        const v = viewRef.current;
-        if (!v) return;
-        const borderOverhead = 4;
-        const newHeight = Math.round(Math.max(v.scrollDOM.scrollHeight + borderOverhead, 60));
-        const current = useCanvasStore.getState().nodes.find((n) => n.id === node.id);
-        if (!current || Math.abs(newHeight - current.height) <= 2) return;
-        updateNode(node.id, { height: newHeight });
-        if (pass < 2) {
-          requestAnimationFrame(() => setTimeout(() => applyFit(pass + 1), 50));
-        }
-      };
-      applyFit(1);
-    }, 50));
-  }, [node.id, updateNode, viewRef]);
+    fitNodeToContent(node.id, 60);
+  }, [node.id]);
 
   // -- Interaction handlers --
   const canvasLocked = useCanvasStore((s) => s.canvasLocked);
@@ -108,7 +91,7 @@ export function TextCard({ node, selected, style, onMouseDown, onResizeMouseDown
     } else {
       selectNode(node.id, e.ctrlKey || e.metaKey);
     }
-  }, [node.id, selectNode, setEditingNode, selected, isEditing, canvasLocked, canvasTool]);
+  }, [node.id, node.locked, selectNode, setEditingNode, selected, isEditing, canvasLocked, canvasTool]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();

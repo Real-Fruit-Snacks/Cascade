@@ -5,6 +5,7 @@ import { useEditorStore } from '../../../stores/editor-store';
 import { CANVAS_COLORS, type FileNode } from '../../../types/canvas';
 import { readFile, writeFile } from '../../../lib/tauri-commands';
 import { useCanvasCodeMirror } from './use-canvas-codemirror';
+import { fitNodeToContent } from '../canvas-fit-to-content';
 import type { ResizeCorner } from '../CanvasCards';
 
 interface FileCardProps {
@@ -101,8 +102,7 @@ export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResi
   }, [node.file, vaultPath, isImage, isPdf]);
 
   // -- CM6 hook --
-  const updateNode = useCanvasStore((s) => s.updateNode);
-  const { editorRef, viewRef } = useCanvasCodeMirror({
+  const { editorRef } = useCanvasCodeMirror({
     content,
     editing: isEditing && isMarkdown,
     onContentChange: handleContentChange,
@@ -113,29 +113,8 @@ export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResi
   const handleAutoFitHeight = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    const view = viewRef.current;
-    if (!view) return;
-    // Shrink to minimum so scrollHeight reflects true content overflow
-    updateNode(node.id, { height: 80 });
-    requestAnimationFrame(() => setTimeout(() => {
-      const applyFit = (pass: number) => {
-        const v = viewRef.current;
-        if (!v) return;
-        const cardEl = document.querySelector(`[data-node-id="${node.id}"]`);
-        const headerEl = cardEl?.querySelector('[data-card-header]') as HTMLElement | null;
-        const headerHeight = headerEl ? headerEl.offsetHeight : 36;
-        const borderOverhead = 4;
-        const newHeight = Math.round(Math.max(v.scrollDOM.scrollHeight + headerHeight + borderOverhead, 80));
-        const current = useCanvasStore.getState().nodes.find((n) => n.id === node.id);
-        if (!current || Math.abs(newHeight - current.height) <= 2) return;
-        updateNode(node.id, { height: newHeight });
-        if (pass < 2) {
-          requestAnimationFrame(() => setTimeout(() => applyFit(pass + 1), 50));
-        }
-      };
-      applyFit(1);
-    }, 50));
-  }, [node.id, updateNode, viewRef]);
+    fitNodeToContent(node.id, 80);
+  }, [node.id]);
 
   // -- Interaction handlers --
   const canvasLocked = useCanvasStore((s) => s.canvasLocked);

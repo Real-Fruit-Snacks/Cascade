@@ -1,6 +1,7 @@
 import { Type, FileText, Link, Square, Trash2, Copy, Palette, Tag, ZoomIn, XCircle, ArrowUpToLine, ArrowDownToLine, Code, ArrowRight, ArrowLeftRight, Minus, MoveRight, MoveLeft, AlignLeft, AlignCenterHorizontal, AlignRight as AlignRightIcon, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, Lock, Unlock, Download, LayoutGrid, GitBranch, Waypoints } from 'lucide-react';
 import { downloadExport } from './CanvasExport';
 import { gridLayout, treeLayout, forceLayout } from './CanvasAutoLayout';
+import { fitNodeToContent } from './canvas-fit-to-content';
 import { ContextMenu } from '../sidebar/ContextMenu';
 import type { MenuItem } from '../sidebar/ContextMenu';
 import { useCanvasStore } from '../../stores/canvas-store';
@@ -83,45 +84,14 @@ export function CanvasContextMenu({
       });
     }
 
-    // Auto-fit height (works in locked or unlocked)
-    items.push({
-      label: 'Fit to Content',
-      icon: <ZoomIn size={14} />,
-      onClick: () => {
-        // CM6 uses virtual rendering — scrollHeight changes as more content
-        // becomes visible after resize. We measure, resize, wait for CM6 to
-        // re-render, then measure again to converge on the true height.
-        // Shrink to minimum first so scrollHeight reflects true content overflow,
-        // then expand to fit. Two-pass handles CM6 virtual rendering re-layout.
-        store.updateNode(targetNodeId, { height: 60 });
-        requestAnimationFrame(() => setTimeout(() => {
-          const measure = () => {
-            const cardEl = document.querySelector(`[data-node-id="${targetNodeId}"]`);
-            if (!cardEl) return null;
-            const cmScroller = cardEl.querySelector('.cm-scroller') as HTMLElement | null;
-            if (!cmScroller) return null;
-            const headerEl = cardEl.querySelector('[data-card-header]') as HTMLElement | null;
-            const headerHeight = headerEl ? headerEl.offsetHeight : 0;
-            const borderOverhead = 4;
-            return Math.round(Math.max(cmScroller.scrollHeight + headerHeight + borderOverhead, 60));
-          };
-
-          const applyFit = (pass: number) => {
-            const newHeight = measure();
-            if (newHeight === null) return;
-            const current = useCanvasStore.getState().nodes.find((n: any) => n.id === targetNodeId);
-            if (!current) return;
-            if (Math.abs(newHeight - current.height) > 2) {
-              store.updateNode(targetNodeId, { height: newHeight });
-              if (pass < 2) {
-                requestAnimationFrame(() => setTimeout(() => applyFit(pass + 1), 50));
-              }
-            }
-          };
-          applyFit(1);
-        }, 50));
-      },
-    });
+    // Auto-fit height (works in locked or unlocked) — only for CM6 cards
+    if (node.type === 'text' || node.type === 'file') {
+      items.push({
+        label: 'Fit to Content',
+        icon: <ZoomIn size={14} />,
+        onClick: () => fitNodeToContent(targetNodeId, node.type === 'file' ? 80 : 60),
+      });
+    }
 
     // Mutation actions only when unlocked
     if (!locked) {
