@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCanvasStore } from '../../stores/canvas-store';
 import { readFile, writeFile } from '../../lib/tauri-commands';
-import type { CanvasData, EdgeSide, CanvasNode } from '../../types/canvas';
+import type { CanvasData, EdgeSide, CanvasNode, TextNode } from '../../types/canvas';
 import { CanvasBackground, type ConnectDragState } from './CanvasBackground';
 import { CanvasCards, type ResizeCorner } from './CanvasCards';
+import { CanvasToolbar } from './CanvasToolbar';
 
 interface CanvasViewProps {
   filePath: string;
@@ -227,7 +228,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
     return () => observer.disconnect();
   }, []);
 
-  // Space key tracking + Delete/Backspace for selected edges
+  // Space key tracking + keyboard shortcuts
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && e.target === document.body) {
@@ -235,14 +236,104 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
         e.preventDefault();
         return;
       }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && e.target === document.body) {
-        const store = useCanvasStore.getState();
-        if (store.selectedEdgeIds.size > 0) {
+
+      if (e.target !== document.body) return;
+
+      const store = useCanvasStore.getState();
+      const ctrl = e.ctrlKey || e.metaKey;
+
+      // Delete / Backspace — remove selected nodes and edges
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (store.selectedNodeIds.size > 0) {
+          store.removeNodes([...store.selectedNodeIds]);
+          e.preventDefault();
+        } else if (store.selectedEdgeIds.size > 0) {
           store.removeEdges([...store.selectedEdgeIds]);
           e.preventDefault();
         }
+        return;
+      }
+
+      // Ctrl+A — select all
+      if (ctrl && e.key === 'a') {
+        store.selectAll();
+        e.preventDefault();
+        return;
+      }
+
+      // Ctrl+Z — undo
+      if (ctrl && !e.shiftKey && e.key === 'z') {
+        store.undo();
+        e.preventDefault();
+        return;
+      }
+
+      // Ctrl+Y or Ctrl+Shift+Z — redo
+      if ((ctrl && e.key === 'y') || (ctrl && e.shiftKey && e.key === 'z')) {
+        store.redo();
+        e.preventDefault();
+        return;
+      }
+
+      // Ctrl+D — duplicate selected nodes
+      if (ctrl && e.key === 'd') {
+        const selectedNodes = store.nodes.filter((n) => store.selectedNodeIds.has(n.id));
+        if (selectedNodes.length > 0) {
+          store.pushUndo();
+          for (const node of selectedNodes) {
+            const { id: _id, ...rest } = node;
+            store.addNode({ ...rest, x: node.x + 20, y: node.y + 20 });
+          }
+          e.preventDefault();
+        }
+        return;
+      }
+
+      // Ctrl+0 — zoom to fit
+      if (ctrl && e.key === '0') {
+        store.zoomToFit();
+        e.preventDefault();
+        return;
+      }
+
+      // Ctrl+= or Ctrl++ — zoom in
+      if (ctrl && (e.key === '=' || e.key === '+')) {
+        const vp = store.viewport;
+        store.setViewport({ zoom: Math.min(4, vp.zoom * 1.25) });
+        e.preventDefault();
+        return;
+      }
+
+      // Ctrl+- — zoom out
+      if (ctrl && e.key === '-') {
+        const vp = store.viewport;
+        store.setViewport({ zoom: Math.max(0.25, vp.zoom * 0.8) });
+        e.preventDefault();
+        return;
+      }
+
+      // Arrow keys — nudge selected nodes
+      const nudge = e.shiftKey ? 1 : 20;
+      let dx = 0;
+      let dy = 0;
+      if (e.key === 'ArrowLeft')  dx = -nudge;
+      if (e.key === 'ArrowRight') dx =  nudge;
+      if (e.key === 'ArrowUp')    dy = -nudge;
+      if (e.key === 'ArrowDown')  dy =  nudge;
+      if ((dx !== 0 || dy !== 0) && store.selectedNodeIds.size > 0) {
+        store.pushUndo();
+        useCanvasStore.setState((s) => ({
+          nodes: s.nodes.map((n) =>
+            s.selectedNodeIds.has(n.id)
+              ? { ...n, x: n.x + dx, y: n.y + dy }
+              : n,
+          ),
+          isDirty: true,
+        }));
+        e.preventDefault();
       }
     };
+
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         spaceDown.current = false;
@@ -585,6 +676,25 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
     setDragMode('none');
   };
 
+  const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only on empty canvas (direct target, not a card)
+    if (e.target !== e.currentTarget) return;
+    const rect = containerRef.current?.getBoundingClientRect();
+    const sx = rect ? e.clientX - rect.left : e.clientX;
+    const sy = rect ? e.clientY - rect.top : e.clientY;
+    const { zoom, x, y } = viewport;
+    const wx = sx / zoom - x;
+    const wy = sy / zoom - y;
+    useCanvasStore.getState().addNode({
+      type: 'text',
+      text: '',
+      x: wx - 150,
+      y: wy - 100,
+      width: 300,
+      height: 200,
+    } as Omit<TextNode, 'id'>);
+  };
+
   const handleMouseLeave = () => {
     if (dragRef.current.mode === 'connect') {
       setConnectDrag(null);
@@ -611,6 +721,7 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
+      onDoubleClick={handleDoubleClick}
     >
       {containerSize.width > 0 && (
         <CanvasBackground
@@ -626,6 +737,10 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
         onCardMouseDown={onCardMouseDown}
         onResizeMouseDown={onResizeMouseDown}
         onConnectMouseDown={onConnectMouseDown}
+      />
+      <CanvasToolbar
+        containerWidth={containerSize.width}
+        containerHeight={containerSize.height}
       />
     </div>
   );
