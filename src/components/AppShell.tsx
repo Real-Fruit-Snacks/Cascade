@@ -30,6 +30,7 @@ import { useVaultStore } from '../stores/vault-store';
 import { useSettingsStore } from '../stores/settings-store';
 import type { VariableMatch } from '../lib/tidemark';
 import { writeFile } from '../lib/tauri-commands';
+import { useSyncTimer } from '../hooks/use-sync-timer';
 
 const SIDEBAR_STORAGE_KEY = 'cascade-sidebar-visible';
 
@@ -58,6 +59,7 @@ function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
 
 export function AppShell() {
   const { t } = useTranslation(['common', 'dialogs']);
+  useSyncTimer();
   const sidebarPosition = useSettingsStore((s) => s.sidebarPosition);
   const accentColor = useSettingsStore((s) => s.accentColor);
   const uiFontSize = useSettingsStore((s) => s.uiFontSize);
