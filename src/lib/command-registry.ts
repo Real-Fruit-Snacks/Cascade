@@ -22,6 +22,12 @@ export class CommandRegistry {
     return [...this.commands.values()];
   }
 
+  unregister(id: string): boolean {
+    const deleted = this.commands.delete(id);
+    if (deleted) this.notify();
+    return deleted;
+  }
+
   execute(id: string): boolean {
     const cmd = this.commands.get(id);
     if (cmd) {

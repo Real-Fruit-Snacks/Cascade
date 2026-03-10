@@ -471,7 +471,10 @@ export class PluginSandbox {
         return undefined;
       }
       case 'ui.removeCommand': {
-        throw new Error('ui.removeCommand is not yet implemented');
+        requirePermission(this.permissions, 'ui.commands');
+        const commandId = `${this.pluginId}:${args[0]}`;
+        commandRegistry.unregister(commandId);
+        return undefined;
       }
       case 'ui.addStatusBarItem': {
         requirePermission(this.permissions, 'ui.statusbar');
