@@ -4,17 +4,20 @@ import { useCanvasStore } from '../../../stores/canvas-store';
 import { useEditorStore } from '../../../stores/editor-store';
 import { CANVAS_COLORS, type FileNode } from '../../../types/canvas';
 import { readFile } from '../../../lib/tauri-commands';
+import type { ResizeCorner } from '../CanvasCards';
 
 interface FileCardProps {
   node: FileNode;
   selected: boolean;
   style: React.CSSProperties;
   vaultPath: string;
+  onMouseDown?: (e: React.MouseEvent) => void;
+  onResizeMouseDown?: (corner: ResizeCorner, e: React.MouseEvent) => void;
 }
 
 const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp']);
 
-export function FileCard({ node, selected, style, vaultPath }: FileCardProps) {
+export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResizeMouseDown }: FileCardProps) {
   const selectNode = useCanvasStore((s) => s.selectNode);
   const [preview, setPreview] = useState<string>('');
   const ext = node.file.slice(node.file.lastIndexOf('.')).toLowerCase();
@@ -61,6 +64,7 @@ export function FileCard({ node, selected, style, vaultPath }: FileCardProps) {
       }}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
+      onMouseDown={onMouseDown}
     >
       {/* Header */}
       <div
@@ -88,6 +92,66 @@ export function FileCard({ node, selected, style, vaultPath }: FileCardProps) {
           </pre>
         )}
       </div>
+      {selected && onResizeMouseDown && (
+        <>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: -4,
+              right: -4,
+              width: 8,
+              height: 8,
+              backgroundColor: 'var(--ctp-accent)',
+              borderRadius: 2,
+              cursor: 'nwse-resize',
+              zIndex: 10,
+            }}
+            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('br', e); }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              bottom: -4,
+              left: -4,
+              width: 8,
+              height: 8,
+              backgroundColor: 'var(--ctp-accent)',
+              borderRadius: 2,
+              cursor: 'nesw-resize',
+              zIndex: 10,
+            }}
+            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('bl', e); }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: -4,
+              right: -4,
+              width: 8,
+              height: 8,
+              backgroundColor: 'var(--ctp-accent)',
+              borderRadius: 2,
+              cursor: 'nesw-resize',
+              zIndex: 10,
+            }}
+            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('tr', e); }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: -4,
+              left: -4,
+              width: 8,
+              height: 8,
+              backgroundColor: 'var(--ctp-accent)',
+              borderRadius: 2,
+              cursor: 'nwse-resize',
+              zIndex: 10,
+            }}
+            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('tl', e); }}
+          />
+        </>
+      )}
     </div>
   );
 }

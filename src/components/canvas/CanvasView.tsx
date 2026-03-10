@@ -3,12 +3,50 @@ import { useCanvasStore } from '../../stores/canvas-store';
 import { readFile, writeFile } from '../../lib/tauri-commands';
 import type { CanvasData } from '../../types/canvas';
 import { CanvasBackground } from './CanvasBackground';
-import { CanvasCards } from './CanvasCards';
+import { CanvasCards, type ResizeCorner } from './CanvasCards';
 
 interface CanvasViewProps {
   filePath: string;
   vaultPath: string;
 }
+
+type DragMode = 'none' | 'pan' | 'move' | 'resize';
+
+interface MoveDragRef {
+  mode: 'move';
+  startX: number;
+  startY: number;
+  origPositions: Map<string, { x: number; y: number }>;
+}
+
+interface ResizeDragRef {
+  mode: 'resize';
+  nodeId: string;
+  corner: ResizeCorner;
+  startX: number;
+  startY: number;
+  origX: number;
+  origY: number;
+  origW: number;
+  origH: number;
+}
+
+interface PanDragRef {
+  mode: 'pan';
+  startX: number;
+  startY: number;
+  vpX: number;
+  vpY: number;
+}
+
+interface NoDragRef {
+  mode: 'none';
+}
+
+type DragRef = NoDragRef | PanDragRef | MoveDragRef | ResizeDragRef;
+
+const MIN_CARD_W = 100;
+const MIN_CARD_H = 60;
 
 export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   const loadCanvas = useCanvasStore((s) => s.loadCanvas);
@@ -23,10 +61,12 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Pan state
-  const isPanning = useRef(false);
-  const panStart = useRef({ x: 0, y: 0 });
-  const panViewportStart = useRef({ x: 0, y: 0 });
+  // Unified drag state ref — avoids React re-renders during drag
+  const dragRef = useRef<DragRef>({ mode: 'none' });
+
+  // Track current drag mode for cursor styling — use a state-driven boolean
+  const [dragMode, setDragMode] = useState<DragMode>('none');
+
   const spaceDown = useRef(false);
 
   // Load canvas on mount / filePath change
@@ -145,14 +185,80 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
     return () => el.removeEventListener('wheel', onWheel);
   }, [viewport, setViewport]);
 
+  // Card drag initiated from a card's mousedown
+  const onCardMouseDown = (nodeId: string, e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+
+    const store = useCanvasStore.getState();
+
+    // If card not selected, select it (non-additive) first
+    if (!store.selectedNodeIds.has(nodeId)) {
+      store.selectNode(nodeId, false);
+    }
+
+    // Push undo once at drag start
+    store.pushUndo();
+
+    // Snapshot original positions of all currently selected nodes
+    // Re-read selection after potential selectNode call above
+    const selectedIds = useCanvasStore.getState().selectedNodeIds;
+    const nodes = useCanvasStore.getState().nodes;
+    const origPositions = new Map<string, { x: number; y: number }>();
+    for (const node of nodes) {
+      if (selectedIds.has(node.id)) {
+        origPositions.set(node.id, { x: node.x, y: node.y });
+      }
+    }
+
+    dragRef.current = {
+      mode: 'move',
+      startX: e.clientX,
+      startY: e.clientY,
+      origPositions,
+    };
+    setDragMode('move');
+  };
+
+  // Resize initiated from a resize handle's mousedown
+  const onResizeMouseDown = (nodeId: string, corner: ResizeCorner, e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+
+    const store = useCanvasStore.getState();
+    const node = store.nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    // Push undo once at resize start
+    store.pushUndo();
+
+    dragRef.current = {
+      mode: 'resize',
+      nodeId,
+      corner,
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: node.x,
+      origY: node.y,
+      origW: node.width,
+      origH: node.height,
+    };
+    setDragMode('resize');
+  };
+
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     const isMiddle = e.button === 1;
     const isLeftWithSpace = e.button === 0 && spaceDown.current;
 
     if (isMiddle || isLeftWithSpace) {
-      isPanning.current = true;
-      panStart.current = { x: e.clientX, y: e.clientY };
-      panViewportStart.current = { x: viewport.x, y: viewport.y };
+      dragRef.current = {
+        mode: 'pan',
+        startX: e.clientX,
+        startY: e.clientY,
+        vpX: viewport.x,
+        vpY: viewport.y,
+      };
+      setDragMode('pan');
       e.preventDefault();
       return;
     }
@@ -164,20 +270,91 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isPanning.current) return;
-    const dx = (e.clientX - panStart.current.x) / viewport.zoom;
-    const dy = (e.clientY - panStart.current.y) / viewport.zoom;
-    setViewport({
-      x: panViewportStart.current.x + dx,
-      y: panViewportStart.current.y + dy,
-    });
+    const drag = dragRef.current;
+
+    if (drag.mode === 'pan') {
+      const dx = (e.clientX - drag.startX) / viewport.zoom;
+      const dy = (e.clientY - drag.startY) / viewport.zoom;
+      setViewport({
+        x: drag.vpX + dx,
+        y: drag.vpY + dy,
+      });
+      return;
+    }
+
+    if (drag.mode === 'move') {
+      const zoom = useCanvasStore.getState().viewport.zoom;
+      const dx = (e.clientX - drag.startX) / zoom;
+      const dy = (e.clientY - drag.startY) / zoom;
+
+      // Directly update node positions without calling updateNode (which pushes undo)
+      useCanvasStore.setState((s) => ({
+        nodes: s.nodes.map((n) => {
+          const orig = drag.origPositions.get(n.id);
+          if (!orig) return n;
+          return { ...n, x: orig.x + dx, y: orig.y + dy };
+        }),
+        isDirty: true,
+      }));
+      return;
+    }
+
+    if (drag.mode === 'resize') {
+      const zoom = useCanvasStore.getState().viewport.zoom;
+      const dx = (e.clientX - drag.startX) / zoom;
+      const dy = (e.clientY - drag.startY) / zoom;
+
+      let newX = drag.origX;
+      let newY = drag.origY;
+      let newW = drag.origW;
+      let newH = drag.origH;
+
+      switch (drag.corner) {
+        case 'br':
+          newW = Math.max(MIN_CARD_W, drag.origW + dx);
+          newH = Math.max(MIN_CARD_H, drag.origH + dy);
+          break;
+        case 'bl':
+          newW = Math.max(MIN_CARD_W, drag.origW - dx);
+          newH = Math.max(MIN_CARD_H, drag.origH + dy);
+          newX = drag.origX + drag.origW - newW;
+          break;
+        case 'tr':
+          newW = Math.max(MIN_CARD_W, drag.origW + dx);
+          newH = Math.max(MIN_CARD_H, drag.origH - dy);
+          newY = drag.origY + drag.origH - newH;
+          break;
+        case 'tl':
+          newW = Math.max(MIN_CARD_W, drag.origW - dx);
+          newH = Math.max(MIN_CARD_H, drag.origH - dy);
+          newX = drag.origX + drag.origW - newW;
+          newY = drag.origY + drag.origH - newH;
+          break;
+      }
+
+      useCanvasStore.setState((s) => ({
+        nodes: s.nodes.map((n) =>
+          n.id === drag.nodeId
+            ? { ...n, x: newX, y: newY, width: newW, height: newH }
+            : n
+        ),
+        isDirty: true,
+      }));
+      return;
+    }
   };
 
-  const stopPan = () => {
-    isPanning.current = false;
+  const handleMouseUp = () => {
+    dragRef.current = { mode: 'none' };
+    setDragMode('none');
   };
 
-  const cursor = isPanning.current || spaceDown.current ? 'grab' : undefined;
+  const cursor =
+    dragMode === 'pan' || spaceDown.current
+      ? 'grab'
+      : dragMode === 'move'
+      ? 'grabbing'
+      : undefined;
 
   return (
     <div
@@ -186,13 +363,19 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       style={{ backgroundColor: 'var(--ctp-base)', cursor }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
-      onMouseUp={stopPan}
-      onMouseLeave={stopPan}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
     >
       {containerSize.width > 0 && (
         <CanvasBackground width={containerSize.width} height={containerSize.height} />
       )}
-      <CanvasCards vaultPath={vaultPath} containerWidth={containerSize.width} containerHeight={containerSize.height} />
+      <CanvasCards
+        vaultPath={vaultPath}
+        containerWidth={containerSize.width}
+        containerHeight={containerSize.height}
+        onCardMouseDown={onCardMouseDown}
+        onResizeMouseDown={onResizeMouseDown}
+      />
     </div>
   );
 }

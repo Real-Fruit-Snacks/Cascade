@@ -1,14 +1,17 @@
 import { useCallback } from 'react';
 import { useCanvasStore } from '../../../stores/canvas-store';
 import { CANVAS_COLORS, type TextNode } from '../../../types/canvas';
+import type { ResizeCorner } from '../CanvasCards';
 
 interface TextCardProps {
   node: TextNode;
   selected: boolean;
   style: React.CSSProperties;
+  onMouseDown?: (e: React.MouseEvent) => void;
+  onResizeMouseDown?: (corner: ResizeCorner, e: React.MouseEvent) => void;
 }
 
-export function TextCard({ node, selected, style }: TextCardProps) {
+export function TextCard({ node, selected, style, onMouseDown, onResizeMouseDown }: TextCardProps) {
   const selectNode = useCanvasStore((s) => s.selectNode);
   const setEditingNode = useCanvasStore((s) => s.setEditingNode);
   const editingNodeId = useCanvasStore((s) => s.editingNodeId);
@@ -25,6 +28,11 @@ export function TextCard({ node, selected, style }: TextCardProps) {
     setEditingNode(node.id);
   }, [node.id, setEditingNode]);
 
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isEditing) return;
+    onMouseDown?.(e);
+  }, [isEditing, onMouseDown]);
+
   const colorVar = node.color ? CANVAS_COLORS[node.color] : undefined;
 
   return (
@@ -40,6 +48,7 @@ export function TextCard({ node, selected, style }: TextCardProps) {
       }}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
+      onMouseDown={handleMouseDown}
     >
       {isEditing ? (
         <textarea
@@ -63,6 +72,66 @@ export function TextCard({ node, selected, style }: TextCardProps) {
         <div className="p-3 text-sm overflow-y-auto h-full" style={{ color: 'var(--ctp-text)' }}>
           {node.text || <span style={{ color: 'var(--ctp-overlay0)', fontStyle: 'italic' }}>Empty card</span>}
         </div>
+      )}
+      {selected && !isEditing && onResizeMouseDown && (
+        <>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: -4,
+              right: -4,
+              width: 8,
+              height: 8,
+              backgroundColor: 'var(--ctp-accent)',
+              borderRadius: 2,
+              cursor: 'nwse-resize',
+              zIndex: 10,
+            }}
+            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('br', e); }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              bottom: -4,
+              left: -4,
+              width: 8,
+              height: 8,
+              backgroundColor: 'var(--ctp-accent)',
+              borderRadius: 2,
+              cursor: 'nesw-resize',
+              zIndex: 10,
+            }}
+            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('bl', e); }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: -4,
+              right: -4,
+              width: 8,
+              height: 8,
+              backgroundColor: 'var(--ctp-accent)',
+              borderRadius: 2,
+              cursor: 'nesw-resize',
+              zIndex: 10,
+            }}
+            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('tr', e); }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: -4,
+              left: -4,
+              width: 8,
+              height: 8,
+              backgroundColor: 'var(--ctp-accent)',
+              borderRadius: 2,
+              cursor: 'nwse-resize',
+              zIndex: 10,
+            }}
+            onMouseDown={(e) => { e.stopPropagation(); onResizeMouseDown('tl', e); }}
+          />
+        </>
       )}
     </div>
   );

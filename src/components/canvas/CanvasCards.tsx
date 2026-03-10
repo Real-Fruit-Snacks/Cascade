@@ -3,13 +3,17 @@ import { TextCard } from './cards/TextCard';
 import { FileCard } from './cards/FileCard';
 import { LinkCard } from './cards/LinkCard';
 
+export type ResizeCorner = 'tl' | 'tr' | 'bl' | 'br';
+
 interface CanvasCardsProps {
   vaultPath: string;
   containerWidth: number;
   containerHeight: number;
+  onCardMouseDown: (nodeId: string, e: React.MouseEvent) => void;
+  onResizeMouseDown: (nodeId: string, corner: ResizeCorner, e: React.MouseEvent) => void;
 }
 
-export function CanvasCards({ vaultPath, containerWidth, containerHeight }: CanvasCardsProps) {
+export function CanvasCards({ vaultPath, containerWidth, containerHeight, onCardMouseDown, onResizeMouseDown }: CanvasCardsProps) {
   const nodes = useCanvasStore((s) => s.nodes);
   const viewport = useCanvasStore((s) => s.viewport);
   const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
@@ -49,13 +53,44 @@ export function CanvasCards({ vaultPath, containerWidth, containerHeight }: Canv
           pointerEvents: 'auto',
         };
 
+        const cardMouseDown = (e: React.MouseEvent) => onCardMouseDown(node.id, e);
+        const resizeMouseDown = (corner: ResizeCorner, e: React.MouseEvent) => onResizeMouseDown(node.id, corner, e);
+
         switch (node.type) {
           case 'text':
-            return <TextCard key={node.id} node={node} selected={isSelected} style={style} />;
+            return (
+              <TextCard
+                key={node.id}
+                node={node}
+                selected={isSelected}
+                style={style}
+                onMouseDown={cardMouseDown}
+                onResizeMouseDown={resizeMouseDown}
+              />
+            );
           case 'file':
-            return <FileCard key={node.id} node={node} selected={isSelected} style={style} vaultPath={vaultPath} />;
+            return (
+              <FileCard
+                key={node.id}
+                node={node}
+                selected={isSelected}
+                style={style}
+                vaultPath={vaultPath}
+                onMouseDown={cardMouseDown}
+                onResizeMouseDown={resizeMouseDown}
+              />
+            );
           case 'link':
-            return <LinkCard key={node.id} node={node} selected={isSelected} style={style} />;
+            return (
+              <LinkCard
+                key={node.id}
+                node={node}
+                selected={isSelected}
+                style={style}
+                onMouseDown={cardMouseDown}
+                onResizeMouseDown={resizeMouseDown}
+              />
+            );
           default:
             return null;
         }
