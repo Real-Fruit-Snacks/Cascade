@@ -114,7 +114,7 @@ export function TextCard({ node, selected, style, onMouseDown, onResizeMouseDown
       onDoubleClick={handleDoubleClick}
       onMouseDown={handleMouseDown}
     >
-      <div ref={editorRef} className="h-full" />
+      <div ref={editorRef} className="canvas-card-editor h-full" />
       {node.locked && (
         <div
           style={{

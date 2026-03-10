@@ -185,7 +185,7 @@ export function FileCard({ node, selected, style, vaultPath, onMouseDown, onResi
             className="w-full h-full object-contain"
           />
         ) : isMarkdown ? (
-          <div ref={editorRef} className="h-full" />
+          <div ref={editorRef} className="canvas-card-editor h-full" />
         ) : (
           <pre className="text-xs h-full whitespace-pre-wrap p-2 overflow-y-auto" style={{ color: 'var(--ctp-text)' }}>
             {content}

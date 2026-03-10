@@ -233,6 +233,34 @@
   border-radius: 4px;
 }
 
+/* Canvas card CodeMirror overrides */
+.canvas-card-editor .cm-editor {
+  height: 100%;
+  background: transparent;
+}
+.canvas-card-editor .cm-editor.cm-focused {
+  outline: none;
+}
+.canvas-card-editor .cm-scroller {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 8px;
+}
+.canvas-card-editor .cm-gutters {
+  display: none;
+}
+.canvas-card-editor .cm-content {
+  padding: 0;
+}
+/* Hide cursor in read-only canvas cards */
+.canvas-card-editor .cm-editor:not(.cm-focused) .cm-cursor {
+  display: none !important;
+}
+/* Ensure live preview decorations render properly in small cards */
+.canvas-card-editor .cm-line {
+  padding-left: 0;
+}
+
 /* Respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
