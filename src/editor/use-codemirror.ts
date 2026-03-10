@@ -298,8 +298,8 @@ export function useCodeMirror() {
 
     const state = EditorState.create({
       extensions: [
-        cursorLineField,
         // Shared rendering extensions (live preview, wiki-links, tags, math, etc.)
+        // Note: cursorLineField is included in renderExts (required by frontmatterField)
         ...renderExts,
         // Editor-specific extensions below
         vimComp.of([]),

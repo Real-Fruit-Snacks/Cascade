@@ -579,6 +579,44 @@ export const featureWikiContent: Record<string, FeatureWikiEntry> = {
     ],
   },
 
+  "canvas-options": {
+    overview:
+      "The Canvas is an infinite whiteboard for visual thinking — drag cards, draw connections, and group related ideas spatially. It uses the same `.canvas` file format as Obsidian for full compatibility.",
+    usage: [
+      "Create a new canvas from the Command Palette (Ctrl+Shift+C) or by right-clicking a folder and selecting 'New Canvas'.",
+      "Click the canvas toolbar's 'Text' button to add a new text card, or drag a file from the sidebar to create a file card.",
+      "Drag cards to reposition them; resize by pulling the corner or edge handles.",
+      "Connect two cards by dragging from one card's edge handle to another card — an arrow (edge) is created.",
+      "Click an edge to select it, then add a label or change its color and line style in the toolbar.",
+      "Select multiple cards and use 'Group' in the toolbar to wrap them in a labeled group region.",
+      "Use Ctrl+Mouse Wheel to zoom in and out; click and drag the background to pan.",
+      "Enable 'Snap to Grid' in settings for precise card alignment.",
+      "Use the minimap (bottom-right corner) for quick navigation on large canvases.",
+      "Export your canvas as PNG or SVG from the Command Palette or canvas toolbar.",
+    ],
+    tips: [
+      "Use groups to organize cards by topic or project phase — they act like visual folders on the canvas.",
+      "Color-code your cards and edges to distinguish categories: e.g., blue for research, green for actions, red for blockers.",
+      "The auto-layout options (grid, tree, force-directed) are great starting points — apply one and then manually adjust.",
+      "Use Ctrl+A to select all cards, then apply alignment or distribution from the toolbar for a clean layout.",
+      "Double-click a text card to edit its markdown content inline — full markdown rendering is supported.",
+      "Link cards to existing vault files by creating 'file' type cards — clicking them opens the note in the editor.",
+      "Canvas files are plain JSON — you can version-control them with git alongside your notes.",
+    ],
+    shortcuts: [
+      { key: "Ctrl+Shift+C", action: "Create a new canvas" },
+      { key: "T", action: "Add a text card (when canvas is focused)" },
+      { key: "Ctrl+A", action: "Select all cards" },
+      { key: "Ctrl+G", action: "Group selected cards" },
+      { key: "Delete / Backspace", action: "Delete selected cards or edges" },
+      { key: "Ctrl+D", action: "Duplicate selected cards" },
+      { key: "Ctrl+Z / Ctrl+Shift+Z", action: "Undo / Redo" },
+      { key: "Ctrl+Mouse Wheel", action: "Zoom in / out" },
+      { key: "Space+Drag", action: "Pan the canvas" },
+      { key: "Ctrl+Shift+F", action: "Zoom to fit all cards" },
+    ],
+  },
+
   "query-options": {
     overview:
       "Query Preview lets you embed dynamic query blocks in your notes that filter and display notes from your vault based on frontmatter properties — similar to a database view inside your notes. Full documentation for query syntax and options is shown directly in the settings page above.",

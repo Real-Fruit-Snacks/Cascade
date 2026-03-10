@@ -65,7 +65,7 @@ export const dropHandler = EditorView.domEventHandlers({
     return false;
   },
   drop(event, view) {
-    const filePath = event.dataTransfer?.getData('cascade/file-path');
+    const filePath = event.dataTransfer?.getData('cascade/file-path') || event.dataTransfer?.getData('text/plain');
     if (!filePath) return false;
 
     event.preventDefault();
@@ -93,9 +93,9 @@ export const dropHandler = EditorView.domEventHandlers({
     return true;
   },
   dragover(event) {
-    if (event.dataTransfer?.types.includes('cascade/file-path')) {
+    if (event.dataTransfer?.types.includes('cascade/file-path') || event.dataTransfer?.types.includes('text/plain')) {
       event.preventDefault();
-      event.dataTransfer.dropEffect = 'link';
+      event.dataTransfer.dropEffect = 'move';
       return true;
     }
     return false;

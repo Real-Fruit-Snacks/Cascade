@@ -483,19 +483,12 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
         onContextMenu={handleContextMenu}
         draggable={true}
         onDragStart={(e) => {
+          e.dataTransfer.effectAllowed = 'copyMove';
           e.dataTransfer.setData('text/plain', entry.path);
           e.dataTransfer.setData('cascade/file-path', entry.path);
-          e.dataTransfer.effectAllowed = 'move';
-          // Custom drag preview
-          const preview = document.createElement('div');
-          preview.textContent = entry.name;
-          preview.style.cssText = 'position:fixed;top:-999px;padding:4px 10px;font-size:12px;border-radius:4px;color:var(--ctp-text);background:var(--ctp-surface1);border:1px solid var(--ctp-surface2);white-space:nowrap;';
-          document.body.appendChild(preview);
-          e.dataTransfer.setDragImage(preview, 0, 0);
-          requestAnimationFrame(() => document.body.removeChild(preview));
         }}
         onDragOver={entry.isDir ? (e) => {
-          if (!e.dataTransfer.types.includes('cascade/file-path')) return;
+          if (!e.dataTransfer.types.includes('text/plain') && !e.dataTransfer.types.includes('cascade/file-path')) return;
           e.preventDefault();
           e.dataTransfer.dropEffect = 'move';
           setDragOver(true);
@@ -504,7 +497,7 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
         onDrop={entry.isDir ? async (e) => {
           e.preventDefault();
           setDragOver(false);
-          const sourcePath = e.dataTransfer.getData('cascade/file-path');
+          const sourcePath = e.dataTransfer.getData('cascade/file-path') || e.dataTransfer.getData('text/plain');
           if (!sourcePath) return;
           // Prevent dropping on self or descendant
           const normalizedSource = sourcePath.replace(/\\/g, '/');

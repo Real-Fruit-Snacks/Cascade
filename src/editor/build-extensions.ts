@@ -22,6 +22,7 @@ import { bracketMatching } from '@codemirror/language';
 import { markdown } from '@codemirror/lang-markdown';
 import { GFM } from '@lezer/markdown';
 import { createCatppuccinExtensions } from './catppuccin-theme';
+import { cursorLineField } from './cursor-line';
 import { livePreview, livePreviewTheme, frontmatterField, markdownLinkClickHandler } from './live-preview/index';
 import { highlightSyntax, highlightSyntaxTheme } from './highlight-syntax';
 import type { AccentColor } from '../stores/settings-store';
@@ -146,6 +147,7 @@ export function buildRenderExtensions(
   const exts = extensionsForMode(mode, settings.enableLivePreview);
 
   return [
+    cursorLineField,
     comps.markdownComp.of(markdown({ extensions: [GFM] })),
     comps.themeComp.of(createCatppuccinExtensions(settings.theme)),
     comps.livePreviewComp.of(exts.livePreview),

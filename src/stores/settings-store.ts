@@ -192,6 +192,16 @@ export interface Settings {
   tocAutoUpdate: boolean;
   // Canvas
   enableCanvas: boolean;
+  canvasSnapToGrid: boolean;
+  canvasGridSize: number;
+  canvasDefaultCardWidth: number;
+  canvasDefaultCardHeight: number;
+  canvasShowMinimap: boolean;
+  canvasAutoLayout: 'none' | 'grid' | 'tree' | 'force';
+  canvasEdgeStyle: 'bezier' | 'straight' | 'step';
+  canvasSnapSensitivity: number;
+  canvasShowEdgeLabels: boolean;
+  canvasExportBackground: boolean;
   // Media Viewer
   enableMediaViewer: boolean;
   pdfDefaultZoom: number;
@@ -340,6 +350,16 @@ export const DEFAULTS: Settings = {
   enableCalloutPreview: true,
   enableMermaidPreview: false,
   enableCanvas: true,
+  canvasSnapToGrid: true,
+  canvasGridSize: 20,
+  canvasDefaultCardWidth: 260,
+  canvasDefaultCardHeight: 140,
+  canvasShowMinimap: true,
+  canvasAutoLayout: 'none',
+  canvasEdgeStyle: 'bezier',
+  canvasSnapSensitivity: 10,
+  canvasShowEdgeLabels: true,
+  canvasExportBackground: true,
   enableQueryPreview: false,
   enableEmbedPreview: true,
   enableTableOfContents: false,

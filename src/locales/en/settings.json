@@ -796,6 +796,53 @@
     "enableCanvas": {
       "label": "Enable Canvas",
       "description": "Allow creating and viewing .canvas files as visual whiteboards"
+    },
+    "snapToGrid": {
+      "label": "Snap to Grid",
+      "description": "Snap cards and groups to the grid when dragging"
+    },
+    "gridSize": {
+      "label": "Grid Size",
+      "description": "Grid spacing in pixels (10–100)"
+    },
+    "defaultCardWidth": {
+      "label": "Default Card Width",
+      "description": "Width of new text cards in pixels (100–800)"
+    },
+    "defaultCardHeight": {
+      "label": "Default Card Height",
+      "description": "Height of new text cards in pixels (60–600)"
+    },
+    "showMinimap": {
+      "label": "Show Minimap",
+      "description": "Display a minimap overview in the corner of the canvas"
+    },
+    "autoLayout": {
+      "label": "Auto-Layout",
+      "description": "Default layout algorithm for new canvases",
+      "none": "None (manual)",
+      "grid": "Grid",
+      "tree": "Tree",
+      "force": "Force-Directed"
+    },
+    "edgeStyle": {
+      "label": "Edge Style",
+      "description": "Default curve style for connections between cards",
+      "bezier": "Bezier (curved)",
+      "straight": "Straight",
+      "step": "Step (right-angle)"
+    },
+    "snapSensitivity": {
+      "label": "Snap Sensitivity",
+      "description": "How close an object must be to a grid line to snap (1–50)"
+    },
+    "showEdgeLabels": {
+      "label": "Show Edge Labels",
+      "description": "Display text labels on connections between cards"
+    },
+    "exportBackground": {
+      "label": "Export Background",
+      "description": "Include the grid background when exporting canvas as PNG or SVG"
     }
   },
   "bookmarksOptions": {
