@@ -46,7 +46,7 @@ export function NewFileModal({ open, onClose, onCreate }: NewFileModalProps) {
     const path = trimmed.endsWith('.md') ? trimmed : `${trimmed}.md`;
     onCreate(path);
     onClose();
-  }, [value, onCreate, onClose]);
+  }, [value, onCreate, onClose, t]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

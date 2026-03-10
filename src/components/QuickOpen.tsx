@@ -697,7 +697,7 @@ export function QuickOpen({ open, mode = 'open', onClose, onInsertLink }: QuickO
     });
 
     return () => { cancelled = true; };
-  }, [selectedIndex, activeList, vaultPath, previewPath]);
+  }, [selectedIndex, activeList, vaultPath, previewPath, cachePreview]);
 
   // Scroll selected item into view
   useEffect(() => {

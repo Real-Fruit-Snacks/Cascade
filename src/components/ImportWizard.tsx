@@ -123,7 +123,7 @@ export function ImportWizard({ open: isOpen, onClose }: ImportWizardProps) {
     if (result) {
       setExportPath(result as string);
     }
-  }, [source]);
+  }, [source, SOURCES, t]);
 
   const handleNext = useCallback(async () => {
     if (!vaultPath || !source) return;
@@ -168,7 +168,7 @@ export function ImportWizard({ open: isOpen, onClose }: ImportWizardProps) {
     } finally {
       setImporting(false);
     }
-  }, [vaultPath, source, exportPath, selectedSource]);
+  }, [vaultPath, source, exportPath, selectedSource, t]);
 
   const handleApplyObsidian = useCallback(() => {
     if (!config || !config.detected) return;
@@ -223,7 +223,7 @@ export function ImportWizard({ open: isOpen, onClose }: ImportWizardProps) {
       t('toast.importedSettings', { count: changes.length }),
       'success'
     );
-  }, [config]);
+  }, [config, t]);
 
   const handleClose = useCallback(() => {
     setStep('select');

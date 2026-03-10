@@ -200,7 +200,7 @@ export function ExportModal({ open, onClose, defaultScope }: ExportModalProps) {
     } finally {
       setExporting(false);
     }
-  }, [activeFilePath, vaultPath, content, fileName, onClose, format, scope, selectedFolder, flatFiles, tagIndex, batchFormat, includeImages, resolveWikiLinks, tagFilter]);
+  }, [activeFilePath, vaultPath, content, fileName, onClose, format, scope, selectedFolder, flatFiles, tagIndex, batchFormat, includeImages, resolveWikiLinks, tagFilter, t]);
 
   if (!shouldRender) return null;
 

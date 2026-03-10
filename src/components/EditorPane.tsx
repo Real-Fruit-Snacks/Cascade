@@ -303,6 +303,7 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
     }
 
     setOverflowStartIndex(splitIdx ?? widths.length - 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- overflowStartIndex is the setter target, not a dependency
   }, [tabsMeta, containerWidth]);
 
   // Build visible and overflow tab index sets
@@ -429,7 +430,7 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
 
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
-  }, []);
+  }, [isPane, paneIndex, t]);
 
   // Pane settings menu
   const [paneMenu, setPaneMenu] = useState<{ x: number; y: number } | null>(null);
@@ -554,7 +555,7 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
     }
 
     return items;
-  }, [tabMenu, tabsMeta, closeTab]);
+  }, [tabMenu, tabsMeta, closeTab, t]);
 
   const setEditorView = useEditorStore((s) => s.setEditorView);
   const setPaneEditorView = useEditorStore((s) => s.setPaneEditorView);
@@ -780,7 +781,7 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
     }
 
     return items;
-  }, [getView, editorMenu]);
+  }, [getView, editorMenu, t]);
 
   // Expose CM view via store for commands (e.g., find/replace from command palette)
   useEffect(() => {
