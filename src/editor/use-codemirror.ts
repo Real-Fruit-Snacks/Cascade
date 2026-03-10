@@ -10,7 +10,6 @@ import { markdown } from '@codemirror/lang-markdown';
 import { GFM } from '@lezer/markdown';
 import { createCatppuccinExtensions } from './catppuccin-theme';
 import { searchTheme } from './search-theme';
-import { cursorLineField } from './cursor-line';
 import { wikiLinks, wikiLinkClickHandler, wikiLinkTheme } from './wiki-links';
 import { wikiLinkCompletion } from './wiki-link-completion';
 import { tags, tagTheme, tagClickHandler, tagAutocompletion } from './tags';

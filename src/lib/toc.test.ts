@@ -85,7 +85,6 @@ describe('generateToc', () => {
   it('indents nested headings relative to minimum level', () => {
     const doc = '## H2\n### H3';
     const toc = generateToc(doc);
-    const lines = toc.split('\n').filter(l => l.startsWith('-') || l.startsWith(' '));
     // H2 is min level → no indent; H3 → 2 spaces
     expect(toc).toContain('- [H2](#h2)');
     expect(toc).toContain('  - [H3](#h3)');
