@@ -5,7 +5,7 @@ export interface Command {
   run: () => void;
 }
 
-class CommandRegistry {
+export class CommandRegistry {
   private commands = new Map<string, Command>();
   private listeners = new Set<() => void>();
 

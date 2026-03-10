@@ -1,55 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CommandRegistry, Command } from './command-registry';
 
-// The module exports a singleton `commandRegistry`, but for isolated tests
-// we need a fresh instance each time. We instantiate CommandRegistry directly.
-// If CommandRegistry is not exported as a class, we test via the singleton with
-// cleanup. Let's try the class first and fall back gracefully.
-
-// We test behaviour through a locally constructed registry to avoid test pollution.
-function makeRegistry() {
-  // Access the class via the module — if only singleton exported, use it directly.
-  // We'll create a new one via the same internal class pattern.
-  // The file exports `commandRegistry` (singleton) — we re-import and reset between tests.
-  return new (class {
-    private commands = new Map<string, Command>();
-    private listeners = new Set<() => void>();
-
-    register(cmd: Command): () => void {
-      this.commands.set(cmd.id, cmd);
-      this.notify();
-      return () => {
-        this.commands.delete(cmd.id);
-        this.notify();
-      };
-    }
-
-    getAll(): Command[] {
-      return [...this.commands.values()];
-    }
-
-    execute(id: string): boolean {
-      const cmd = this.commands.get(id);
-      if (cmd) { cmd.run(); return true; }
-      return false;
-    }
-
-    subscribe(listener: () => void): () => void {
-      this.listeners.add(listener);
-      return () => this.listeners.delete(listener);
-    }
-
-    private notify() {
-      this.listeners.forEach((fn) => fn());
-    }
-  })();
-}
-
 describe('CommandRegistry', () => {
-  let registry: ReturnType<typeof makeRegistry>;
+  let registry: CommandRegistry;
 
   beforeEach(() => {
-    registry = makeRegistry();
+    registry = new CommandRegistry();
   });
 
   describe('register', () => {
