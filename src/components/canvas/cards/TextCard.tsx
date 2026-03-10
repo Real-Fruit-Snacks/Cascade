@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef } from 'react';
 import { Lock } from 'lucide-react';
 import { useCanvasStore } from '../../../stores/canvas-store';
 import { CANVAS_COLORS, type TextNode } from '../../../types/canvas';
+import { useCanvasCodeMirror } from './use-canvas-codemirror';
 import type { ResizeCorner } from '../CanvasCards';
-import { useMarkdown } from './useMarkdown';
 
 interface TextCardProps {
   node: TextNode;
@@ -20,35 +20,61 @@ export function TextCard({ node, selected, style, onMouseDown, onResizeMouseDown
   const updateNode = useCanvasStore((s) => s.updateNode);
   const isEditing = editingNodeId === node.id;
 
-  // Track textarea value in a ref so we can save even if blur doesn't fire
-  // (e.g. when mousedown on canvas calls clearSelection before blur)
-  const textRef = useRef(node.text);
-  const wasEditingRef = useRef(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // -- Debounced save to canvas store --
+  const pendingContentRef = useRef<string>(node.text);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const flushSave = useCallback(() => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    updateNode(node.id, { text: pendingContentRef.current });
+  }, [node.id, updateNode]);
+
+  const handleContentChange = useCallback((newContent: string) => {
+    pendingContentRef.current = newContent;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
+      updateNode(node.id, { text: pendingContentRef.current });
+    }, 500);
+  }, [node.id, updateNode]);
+
+  // Flush save when editing ends
+  const wasEditingRef = useRef(false);
   useEffect(() => {
     if (isEditing) {
-      textRef.current = node.text;
       wasEditingRef.current = true;
     } else if (wasEditingRef.current) {
-      // Editing just ended — save the latest text if it changed
       wasEditingRef.current = false;
-      if (textRef.current !== node.text) {
-        updateNode(node.id, { text: textRef.current });
-      }
+      flushSave();
     }
-  }, [isEditing, node.id, node.text, updateNode]);
+  }, [isEditing, flushSave]);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  // -- CM6 hook --
+  const { editorRef } = useCanvasCodeMirror({
+    content: node.text,
+    editing: isEditing,
+    onContentChange: handleContentChange,
+    onEscape: () => setEditingNode(null),
+  });
+
+  // -- Interaction handlers --
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isEditing) {
-      // Clicking inside the card while editing — refocus textarea
-      textareaRef.current?.focus();
-      return;
-    }
+    if (isEditing) return; // let CM6 handle clicks
     if (selected) {
-      // Already selected — single click enters edit mode
       setEditingNode(node.id);
     } else {
       selectNode(node.id, e.ctrlKey || e.metaKey);
@@ -62,20 +88,17 @@ export function TextCard({ node, selected, style, onMouseDown, onResizeMouseDown
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (isEditing) {
-      // Prevent drag while editing; keep focus in textarea
       e.stopPropagation();
       return;
     }
     onMouseDown?.(e);
   }, [isEditing, onMouseDown]);
 
-  const html = useMarkdown(node.text);
   const colorVar = node.color ? CANVAS_COLORS[node.color] : undefined;
   const baseBorder = selected ? '2px solid var(--ctp-accent)' : '1px solid var(--ctp-surface1)';
 
   return (
     <div
-      ref={cardRef}
       style={{
         ...style,
         backgroundColor: 'var(--ctp-surface0)',
@@ -91,42 +114,7 @@ export function TextCard({ node, selected, style, onMouseDown, onResizeMouseDown
       onDoubleClick={handleDoubleClick}
       onMouseDown={handleMouseDown}
     >
-      {isEditing ? (
-        <textarea
-          ref={textareaRef}
-          autoFocus
-          defaultValue={node.text}
-          className="w-full h-full p-3 text-sm resize-none outline-none"
-          style={{
-            backgroundColor: 'transparent',
-            color: 'var(--ctp-text)',
-            fontFamily: 'var(--font-mono, monospace)',
-          }}
-          onChange={(e) => { textRef.current = e.target.value; }}
-          onBlur={(e) => {
-            // Only exit edit mode if focus moved outside the card
-            const related = e.relatedTarget as HTMLElement | null;
-            if (related && cardRef.current?.contains(related)) {
-              // Clicked inside the card — refocus
-              e.target.focus();
-              return;
-            }
-            updateNode(node.id, { text: e.target.value });
-            setEditingNode(null);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') { setEditingNode(null); }
-          }}
-        />
-      ) : (
-        <div className="p-3 text-sm overflow-y-auto h-full" style={{ color: 'var(--ctp-text)', wordBreak: 'break-word', boxSizing: 'border-box' }}>
-          {node.text ? (
-            <div className="canvas-markdown prose prose-sm" style={{ overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: html }} />
-          ) : (
-            <span style={{ color: 'var(--ctp-overlay0)', fontStyle: 'italic' }}>Empty card</span>
-          )}
-        </div>
-      )}
+      <div ref={editorRef} className="h-full" />
       {node.locked && (
         <div
           style={{
