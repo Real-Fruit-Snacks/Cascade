@@ -36,6 +36,16 @@
 - Spellcheck with custom dictionary support
 - Vim mode (optional)
 
+**Canvas Whiteboard**
+- Infinite canvas for visual thinking with pan, zoom, and snap-to-grid
+- Text, file, and link cards with markdown rendering
+- Connect cards with edges (arrows, labels, colors, line styles)
+- Group nodes for organizing related cards
+- Auto-layout (grid, tree, force-directed), alignment, and distribution
+- Canvas search, minimap, and export to PNG or SVG
+- Undo/redo, copy/paste, duplicate, lock/unlock nodes
+- `.canvas` file format compatible with Obsidian
+
 **Knowledge Management**
 - Backlinks panel showing all notes that link to the current note
 - Tag index with tag panel for browsing
@@ -70,6 +80,11 @@
 - Lazy-loaded components and namespaced i18n bundles
 
 ## Screenshots
+
+<details>
+<summary>Canvas Whiteboard</summary>
+<img src="docs/screenshots/canvas-view.png" alt="Canvas Whiteboard" width="800" />
+</details>
 
 <details>
 <summary>Graph View</summary>
@@ -232,6 +247,7 @@ npx playwright test
 | `Ctrl+B` | Toggle Sidebar |
 | `Ctrl+F` | Find in File |
 | `Ctrl+H` | Find and Replace |
+| `Ctrl+Shift+C` | New Canvas |
 | `Ctrl+Z` | Undo |
 | `Ctrl+Shift+Z` | Redo |
 
