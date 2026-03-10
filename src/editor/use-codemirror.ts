@@ -12,7 +12,7 @@ import { GFM } from '@lezer/markdown';
 import { createCatppuccinExtensions } from './catppuccin-theme';
 import { searchTheme } from './search-theme';
 import { cursorLineField } from './cursor-line';
-import { livePreview, livePreviewTheme, frontmatterField, markdownLinkClickHandler } from './live-preview';
+import { livePreview, livePreviewTheme, frontmatterField, markdownLinkClickHandler } from './live-preview/index';
 import { highlightSyntax, highlightSyntaxTheme } from './highlight-syntax';
 import type { AccentColor } from '../stores/settings-store';
 import { wikiLinks, wikiLinkClickHandler, wikiLinkTheme } from './wiki-links';
