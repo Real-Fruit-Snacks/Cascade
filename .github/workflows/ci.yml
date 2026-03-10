@@ -40,10 +40,16 @@ jobs:
         include:
           - platform: ubuntu-22.04
             rust-targets: ""
+            args: ""
           - platform: macos-latest
-            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+            rust-targets: "aarch64-apple-darwin"
+            args: "--target aarch64-apple-darwin"
+          - platform: macos-latest
+            rust-targets: "x86_64-apple-darwin"
+            args: "--target x86_64-apple-darwin"
           - platform: windows-latest
             rust-targets: ""
+            args: ""
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -62,38 +68,22 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Install macOS dependencies
-        if: matrix.platform == 'macos-latest'
-        run: brew install cmake
-
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
-            libayatana-appindicator3-dev \
+            libappindicator3-dev \
             librsvg2-dev \
             patchelf \
             libssl-dev \
-            libdbus-1-dev \
-            libxdo-dev \
-            build-essential \
-            file
+            libdbus-1-dev
 
       - run: npm ci
 
       - name: Build frontend
         run: npm run build
 
-      - name: Build Tauri (Linux)
-        if: matrix.platform == 'ubuntu-22.04'
-        run: npx tauri build
-
-      - name: Build Tauri (macOS universal)
-        if: matrix.platform == 'macos-latest'
-        run: npx tauri build --target universal-apple-darwin
-
-      - name: Build Tauri (Windows)
-        if: matrix.platform == 'windows-latest'
-        run: npx tauri build
+      - name: Build Tauri
+        run: npx tauri build ${{ matrix.args }}
