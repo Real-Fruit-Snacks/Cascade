@@ -3,6 +3,7 @@ import { useCanvasStore } from '../../stores/canvas-store';
 import { TextCard } from './cards/TextCard';
 import { FileCard } from './cards/FileCard';
 import { LinkCard } from './cards/LinkCard';
+import { GroupCard } from './cards/GroupCard';
 import type { EdgeSide } from '../../types/canvas';
 
 export type ResizeCorner = 'tl' | 'tr' | 'bl' | 'br';
@@ -56,7 +57,6 @@ export function CanvasCards({
   // Viewport culling — only render nodes visible in viewport + margin
   const margin = 200;
   const visibleNodes = nodes.filter((node) => {
-    if (node.type === 'group') return false; // Groups rendered on canvas layer
     const screenX = (node.x + viewport.x) * viewport.zoom;
     const screenY = (node.y + viewport.y) * viewport.zoom;
     const screenW = node.width * viewport.zoom;
@@ -87,6 +87,7 @@ export function CanvasCards({
           width: node.width,
           height: node.height,
           pointerEvents: 'auto',
+          zIndex: node.type === 'group' ? 0 : 1,
         };
 
         const cardMouseDown = (e: React.MouseEvent) => onCardMouseDown(node.id, e);
@@ -116,6 +117,18 @@ export function CanvasCards({
         };
 
         switch (node.type) {
+          case 'group':
+            return (
+              <div key={node.id} {...wrapperProps}>
+                <GroupCard
+                  node={node}
+                  selected={isSelected}
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+                  onMouseDown={cardMouseDown}
+                  onResizeMouseDown={resizeMouseDown}
+                />
+              </div>
+            );
           case 'text':
             return (
               <div key={node.id} {...wrapperProps}>

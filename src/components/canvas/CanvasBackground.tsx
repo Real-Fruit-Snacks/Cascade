@@ -91,6 +91,7 @@ export function CanvasBackground({ width, height, connectDrag }: CanvasBackgroun
   const nodes = useCanvasStore((s) => s.nodes);
   const edges = useCanvasStore((s) => s.edges);
   const selectedEdgeIds = useCanvasStore((s) => s.selectedEdgeIds);
+  const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -134,6 +135,47 @@ export function CanvasBackground({ width, height, connectDrag }: CanvasBackgroun
       sx: (wx + x) * zoom,
       sy: (wy + y) * zoom,
     });
+
+    // ── Groups ───────────────────────────────────────────────────────────────
+    const groupNodes = nodes.filter((n) => n.type === 'group');
+    for (const group of groupNodes) {
+      const { sx: gx, sy: gy } = toScreen(group.x, group.y);
+      const gw = group.width * zoom;
+      const gh = group.height * zoom;
+
+      const groupColor = resolveEdgeColor(group.color);
+      const isGroupSelected = selectedNodeIds.has(group.id);
+
+      // Filled background at low opacity
+      ctx.globalAlpha = 0.1;
+      ctx.fillStyle = groupColor;
+      ctx.beginPath();
+      ctx.roundRect(gx, gy, gw, gh, 6);
+      ctx.fill();
+
+      // Border at medium opacity
+      ctx.globalAlpha = isGroupSelected ? 0.8 : 0.3;
+      ctx.strokeStyle = isGroupSelected
+        ? (getComputedStyle(document.documentElement).getPropertyValue('--ctp-blue').trim() || '#89b4fa')
+        : groupColor;
+      ctx.lineWidth = isGroupSelected ? 2 * zoom : 1 * zoom;
+      ctx.beginPath();
+      ctx.roundRect(gx, gy, gw, gh, 6);
+      ctx.stroke();
+
+      // Label text top-left
+      if ('label' in group && group.label) {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = groupColor;
+        const fontSize = Math.max(10, 11 * zoom);
+        ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(group.label, gx + 8 * zoom, gy + 8 * zoom);
+      }
+
+      ctx.globalAlpha = 1;
+    }
 
     // ── Edges ────────────────────────────────────────────────────────────────
     const CTRL_OFFSET = 80; // world-space pixels
@@ -264,7 +306,7 @@ export function CanvasBackground({ width, height, connectDrag }: CanvasBackgroun
         ctx.fill();
       }
     }
-  }, [width, height, viewport, nodes, edges, selectedEdgeIds, connectDrag]);
+  }, [width, height, viewport, nodes, edges, selectedEdgeIds, selectedNodeIds, connectDrag]);
 
   return (
     <canvas

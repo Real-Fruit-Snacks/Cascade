@@ -304,6 +304,22 @@ export function CanvasView({ filePath, vaultPath }: CanvasViewProps) {
       }
     }
 
+    // For each selected group, also snapshot child nodes (non-group nodes whose
+    // center falls within the group bounds) so they move together.
+    for (const node of nodes) {
+      if (!selectedIds.has(node.id) || node.type !== 'group') continue;
+      for (const other of nodes) {
+        if (other.type === 'group') continue;
+        if (origPositions.has(other.id)) continue; // already included (selected)
+        const cx = other.x + other.width / 2;
+        const cy = other.y + other.height / 2;
+        if (cx >= node.x && cx <= node.x + node.width &&
+            cy >= node.y && cy <= node.y + node.height) {
+          origPositions.set(other.id, { x: other.x, y: other.y });
+        }
+      }
+    }
+
     dragRef.current = {
       mode: 'move',
       startX: e.clientX,
