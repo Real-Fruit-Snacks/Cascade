@@ -20,26 +20,34 @@ pub fn rebuild_fts_from_entries(conn: &Connection, entries: &[(String, String)])
     conn.execute("DELETE FROM fts_docs", [])
         .map_err(|e| format!("Failed to clear FTS index: {}", e))?;
     for (rel_path, content) in entries {
-        let _ = conn.execute(
+        if let Err(e) = conn.execute(
             "INSERT INTO fts_docs(path, content) VALUES (?1, ?2)",
             rusqlite::params![rel_path, content],
-        );
+        ) {
+            eprintln!("[fts] warning: failed to insert '{rel_path}' into FTS index: {e}");
+        }
     }
     Ok(())
 }
 
 /// Update a single file in the FTS index.
 pub fn update_file(conn: &Connection, rel_path: &str, content: &str) {
-    let _ = conn.execute("DELETE FROM fts_docs WHERE path = ?1", rusqlite::params![rel_path]);
-    let _ = conn.execute(
+    if let Err(e) = conn.execute("DELETE FROM fts_docs WHERE path = ?1", rusqlite::params![rel_path]) {
+        eprintln!("[fts] warning: failed to delete '{rel_path}' from FTS index: {e}");
+    }
+    if let Err(e) = conn.execute(
         "INSERT INTO fts_docs(path, content) VALUES (?1, ?2)",
         rusqlite::params![rel_path, content],
-    );
+    ) {
+        eprintln!("[fts] warning: failed to insert '{rel_path}' into FTS index: {e}");
+    }
 }
 
 /// Remove a file from the FTS index.
 pub fn remove_file(conn: &Connection, rel_path: &str) {
-    let _ = conn.execute("DELETE FROM fts_docs WHERE path = ?1", rusqlite::params![rel_path]);
+    if let Err(e) = conn.execute("DELETE FROM fts_docs WHERE path = ?1", rusqlite::params![rel_path]) {
+        eprintln!("[fts] warning: failed to delete '{rel_path}' from FTS index: {e}");
+    }
 }
 
 /// Search the FTS index for matching file paths.

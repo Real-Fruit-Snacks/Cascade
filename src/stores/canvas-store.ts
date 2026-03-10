@@ -443,6 +443,6 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
 }));
 
 // Expose store for e2e testing
-if (typeof window !== 'undefined') {
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   (window as any).__ZUSTAND_CANVAS_STORE__ = useCanvasStore;
 }

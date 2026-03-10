@@ -7,7 +7,7 @@ export interface FileEntry {
 }
 
 export interface FsChangeEvent {
-  kind: 'create' | 'modify' | 'remove' | 'rename';
+  kind: 'create' | 'modify' | 'remove' | 'bulk';
   path: string;
   newPath?: string;
 }

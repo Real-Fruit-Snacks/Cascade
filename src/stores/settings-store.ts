@@ -458,6 +458,6 @@ export const useSettingsStore = create<Settings & SettingsActions>((set, get) =>
 }));
 
 // Expose store for e2e testing
-if (typeof window !== 'undefined') {
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   (window as any).__ZUSTAND_SETTINGS_STORE__ = useSettingsStore;
 }
