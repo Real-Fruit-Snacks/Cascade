@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useCanvasStore } from '../../stores/canvas-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import type { EdgeSide, CanvasColor } from '../../types/canvas';
@@ -75,6 +75,8 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
   const canvasGridSize = useSettingsStore((s) => s.canvasGridSize);
   const canvasEdgeStyle = useSettingsStore((s) => s.canvasEdgeStyle);
   const canvasShowEdgeLabels = useSettingsStore((s) => s.canvasShowEdgeLabels);
+
+  const nodeMap = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -171,8 +173,8 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
     const CTRL_OFFSET = 80; // world-space pixels
 
     for (const edge of edges) {
-      const fromNode = nodes.find((n) => n.id === edge.fromNode);
-      const toNode = nodes.find((n) => n.id === edge.toNode);
+      const fromNode = nodeMap.get(edge.fromNode);
+      const toNode = nodeMap.get(edge.toNode);
       if (!fromNode || !toNode) continue;
 
       const fromAnchorW = anchorPoint(fromNode, edge.fromSide);
@@ -318,7 +320,7 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
 
     // ── Temporary connection line during connect drag ─────────────────────
     if (connectDrag) {
-      const fromNode = nodes.find((n) => n.id === connectDrag.fromNodeId);
+      const fromNode = nodeMap.get(connectDrag.fromNodeId);
       if (fromNode) {
         const fromAnchorW = anchorPoint(fromNode, connectDrag.fromSide);
         const from = toScreen(fromAnchorW.x, fromAnchorW.y);
