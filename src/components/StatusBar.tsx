@@ -4,6 +4,7 @@ import { useEditorStore } from '../stores/editor-store';
 import { useSettingsStore } from '../stores/settings-store';
 import { usePluginStore } from '../stores/plugin-store';
 import { useToastStore } from '../stores/toast-store';
+import { SyncStatusIndicator } from './SyncStatusIndicator';
 // B2: Lazily loaded only when vim mode is enabled
 let _getCM: typeof import('@replit/codemirror-vim').getCM | null = null;
 let _getCMLoading = false;
@@ -284,6 +285,10 @@ export function StatusBar() {
 
       {/* Spacer pushes right-side items to the far right */}
       <span style={{ flex: 1 }} />
+
+      {/* Sync status */}
+      <SyncStatusIndicator />
+      <Divider />
 
       {/* Right side */}
       {Array.from(pluginStatusBarItems.entries()).map(([id, item], index) => (
