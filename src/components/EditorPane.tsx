@@ -5,6 +5,7 @@ import { ask } from '@tauri-apps/plugin-dialog';
 import { useEditorStore, getTabType } from '../stores/editor-store';
 import { ImageViewer } from './ImageViewer';
 const PdfViewer = lazy(() => import('./PdfViewer').then((m) => ({ default: m.PdfViewer })));
+const CanvasView = lazy(() => import('./canvas/CanvasView').then((m) => ({ default: m.CanvasView })));
 import { useVaultStore } from '../stores/vault-store';
 import { useSettingsStore } from '../stores/settings-store';
 import { WelcomeView } from './WelcomeView';
@@ -1114,6 +1115,13 @@ export function EditorPane() {
       {activeFilePath && activeTabType === 'pdf' && vaultPath && !isFileLoading && (
         <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-6 h-6 border-2 border-[var(--ctp-surface2)] border-t-[var(--ctp-accent)] rounded-full animate-spin" /></div>}>
           <PdfViewer filePath={activeFilePath} vaultPath={vaultPath} />
+        </Suspense>
+      )}
+
+      {/* Canvas view */}
+      {activeFilePath && activeTabType === 'canvas' && vaultPath && !isFileLoading && (
+        <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-6 h-6 border-2 border-[var(--ctp-surface2)] border-t-[var(--ctp-accent)] rounded-full animate-spin" /></div>}>
+          <CanvasView filePath={activeFilePath} vaultPath={vaultPath} />
         </Suspense>
       )}
 

@@ -6,15 +6,17 @@ import { useVaultStore } from './vault-store';
 import { useSettingsStore } from './settings-store';
 import { useToastStore } from './toast-store';
 
-export type TabType = 'markdown' | 'image' | 'pdf';
+export type TabType = 'markdown' | 'image' | 'pdf' | 'canvas';
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.bmp', '.ico']);
 const PDF_EXTENSIONS = new Set(['.pdf']);
+const CANVAS_EXTENSIONS = new Set(['.canvas']);
 
 export function getTabType(path: string): TabType {
   const ext = path.slice(path.lastIndexOf('.')).toLowerCase();
   if (IMAGE_EXTENSIONS.has(ext)) return 'image';
   if (PDF_EXTENSIONS.has(ext)) return 'pdf';
+  if (CANVAS_EXTENSIONS.has(ext)) return 'canvas';
   return 'markdown';
 }
 
