@@ -33,6 +33,18 @@ function repoToRawUrl(repoUrl: string, file: string): string {
   return `https://raw.githubusercontent.com/${match[1]}/${match[2]}/main/${file}`;
 }
 
+function isValidRegistryPlugin(obj: unknown): obj is RegistryPlugin {
+  if (!obj || typeof obj !== 'object') return false;
+  const p = obj as Record<string, unknown>;
+  return (
+    typeof p.id === 'string' && /^[a-z0-9_-]+$/.test(p.id) &&
+    typeof p.name === 'string' && p.name.length > 0 &&
+    typeof p.downloadUrl === 'string' && p.downloadUrl.startsWith('https://') &&
+    typeof p.sha256 === 'string' && /^[a-f0-9]{64}$/.test(p.sha256) &&
+    typeof p.version === 'string'
+  );
+}
+
 export async function fetchPluginRegistry(repoUrls: string[]): Promise<RegistryPlugin[]> {
   const all: RegistryPlugin[] = [];
   for (const url of repoUrls) {
@@ -42,7 +54,9 @@ export async function fetchPluginRegistry(repoUrls: string[]): Promise<RegistryP
       const data = await raw.json() as { version?: unknown; plugins?: unknown[] };
       if (data.version !== 1 || !Array.isArray(data.plugins)) continue;
       for (const plugin of data.plugins) {
-        all.push({ ...(plugin as RegistryPlugin), registry: url });
+        if (isValidRegistryPlugin(plugin)) {
+          all.push({ ...plugin, registry: url });
+        }
       }
     } catch {
       // Skip unavailable registries
