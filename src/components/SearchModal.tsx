@@ -342,6 +342,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
           filePaths,
           useRegex,
           caseSensitive,
+          wholeWord,
         );
         setReplaceStatus(
           t('replace.success' + (result.filesChanged !== 1 ? '_plural' : ''), { replacements: result.totalReplacements, files: result.filesChanged })

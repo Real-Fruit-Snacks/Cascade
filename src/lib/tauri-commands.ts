@@ -77,8 +77,9 @@ export function replaceInFiles(
   filePaths: string[],
   useRegex = false,
   caseSensitive = false,
+  wholeWord = false,
 ): Promise<ReplaceResult> {
-  return invoke<ReplaceResult>('replace_in_files', { vaultRoot, query, replacement, filePaths, useRegex, caseSensitive });
+  return invoke<ReplaceResult>('replace_in_files', { vaultRoot, query, replacement, filePaths, useRegex, caseSensitive, wholeWord });
 }
 
 export function saveAttachment(vaultRoot: string, folder: string, filename: string, data: number[]): Promise<string> {

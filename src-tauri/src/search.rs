@@ -200,6 +200,7 @@ pub async fn replace_in_files(
     file_paths: Vec<String>,
     use_regex: bool,
     case_sensitive: bool,
+    whole_word: bool,
 ) -> Result<ReplaceResult, CascadeError> {
     if query.is_empty() {
         return Ok(ReplaceResult { files_changed: 0, total_replacements: 0 });
@@ -213,7 +214,7 @@ pub async fn replace_in_files(
     }
 
     tauri::async_runtime::spawn_blocking(move || {
-        replace_in_files_sync(root, query, replacement, file_paths, use_regex, case_sensitive)
+        replace_in_files_sync(root, query, replacement, file_paths, use_regex, case_sensitive, whole_word)
     })
     .await
     .map_err(|e| CascadeError::Io(std::io::Error::other(e.to_string())))?
@@ -226,16 +227,19 @@ fn replace_in_files_sync(
     file_paths: Vec<String>,
     use_regex: bool,
     case_sensitive: bool,
+    whole_word: bool,
 ) -> Result<ReplaceResult, CascadeError> {
     let re = if use_regex {
-        let pattern = if case_sensitive { query.clone() } else { format!("(?i){}", query) };
+        let base = if whole_word { format!(r"\b{}\b", query) } else { query.clone() };
+        let pattern = if case_sensitive { base } else { format!("(?i){}", base) };
         match Regex::new(&pattern) {
             Ok(r) => r,
             Err(e) => return Err(CascadeError::InvalidRegex(e.to_string())),
         }
     } else {
         let escaped = regex::escape(&query);
-        let pattern = if case_sensitive { escaped } else { format!("(?i){}", escaped) };
+        let base = if whole_word { format!(r"\b{}\b", escaped) } else { escaped };
+        let pattern = if case_sensitive { base } else { format!("(?i){}", base) };
         Regex::new(&pattern).map_err(|e| CascadeError::InvalidRegex(e.to_string()))?
     };
 
