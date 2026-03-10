@@ -306,3 +306,165 @@ pub fn build_index(vault_root: String, fts_state: State<'_, FtsState>) -> Result
         property_index,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Helper to extract a Text value
+    fn as_text(v: &PropertyValue) -> Option<&str> {
+        if let PropertyValue::Text(s) = v { Some(s.as_str()) } else { None }
+    }
+    fn as_bool(v: &PropertyValue) -> Option<bool> {
+        if let PropertyValue::Bool(b) = v { Some(*b) } else { None }
+    }
+    fn as_number(v: &PropertyValue) -> Option<f64> {
+        if let PropertyValue::Number(n) = v { Some(*n) } else { None }
+    }
+    fn as_list(v: &PropertyValue) -> Option<&Vec<String>> {
+        if let PropertyValue::List(l) = v { Some(l) } else { None }
+    }
+
+    #[test]
+    fn test_empty_yaml() {
+        let props = parse_frontmatter_properties("");
+        assert!(props.is_empty());
+    }
+
+    #[test]
+    fn test_simple_text_property() {
+        let yaml = "title: Hello World\nauthor: Alice";
+        let props = parse_frontmatter_properties(yaml);
+        assert_eq!(as_text(props.get("title").unwrap()), Some("Hello World"));
+        assert_eq!(as_text(props.get("author").unwrap()), Some("Alice"));
+    }
+
+    #[test]
+    fn test_boolean_properties() {
+        let yaml = "draft: true\npublished: false\nFEATURED: True";
+        let props = parse_frontmatter_properties(yaml);
+        assert_eq!(as_bool(props.get("draft").unwrap()), Some(true));
+        assert_eq!(as_bool(props.get("published").unwrap()), Some(false));
+        assert_eq!(as_bool(props.get("FEATURED").unwrap()), Some(true));
+    }
+
+    #[test]
+    fn test_numeric_property() {
+        let yaml = "weight: 42\nrating: 4.5\nnegative: -1";
+        let props = parse_frontmatter_properties(yaml);
+        assert_eq!(as_number(props.get("weight").unwrap()), Some(42.0));
+        assert_eq!(as_number(props.get("rating").unwrap()), Some(4.5));
+        assert_eq!(as_number(props.get("negative").unwrap()), Some(-1.0));
+    }
+
+    #[test]
+    fn test_inline_list_property() {
+        let yaml = "aliases: [foo, bar, baz]";
+        let props = parse_frontmatter_properties(yaml);
+        let list = as_list(props.get("aliases").unwrap()).unwrap();
+        assert_eq!(list, &["foo", "bar", "baz"]);
+    }
+
+    #[test]
+    fn test_inline_list_with_quotes() {
+        let yaml = "aliases: ['note one', \"note two\"]";
+        let props = parse_frontmatter_properties(yaml);
+        let list = as_list(props.get("aliases").unwrap()).unwrap();
+        assert_eq!(list, &["note one", "note two"]);
+    }
+
+    #[test]
+    fn test_block_list_property() {
+        let yaml = "aliases:\n  - first\n  - second\n  - third";
+        let props = parse_frontmatter_properties(yaml);
+        let list = as_list(props.get("aliases").unwrap()).unwrap();
+        assert_eq!(list, &["first", "second", "third"]);
+    }
+
+    #[test]
+    fn test_quoted_text_value() {
+        let yaml = "title: \"My Note\"\nauthor: 'Bob'";
+        let props = parse_frontmatter_properties(yaml);
+        assert_eq!(as_text(props.get("title").unwrap()), Some("My Note"));
+        assert_eq!(as_text(props.get("author").unwrap()), Some("Bob"));
+    }
+
+    #[test]
+    fn test_empty_value() {
+        let yaml = "title:\nauthor: Alice";
+        let props = parse_frontmatter_properties(yaml);
+        assert_eq!(as_text(props.get("title").unwrap()), Some(""));
+        assert_eq!(as_text(props.get("author").unwrap()), Some("Alice"));
+    }
+
+    #[test]
+    fn test_nested_properties_ignored() {
+        // Indented keys (nested YAML) should be skipped at top level
+        let yaml = "parent:\n  child: value\ntop: present";
+        let props = parse_frontmatter_properties(yaml);
+        // "child" is indented so should NOT be a top-level key
+        assert!(!props.contains_key("child"));
+        assert!(props.contains_key("top"));
+    }
+
+    #[test]
+    fn test_tags_key_still_parsed_as_property() {
+        // parse_frontmatter_properties parses all keys including tags
+        let yaml = "tags: [rust, notes]";
+        let props = parse_frontmatter_properties(yaml);
+        let list = as_list(props.get("tags").unwrap()).unwrap();
+        assert!(list.contains(&"rust".to_string()));
+        assert!(list.contains(&"notes".to_string()));
+    }
+
+    #[test]
+    fn test_malformed_yaml_no_colon() {
+        // A line with no colon should be silently skipped
+        let yaml = "this is not valid yaml\ntitle: Good";
+        let props = parse_frontmatter_properties(yaml);
+        // Should still parse the valid line
+        assert_eq!(as_text(props.get("title").unwrap()), Some("Good"));
+    }
+
+    #[test]
+    fn test_inline_list_empty() {
+        let yaml = "tags: []";
+        let props = parse_frontmatter_properties(yaml);
+        // Empty inline list: items filtered to non-empty, so may be empty list or absent
+        // The current implementation inserts an empty List
+        match props.get("tags") {
+            Some(PropertyValue::List(l)) => assert!(l.is_empty()),
+            None => {} // also acceptable
+            _ => panic!("unexpected value type"),
+        }
+    }
+
+    #[test]
+    fn test_multiple_colons_in_value() {
+        // Value containing colons should be preserved after the first colon
+        let yaml = "url: https://example.com/path";
+        let props = parse_frontmatter_properties(yaml);
+        assert_eq!(as_text(props.get("url").unwrap()), Some("https://example.com/path"));
+    }
+
+    #[test]
+    fn test_frontmatter_regex_matches_valid() {
+        let content = "---\ntitle: Test\n---\n\nBody text here.";
+        let caps = FRONTMATTER_RE.captures(content);
+        assert!(caps.is_some());
+        let yaml = caps.unwrap().get(1).unwrap().as_str();
+        assert_eq!(yaml, "title: Test");
+    }
+
+    #[test]
+    fn test_frontmatter_regex_no_match_without_opening() {
+        let content = "title: Test\n---\n\nBody text here.";
+        assert!(FRONTMATTER_RE.captures(content).is_none());
+    }
+
+    #[test]
+    fn test_frontmatter_regex_no_match_without_closing() {
+        let content = "---\ntitle: Test\n\nBody text here.";
+        assert!(FRONTMATTER_RE.captures(content).is_none());
+    }
+}

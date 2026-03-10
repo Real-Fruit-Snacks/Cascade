@@ -889,6 +889,105 @@ pub fn write_integrity_file(
     Ok(())
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    fn make_temp_vault() -> (tempfile::TempDir, PathBuf) {
+        let dir = tempfile::tempdir().expect("failed to create temp dir");
+        // Use a non-dotfile subdirectory so path validation and WalkDir work
+        // correctly on Windows (tempfile dirs are named ".tmpXXX" which would
+        // be pruned by dotfile filters if used directly as vault root).
+        let vault = dir.path().join("vault");
+        std::fs::create_dir_all(&vault).expect("failed to create vault subdir");
+        let canonical = vault.canonicalize().expect("failed to canonicalize vault dir");
+        (dir, canonical)
+    }
+
+    #[test]
+    fn test_valid_path_within_vault() {
+        let (_dir, root) = make_temp_vault();
+        let result = validate_path_canonical(&root, "notes/hello.md");
+        assert!(result.is_ok(), "valid relative path should succeed: {:?}", result);
+        let path = result.unwrap();
+        assert!(path.starts_with(&root));
+    }
+
+    #[test]
+    fn test_valid_path_root_level() {
+        let (_dir, root) = make_temp_vault();
+        let result = validate_path_canonical(&root, "readme.md");
+        assert!(result.is_ok());
+        assert!(result.unwrap().starts_with(&root));
+    }
+
+    #[test]
+    fn test_path_traversal_dotdot_rejected() {
+        let (_dir, root) = make_temp_vault();
+        let result = validate_path_canonical(&root, "../outside.md");
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            CascadeError::PathTraversal { .. } => {}
+            other => panic!("expected PathTraversal, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_path_traversal_deep_dotdot_rejected() {
+        let (_dir, root) = make_temp_vault();
+        // Create a real subdirectory so canonicalize can walk up
+        fs::create_dir_all(root.join("a/b")).unwrap();
+        let result = validate_path_canonical(&root, "a/b/../../../outside.md");
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            CascadeError::PathTraversal { .. } => {}
+            other => panic!("expected PathTraversal, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_null_byte_in_path_rejected() {
+        let (_dir, root) = make_temp_vault();
+        let result = validate_path_canonical(&root, "notes/hel\0lo.md");
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            CascadeError::InvalidPath(msg) => assert!(msg.contains("null byte")),
+            other => panic!("expected InvalidPath(null byte), got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_existing_file_within_vault() {
+        let (_dir, root) = make_temp_vault();
+        // Create a real file so the exist-path in validate_path_canonical is exercised
+        let file_path = root.join("existing.md");
+        fs::write(&file_path, "content").unwrap();
+        let result = validate_path_canonical(&root, "existing.md");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), file_path.canonicalize().unwrap());
+    }
+
+    #[test]
+    fn test_nonexistent_nested_path_allowed() {
+        let (_dir, root) = make_temp_vault();
+        // Path does not exist yet — should still succeed (for file creation)
+        let result = validate_path_canonical(&root, "subdir/new-note.md");
+        assert!(result.is_ok());
+        let path = result.unwrap();
+        assert!(path.starts_with(&root));
+    }
+
+    #[test]
+    fn test_empty_path_stays_within_vault() {
+        let (_dir, root) = make_temp_vault();
+        // An empty string joins to root itself — should be ok (starts_with itself)
+        let result = validate_path_canonical(&root, "");
+        // Empty path resolves to the root — valid (not a traversal)
+        assert!(result.is_ok());
+    }
+}
+
 #[tauri::command]
 pub fn extract_plugin_zip(
     vault_root: String,
