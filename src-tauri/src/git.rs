@@ -42,8 +42,9 @@ fn make_push_options<'a>(pat: &'a str) -> PushOptions<'a> {
     po
 }
 
-fn signature() -> Signature<'static> {
-    Signature::now("Cascade", "cascade@localhost").unwrap()
+fn signature() -> Result<Signature<'static>, CascadeError> {
+    Signature::now("Cascade", "cascade@localhost")
+        .map_err(|e| CascadeError::Git(format!("Failed to create git signature: {e}")))
 }
 
 fn ensure_gitignore(vault_path: &Path) {
@@ -78,7 +79,7 @@ pub fn git_init_repo(
     index.write()?;
     let tree_id = index.write_tree()?;
     let tree = repo.find_tree(tree_id)?;
-    let sig = signature();
+    let sig = signature()?;
     repo.commit(Some("HEAD"), &sig, &sig, "Initial vault backup", &tree, &[])?;
 
     // Create main branch ref and push
@@ -115,7 +116,9 @@ pub fn git_sync(vault_path: String, pat: String) -> Result<SyncResult, CascadeEr
     {
         let mut remote = repo.find_remote("origin")?;
         let mut fo = make_fetch_options(&pat);
-        if remote.fetch(&["main"], Some(&mut fo), None).is_err() {
+        if let Err(e) = remote.fetch(&["main"], Some(&mut fo), None) {
+            // Network/auth failure — commit locally and report offline
+            eprintln!("[cascade sync] fetch failed: {e}");
             let committed = commit_changes(&repo)?;
             return Ok(SyncResult {
                 committed_files: committed,
@@ -183,7 +186,7 @@ pub fn git_sync(vault_path: String, pat: String) -> Result<SyncResult, CascadeEr
 
                     let tree_id = idx.write_tree()?;
                     let tree = repo.find_tree(tree_id)?;
-                    let sig = signature();
+                    let sig = signature()?;
                     let head = repo.head()?.peel_to_commit()?;
                     repo.commit(
                         Some("HEAD"),
@@ -199,7 +202,7 @@ pub fn git_sync(vault_path: String, pat: String) -> Result<SyncResult, CascadeEr
                 let mut idx = repo.index()?;
                 let tree_id = idx.write_tree()?;
                 let tree = repo.find_tree(tree_id)?;
-                let sig = signature();
+                let sig = signature()?;
                 let head = repo.head()?.peel_to_commit()?;
                 repo.commit(
                     Some("HEAD"),
@@ -229,7 +232,10 @@ pub fn git_sync(vault_path: String, pat: String) -> Result<SyncResult, CascadeEr
                     "pushed"
                 }
             }
-            Err(_) => "offline",
+            Err(e) => {
+                eprintln!("[cascade sync] push failed: {e}");
+                "offline"
+            }
         }
         .to_string()
     };
@@ -271,7 +277,7 @@ fn commit_changes(repo: &Repository) -> Result<Vec<String>, CascadeError> {
 
     let tree_id = index.write_tree()?;
     let tree = repo.find_tree(tree_id)?;
-    let sig = signature();
+    let sig = signature()?;
 
     match repo.head() {
         Ok(h) => {

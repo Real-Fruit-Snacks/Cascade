@@ -26,7 +26,12 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
       return (
-        <div className="flex flex-col items-center justify-center h-full gap-3 p-8" style={{ color: 'var(--ctp-subtext0)' }}>
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="flex flex-col items-center justify-center h-full gap-3 p-8"
+          style={{ color: 'var(--ctp-subtext0)' }}
+        >
           <div className="text-lg font-medium" style={{ color: 'var(--ctp-text)' }}>Something went wrong</div>
           <div className="text-sm max-w-md text-center">{this.state.error?.message || 'An unexpected error occurred'}</div>
           <button

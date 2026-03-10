@@ -209,6 +209,14 @@ function requirePermission(permissions: PluginPermission[], required: PluginPerm
   }
 }
 
+/** Reject paths that attempt to escape the vault via traversal */
+function validateVaultPath(path: string) {
+  const normalized = path.replace(/\\/g, '/');
+  if (normalized.includes('..') || normalized.startsWith('/') || /^[a-zA-Z]:/.test(normalized)) {
+    throw new Error('Invalid path: traversal or absolute paths are not allowed');
+  }
+}
+
 export class PluginSandbox {
   private iframe: HTMLIFrameElement;
   private permissions: PluginPermission[];
@@ -368,15 +376,19 @@ export class PluginSandbox {
       }
       case 'vault.readFile': {
         requirePermission(this.permissions, 'vault.read');
+        const filePath = args[0] as string;
+        validateVaultPath(filePath);
         const vaultPath = useVaultStore.getState().vaultPath;
         if (!vaultPath) throw new Error('No vault open');
-        return cmd.readFile(vaultPath, args[0] as string);
+        return cmd.readFile(vaultPath, filePath);
       }
       case 'vault.writeFile': {
         requirePermission(this.permissions, 'vault.write');
+        const filePath = args[0] as string;
+        validateVaultPath(filePath);
         const vaultPath = useVaultStore.getState().vaultPath;
         if (!vaultPath) throw new Error('No vault open');
-        await cmd.writeFile(vaultPath, args[0] as string, args[1] as string);
+        await cmd.writeFile(vaultPath, filePath, args[1] as string);
         return undefined;
       }
       case 'vault.onFileChange': {
@@ -389,7 +401,6 @@ export class PluginSandbox {
         window.addEventListener('cascade:fs-change', handler);
         const unsub = () => window.removeEventListener('cascade:fs-change', handler);
         this.eventCallbacks.set(callbackId, unsub);
-        this.cleanups.push(unsub);
         return undefined;
       }
       case 'vault.offFileChange': {
@@ -460,7 +471,7 @@ export class PluginSandbox {
         return undefined;
       }
       case 'ui.removeCommand': {
-        return { error: 'ui.removeCommand is not yet implemented' };
+        throw new Error('ui.removeCommand is not yet implemented');
       }
       case 'ui.addStatusBarItem': {
         requirePermission(this.permissions, 'ui.statusbar');
@@ -566,6 +577,9 @@ export class PluginSandbox {
       case 'events.on': {
         requirePermission(this.permissions, 'events');
         const [event, callbackId] = args as [string, string];
+        if (!/^[a-zA-Z0-9:._-]+$/.test(event)) {
+          throw new Error('Invalid event name');
+        }
         const eventName = `cascade:plugin:${event}`;
         const handler = (e: Event) => {
           this.invokeCallback(callbackId, (e as CustomEvent).detail);
@@ -573,7 +587,6 @@ export class PluginSandbox {
         window.addEventListener(eventName, handler);
         const unsub = () => window.removeEventListener(eventName, handler);
         this.eventCallbacks.set(callbackId, unsub);
-        this.cleanups.push(unsub);
         return undefined;
       }
       case 'events.off': {
@@ -588,7 +601,10 @@ export class PluginSandbox {
         if (!/^[a-zA-Z0-9:._-]+$/.test(eventName)) {
           throw new Error('Invalid event name');
         }
+        // Dispatch on plugin-specific namespace for targeted listeners
         window.dispatchEvent(new CustomEvent(`cascade:plugin:${this.pluginId}:${eventName}`, { detail: args[1] }));
+        // Also dispatch on the generic namespace so cross-plugin events.on listeners receive it
+        window.dispatchEvent(new CustomEvent(`cascade:plugin:${eventName}`, { detail: { pluginId: this.pluginId, data: args[1] } }));
         return undefined;
       }
 

@@ -64,6 +64,16 @@ describe('extractHeadings', () => {
     const headings = extractHeadings('# Hello   ');
     expect(headings[0].text).toBe('Hello');
   });
+
+  it('strips leading and trailing hyphens from slug', () => {
+    const headings = extractHeadings('## !Hello!');
+    expect(headings[0].slug).toBe('hello');
+  });
+
+  it('handles heading with only special characters gracefully', () => {
+    const headings = extractHeadings('## !!!');
+    expect(headings[0].slug).toBe('');
+  });
 });
 
 describe('generateToc', () => {

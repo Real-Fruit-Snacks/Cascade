@@ -89,7 +89,11 @@ export const usePluginStore = create<PluginState & PluginActions>((set, get) => 
       // Auto-load enabled plugins
       for (const [id, entry] of plugins) {
         if (entry.enabled) {
-          get().loadPlugin(id, vaultRoot);
+          try {
+            await get().loadPlugin(id, vaultRoot);
+          } catch {
+            // Plugin load failures are recorded in plugin entry error field
+          }
         }
       }
     } catch {

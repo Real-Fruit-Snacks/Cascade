@@ -57,6 +57,9 @@ export function SyncStatusIndicator() {
 
   return (
     <span
+      role={clickable ? 'button' : 'status'}
+      tabIndex={clickable ? 0 : undefined}
+      aria-label={clickable ? `${label} — click to sync now` : label}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -66,6 +69,7 @@ export function SyncStatusIndicator() {
       }}
       title={clickable ? 'Click to sync now' : label}
       onClick={clickable ? () => triggerSync() : undefined}
+      onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); triggerSync(); } } : undefined}
     >
       {icon}
       <span>{label}</span>

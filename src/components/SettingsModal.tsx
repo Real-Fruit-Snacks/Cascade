@@ -4117,10 +4117,14 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
     }
   }, [vaultPath, patLoaded]);
 
+  const patSaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const handlePatChange = (value: string) => {
     setPat(value);
     if (vaultPath) {
-      storeSyncPat(vaultPath, value).catch(() => {/* toast handled by keyring error */});
+      clearTimeout(patSaveTimer.current);
+      patSaveTimer.current = setTimeout(() => {
+        storeSyncPat(vaultPath, value).catch(() => {/* toast handled by keyring error */});
+      }, 500);
     }
   };
 
@@ -4208,11 +4212,11 @@ function SyncOptionsPage({ settings }: OptionsPageProps) {
         <div
           className="flex items-center gap-3 rounded-lg px-4 py-3"
           style={{
-            backgroundColor: syncStatus === 'error' ? 'color-mix(in srgb, var(--ctp-red) 10%, var(--ctp-mantle))' : 'color-mix(in srgb, var(--ctp-green) 10%, var(--ctp-mantle))',
-            border: `1px solid ${syncStatus === 'error' ? 'var(--ctp-red)' : 'var(--ctp-green)'}`,
+            backgroundColor: syncStatus === 'error' ? 'color-mix(in srgb, var(--ctp-red) 10%, var(--ctp-mantle))' : syncStatus === 'offline' ? 'color-mix(in srgb, var(--ctp-peach) 10%, var(--ctp-mantle))' : 'color-mix(in srgb, var(--ctp-green) 10%, var(--ctp-mantle))',
+            border: `1px solid ${syncStatus === 'error' ? 'var(--ctp-red)' : syncStatus === 'offline' ? 'var(--ctp-peach)' : 'var(--ctp-green)'}`,
           }}
         >
-          <Cloud size={16} style={{ color: syncStatus === 'error' ? 'var(--ctp-red)' : 'var(--ctp-green)', flexShrink: 0 }} />
+          <Cloud size={16} style={{ color: syncStatus === 'error' ? 'var(--ctp-red)' : syncStatus === 'offline' ? 'var(--ctp-peach)' : 'var(--ctp-green)', flexShrink: 0 }} />
           <div className="flex flex-col gap-0.5 flex-1 min-w-0">
             <span className="text-xs font-medium" style={{ color: 'var(--ctp-text)' }}>
               {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Sync Error' : syncStatus === 'offline' ? 'Offline — commits pending' : 'Connected'}

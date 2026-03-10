@@ -19,9 +19,12 @@ pub struct ImportResult {
 const INVALID_FILENAME_CHARS: &[char] = &['/', '\\', ':', '*', '?', '"', '<', '>', '|'];
 
 fn sanitize_filename(name: &str) -> String {
-    name.chars()
+    let sanitized: String = name
+        .chars()
         .map(|c| if INVALID_FILENAME_CHARS.contains(&c) { '_' } else { c })
-        .collect()
+        .collect();
+    // Truncate to 200 chars to stay safe on all file systems
+    sanitized.chars().take(200).collect()
 }
 
 /// Convert Bear-specific markdown syntax to standard markdown.
@@ -70,12 +73,12 @@ fn convert_bear_markdown(content: &str) -> String {
 }
 
 /// Process a single Bear .md file: convert syntax and write to vault.
-/// Returns Ok(true) if written, Ok(false) if skipped, Err on hard failure.
+/// Returns Ok((written, attachment_errors)) where written is true if the note was written.
 fn process_md_file(
     md_path: &Path,
     vault_root: &Path,
     attachments_dir: &Path,
-) -> Result<bool, String> {
+) -> Result<(bool, Vec<String>), String> {
     let raw = fs::read_to_string(md_path)
         .map_err(|e| format!("Read {}: {}", md_path.display(), e))?;
 
@@ -102,20 +105,30 @@ fn process_md_file(
 
     // Copy sibling attachments (files in a same-named subfolder Bear exports alongside notes).
     // Bear typically exports attachments in a folder named after the note stem.
+    let mut attachment_errors = Vec::new();
     let note_stem = md_path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
     if let Some(parent) = md_path.parent() {
         let sibling_dir = parent.join(note_stem);
         if sibling_dir.is_dir() {
-            copy_attachments_from_dir(&sibling_dir, attachments_dir);
+            attachment_errors = copy_attachments_from_dir(&sibling_dir, attachments_dir);
         }
     }
 
-    Ok(true)
+    Ok((true, attachment_errors))
 }
 
 /// Copy all non-.md files from `src_dir` into `dest_dir`, creating dest if needed.
-fn copy_attachments_from_dir(src_dir: &Path, dest_dir: &Path) {
-    let _ = fs::create_dir_all(dest_dir);
+/// Returns a list of error messages for any attachments that failed to copy.
+fn copy_attachments_from_dir(src_dir: &Path, dest_dir: &Path) -> Vec<String> {
+    let mut errors = Vec::new();
+    if let Err(e) = fs::create_dir_all(dest_dir) {
+        errors.push(format!(
+            "Create attachments dir {}: {}",
+            dest_dir.display(),
+            e
+        ));
+        return errors;
+    }
     for entry in WalkDir::new(src_dir).min_depth(1).max_depth(1) {
         let Ok(entry) = entry else { continue };
         let path = entry.path();
@@ -130,27 +143,36 @@ fn copy_attachments_from_dir(src_dir: &Path, dest_dir: &Path) {
             }
             if let Some(fname) = path.file_name() {
                 let dest = dest_dir.join(fname);
-                let _ = fs::copy(path, dest);
+                if let Err(e) = fs::copy(path, &dest) {
+                    errors.push(format!("Copy attachment {}: {}", path.display(), e));
+                }
             }
         }
     }
+    errors
 }
 
 /// Copy a non-.md file directly to the attachments directory (top-level attachment).
-fn copy_attachment(src: &Path, dest_dir: &Path) {
-    let _ = fs::create_dir_all(dest_dir);
+/// Returns an error message on failure, or None on success.
+fn copy_attachment(src: &Path, dest_dir: &Path) -> Option<String> {
+    if let Err(e) = fs::create_dir_all(dest_dir) {
+        return Some(format!(
+            "Create attachments dir {}: {}",
+            dest_dir.display(),
+            e
+        ));
+    }
     if let Some(fname) = src.file_name() {
         let dest = dest_dir.join(fname);
-        let _ = fs::copy(src, dest);
+        if let Err(e) = fs::copy(src, &dest) {
+            return Some(format!("Copy attachment {}: {}", src.display(), e));
+        }
     }
+    None
 }
 
 /// Process all files found under `export_dir`.
-fn process_export_dir(
-    export_dir: &Path,
-    vault_root: &Path,
-    result: &mut ImportResult,
-) {
+fn process_export_dir(export_dir: &Path, vault_root: &Path, result: &mut ImportResult) {
     let attachments_dir = vault_root.join("attachments");
 
     for entry in WalkDir::new(export_dir).min_depth(1) {
@@ -168,8 +190,14 @@ fn process_export_dir(
 
         if ext == "md" {
             match process_md_file(path, vault_root, &attachments_dir) {
-                Ok(true) => result.files_imported += 1,
-                Ok(false) => result.files_skipped += 1,
+                Ok((true, att_errors)) => {
+                    result.files_imported += 1;
+                    result.errors.extend(att_errors);
+                }
+                Ok((false, att_errors)) => {
+                    result.files_skipped += 1;
+                    result.errors.extend(att_errors);
+                }
                 Err(e) => result.errors.push(e),
             }
         } else {
@@ -177,7 +205,9 @@ fn process_export_dir(
             // Check if parent is the export root (direct sibling of .md files).
             let parent = path.parent().unwrap_or(export_dir);
             if parent == export_dir {
-                copy_attachment(path, &attachments_dir);
+                if let Some(err) = copy_attachment(path, &attachments_dir) {
+                    result.errors.push(err);
+                }
             }
             // Attachments inside note subfolders are handled by process_md_file.
         }

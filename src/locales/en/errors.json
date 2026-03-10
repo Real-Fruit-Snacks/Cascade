@@ -1,1 +1,17 @@
-{}
+{
+  "notADirectory": "Not a directory: {{path}}",
+  "pathTraversal": "Access denied: path is outside the vault",
+  "ioError": "File system error: {{message}}",
+  "invalidPath": "Invalid path: {{message}}",
+  "invalidRegex": "Invalid regular expression: {{message}}",
+  "importError": "Import error: {{message}}",
+  "gitError": "Git error: {{message}}",
+  "fileNotFound": "File not found: {{path}}",
+  "fileAlreadyExists": "A file with that name already exists",
+  "folderAlreadyExists": "A folder with that name already exists",
+  "unexpectedError": "An unexpected error occurred",
+  "clipboardUnavailable": "Clipboard is not available",
+  "templateNotFound": "Template not found: {{path}}",
+  "networkError": "Network error: {{message}}",
+  "permissionDenied": "Permission denied: {{message}}"
+}

@@ -56,8 +56,11 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.toLowerCase().includes('auth')) {
+      const lowerMsg = msg.toLowerCase();
+      if (lowerMsg.includes('auth') || lowerMsg.includes('401') || lowerMsg.includes('403')) {
         useToastStore.getState().addToast('Sync failed: authentication error — check your PAT in settings', 'error');
+      } else if (lowerMsg.includes('not found') || lowerMsg.includes('404')) {
+        useToastStore.getState().addToast('Sync failed: repository not found — check the URL in settings', 'error');
       } else {
         useToastStore.getState().addToast(`Sync failed: ${msg}`, 'error');
       }
@@ -72,6 +75,9 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       set({ syncStatus: 'disconnected' });
       return;
     }
+    // Don't overwrite status while a sync is in progress
+    const { syncStatus: current } = get();
+    if (current === 'syncing') return;
     try {
       const status = await gitStatus(vaultPath);
       if (!status.is_repo || !status.has_remote) {

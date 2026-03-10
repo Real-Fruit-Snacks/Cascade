@@ -13,7 +13,6 @@ export function useSyncTimer() {
   useEffect(() => {
     if (!syncEnabled) {
       useSyncStore.getState().reset();
-      initialSyncDone.current = false;
       return;
     }
 
@@ -26,7 +25,7 @@ export function useSyncTimer() {
 
     if (!syncAutoSync) return;
 
-    const ms = (syncInterval || 5) * 60_000;
+    const ms = Math.max((syncInterval || 5) * 60_000, 60_000);
     const id = setInterval(() => {
       triggerSync();
     }, ms);

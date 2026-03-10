@@ -42,7 +42,11 @@ fn is_image_ext(ext: &str) -> bool {
 }
 
 /// Convert a scraper ElementRef tree to markdown text.
-fn element_to_markdown(el: ElementRef, link_map: &HashMap<String, String>, indent: usize) -> String {
+fn element_to_markdown(
+    el: ElementRef,
+    link_map: &HashMap<String, String>,
+    indent: usize,
+) -> String {
     let tag = el.value().name();
 
     match tag {
@@ -64,19 +68,34 @@ fn element_to_markdown(el: ElementRef, link_map: &HashMap<String, String>, inden
         "hr" => "---\n\n".to_string(),
         "strong" | "b" => format!("**{}**", inner_text(el)),
         "em" | "i" => format!("*{}*", inner_text(el)),
+        "s" | "del" | "strike" => format!("~~{}~~", inner_text(el)),
+        "u" => {
+            // Markdown has no native underline; preserve as HTML
+            format!("<u>{}</u>", inner_text(el))
+        }
         "code" => {
             // Check if parent is <pre>; if so, handled by "pre"
             format!("`{}`", inner_text(el))
         }
         "pre" => {
-            // Look for a nested <code> element
+            // Look for a nested <code> element and extract language from class
             let code_sel = Selector::parse("code").unwrap();
-            let code_text = if let Some(code_el) = el.select(&code_sel).next() {
-                code_el.text().collect::<String>()
+            let (code_text, lang) = if let Some(code_el) = el.select(&code_sel).next() {
+                let text = code_el.text().collect::<String>();
+                // Notion/Prism uses class="language-xxx"
+                let lang = code_el
+                    .value()
+                    .attr("class")
+                    .unwrap_or("")
+                    .split_whitespace()
+                    .find(|c| c.starts_with("language-"))
+                    .map(|c| &c["language-".len()..])
+                    .unwrap_or("");
+                (text, lang.to_string())
             } else {
-                el.text().collect::<String>()
+                (el.text().collect::<String>(), String::new())
             };
-            format!("```\n{}\n```\n\n", code_text)
+            format!("```{}\n{}\n```\n\n", lang, code_text)
         }
         "blockquote" => {
             let inner = children_to_markdown(el, link_map, indent);
@@ -87,33 +106,20 @@ fn element_to_markdown(el: ElementRef, link_map: &HashMap<String, String>, inden
                 .join("\n")
                 + "\n\n"
         }
-        "ul" => {
-            let mut out = String::new();
-            let li_sel = Selector::parse("li").unwrap();
-            for li in el.select(&li_sel) {
-                // Only direct children li
-                if li.parent()
-                    .and_then(|p| ElementRef::wrap(p))
-                    .map(|p| p.value().name() == "ul")
-                    .unwrap_or(false)
-                    && li.parent()
-                        .and_then(|p| ElementRef::wrap(p))
-                        .map(|p| p == el)
-                        .unwrap_or(false)
-                {
-                    let prefix = "  ".repeat(indent);
-                    let content = li_content_to_markdown(li, link_map, indent + 1);
-                    out.push_str(&format!("{}- {}\n", prefix, content.trim()));
-                }
-            }
-            // Fallback: iterate direct children nodes
-            out = format_list(el, link_map, indent, false);
-            out
-        }
+        "ul" => format_list(el, link_map, indent, false),
         "ol" => format_list(el, link_map, indent, true),
         "li" => {
             // Handled by ul/ol
             children_to_markdown(el, link_map, indent)
+        }
+        "input" => {
+            // Notion exports checkboxes as <input type="checkbox" checked>
+            let checked = el.value().attr("checked").is_some();
+            if checked {
+                "[x] ".to_string()
+            } else {
+                "[ ] ".to_string()
+            }
         }
         "a" => {
             let href = el.value().attr("href").unwrap_or("").to_string();
@@ -143,7 +149,12 @@ fn element_to_markdown(el: ElementRef, link_map: &HashMap<String, String>, inden
 }
 
 /// Format a <ul> or <ol> list recursively.
-fn format_list(el: ElementRef, link_map: &HashMap<String, String>, indent: usize, ordered: bool) -> String {
+fn format_list(
+    el: ElementRef,
+    link_map: &HashMap<String, String>,
+    indent: usize,
+    ordered: bool,
+) -> String {
     let mut out = String::new();
     let mut index = 1usize;
     let prefix_str = "  ".repeat(indent);
@@ -165,9 +176,23 @@ fn format_list(el: ElementRef, link_map: &HashMap<String, String>, indent: usize
                 for li_child in child_el.children() {
                     if let Some(li_child_el) = ElementRef::wrap(li_child) {
                         match li_child_el.value().name() {
-                            "ul" => nested.push_str(&format_list(li_child_el, link_map, indent + 1, false)),
-                            "ol" => nested.push_str(&format_list(li_child_el, link_map, indent + 1, true)),
-                            _ => li_text.push_str(&element_to_markdown(li_child_el, link_map, indent + 1)),
+                            "ul" => nested.push_str(&format_list(
+                                li_child_el,
+                                link_map,
+                                indent + 1,
+                                false,
+                            )),
+                            "ol" => nested.push_str(&format_list(
+                                li_child_el,
+                                link_map,
+                                indent + 1,
+                                true,
+                            )),
+                            _ => li_text.push_str(&element_to_markdown(
+                                li_child_el,
+                                link_map,
+                                indent + 1,
+                            )),
                         }
                     } else if let Some(text) = child.value().as_text() {
                         li_text.push_str(text.trim());
@@ -197,29 +222,12 @@ fn inner_text(el: ElementRef) -> String {
     el.text().collect::<String>()
 }
 
-/// Convert li content (text + inline elements, excluding nested lists).
-fn li_content_to_markdown(el: ElementRef, link_map: &HashMap<String, String>, indent: usize) -> String {
-    let mut out = String::new();
-    for child in el.children() {
-        use scraper::node::Node;
-        match child.value() {
-            Node::Text(t) => out.push_str(t),
-            Node::Element(_) => {
-                if let Some(child_el) = ElementRef::wrap(child) {
-                    let name = child_el.value().name();
-                    if name != "ul" && name != "ol" {
-                        out.push_str(&element_to_markdown(child_el, link_map, indent));
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-    out
-}
-
 /// Convert all children of an element to markdown.
-fn children_to_markdown(el: ElementRef, link_map: &HashMap<String, String>, indent: usize) -> String {
+fn children_to_markdown(
+    el: ElementRef,
+    link_map: &HashMap<String, String>,
+    indent: usize,
+) -> String {
     let mut out = String::new();
     for child in el.children() {
         use scraper::node::Node;
@@ -274,14 +282,34 @@ fn href_to_page_name(href: &str, link_map: &HashMap<String, String>) -> String {
     }
 }
 
-/// Minimal URL percent-decoding.
+/// URL percent-decoding.
 fn urlencoding_decode(s: &str) -> String {
-    // Simple replacement of common encodings
-    s.replace("%20", " ")
-        .replace("%28", "(")
-        .replace("%29", ")")
-        .replace("%2F", "/")
-        .replace("%3A", ":")
+    let mut result = Vec::new();
+    let bytes = s.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            let hi = bytes[i + 1];
+            let lo = bytes[i + 2];
+            if let (Some(h), Some(l)) = (hex_val(hi), hex_val(lo)) {
+                result.push(h << 4 | l);
+                i += 3;
+                continue;
+            }
+        }
+        result.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8(result).unwrap_or_else(|_| s.to_string())
+}
+
+fn hex_val(b: u8) -> Option<u8> {
+    match b {
+        b'0'..=b'9' => Some(b - b'0'),
+        b'a'..=b'f' => Some(b - b'a' + 10),
+        b'A'..=b'F' => Some(b - b'A' + 10),
+        _ => None,
+    }
 }
 
 /// Convert an HTML <table> to a markdown table.

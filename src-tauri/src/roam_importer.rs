@@ -65,26 +65,20 @@ fn collect_block_uids(blocks: &[RoamBlock], page_title: &str, map: &mut HashMap<
 
 /// Convert a Unix millisecond timestamp to an ISO 8601 UTC string.
 fn ms_to_iso(ms: i64) -> String {
-    let secs = ms / 1000;
-    let nsecs = ((ms % 1000) * 1_000_000) as u32;
-    // Manual UTC formatting — avoids pulling in chrono
-    let dt = std::time::UNIX_EPOCH + std::time::Duration::new(secs as u64, nsecs);
-    match dt.duration_since(std::time::UNIX_EPOCH) {
-        Ok(d) => {
-            let s = d.as_secs();
-            let sec = s % 60;
-            let min = (s / 60) % 60;
-            let hour = (s / 3600) % 24;
-            let days = s / 86400;
-            // Days since epoch → calendar date (Gregorian proleptic)
-            let (year, month, day) = days_to_ymd(days);
-            format!(
-                "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
-                year, month, day, hour, min, sec
-            )
-        }
-        Err(_) => "1970-01-01T00:00:00Z".to_string(),
+    // Guard against negative or pre-epoch timestamps
+    if ms < 0 {
+        return "1970-01-01T00:00:00Z".to_string();
     }
+    let total_secs = (ms / 1000) as u64;
+    let sec = total_secs % 60;
+    let min = (total_secs / 60) % 60;
+    let hour = (total_secs / 3600) % 24;
+    let days = total_secs / 86400;
+    let (year, month, day) = days_to_ymd(days);
+    format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
+        year, month, day, hour, min, sec
+    )
 }
 
 fn days_to_ymd(days: u64) -> (u64, u64, u64) {
@@ -214,9 +208,26 @@ fn page_to_markdown(page: &RoamPage, uid_page_map: &HashMap<String, String>) -> 
         .unwrap_or_else(|| "1970-01-01T00:00:00Z".to_string());
     let roam_uid = page.uid.as_deref().unwrap_or("");
 
+    // Quote title if it contains YAML-special characters
+    let title_yaml = if page.title.contains(':')
+        || page.title.contains('#')
+        || page.title.contains('"')
+        || page.title.contains('\'')
+        || page.title.contains('\n')
+        || page.title.starts_with('[')
+        || page.title.starts_with('{')
+    {
+        format!(
+            "\"{}\"",
+            page.title.replace('\\', "\\\\").replace('"', "\\\"")
+        )
+    } else {
+        page.title.clone()
+    };
+
     let mut output = format!(
         "---\ntitle: {}\ncreated: {}\nmodified: {}\nroam-uid: {}\n---\n\n",
-        page.title, created, modified, roam_uid
+        title_yaml, created, modified, roam_uid
     );
 
     let mut lines: Vec<String> = Vec::new();
