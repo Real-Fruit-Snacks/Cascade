@@ -250,10 +250,17 @@ export function renderMarkdownPreview(md: string): string {
   const escapeHtml = (s: string) =>
     s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+  const isSafeUrl = (url: string): boolean =>
+    !/^(javascript|data|vbscript):/i.test(url.trim().toLowerCase());
+
   const inline = (text: string): string => {
     let r = escapeHtml(text);
-    // Images
-    r = r.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:4px;margin:4px 0">');
+    // Images — reject unsafe protocols
+    r = r.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) =>
+      isSafeUrl(url)
+        ? `<img src="${url}" alt="${alt}" style="max-width:100%;border-radius:4px;margin:4px 0">`
+        : escapeHtml(alt || url)
+    );
     // Strikethrough
     r = r.replace(/~~(.+?)~~/g, '<del style="text-decoration:line-through;color:var(--ctp-overlay1)">$1</del>');
     // Bold
