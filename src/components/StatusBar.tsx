@@ -211,7 +211,7 @@ export function StatusBar() {
     } else if (stats.words < wordCountGoalTarget) {
       goalNotifiedRef.current = false;
     }
-  }, [enableWordCountGoal, wordCountGoalNotify, stats.words, wordCountGoalTarget]);
+  }, [enableWordCountGoal, wordCountGoalNotify, stats.words, wordCountGoalTarget, t]);
 
   const [cursorLine, cursorCol] = cursor.split(':');
 

@@ -252,7 +252,7 @@ export function VaultExplorer() {
     });
 
     setRevealPath(normalized);
-  }, [activeFilePath]);
+  }, [activeFilePath, updateExpanded]);
 
   // Re-render tree when breadcrumb reveals a folder
   useEffect(() => {
@@ -273,7 +273,7 @@ export function VaultExplorer() {
     };
     window.addEventListener('cascade:reveal-in-tree', handler);
     return () => window.removeEventListener('cascade:reveal-in-tree', handler);
-  }, []);
+  }, [updateExpanded]);
 
   const handleToggleExpand = useCallback((path: string, expanded: boolean) => {
     updateExpanded((prev) => {

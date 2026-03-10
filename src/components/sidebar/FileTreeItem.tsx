@@ -301,7 +301,7 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
     if (entry.isDir) {
       onToggleExpand(entry.path, true);
     }
-  }, [entry.isDir, entry.path, createFile, openFile, vaultPath, templateFiles]);
+  }, [entry.isDir, entry.path, createFile, openFile, vaultPath, templateFiles, onToggleExpand]);
 
   const handleTemplateSelect = useCallback(async (selection: TemplateSelection | null) => {
     setTemplatePickerOpen(false);
@@ -377,7 +377,7 @@ export const FileTreeItem = memo(function FileTreeItem({ entry, depth = 0, isAct
     if (entry.isDir) {
       onToggleExpand(entry.path, true);
     }
-  }, [entry.isDir, entry.path, createFolder, folderTemplates]);
+  }, [entry.isDir, entry.path, createFolder, folderTemplates, onToggleExpand]);
 
   const handleNewCanvasSubmit = useCallback(async (name: string) => {
     setNewCanvasModal(false);

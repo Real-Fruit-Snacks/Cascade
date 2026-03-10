@@ -357,7 +357,7 @@ export function CanvasBackground({ width, height, connectDrag, marqueeDrag }: Ca
         ctx.fill();
       }
     }
-  }, [width, height, viewport, nodes, edges, selectedEdgeIds, selectedNodeIds, connectDrag, marqueeDrag, canvasGridSize, canvasEdgeStyle, canvasShowEdgeLabels]);
+  }, [width, height, viewport, nodes, edges, selectedEdgeIds, selectedNodeIds, connectDrag, marqueeDrag, canvasGridSize, canvasEdgeStyle, canvasShowEdgeLabels, nodeMap]);
 
   return (
     <canvas

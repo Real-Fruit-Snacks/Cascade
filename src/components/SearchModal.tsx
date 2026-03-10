@@ -356,7 +356,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
         setTimeout(() => setReplaceStatus(''), 3000);
       }
     },
-    [vaultPath, query, replaceText, groups, selectedGroup, runSearch, reloadAffectedTabs, useRegex, caseSensitive]
+    [vaultPath, query, replaceText, groups, selectedGroup, runSearch, reloadAffectedTabs, useRegex, caseSensitive, wholeWord, t]
   );
 
   const handleSelect = useCallback(

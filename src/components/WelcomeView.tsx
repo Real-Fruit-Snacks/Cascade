@@ -68,7 +68,7 @@ export function WelcomeView() {
         const relTime = modifiedSecs !== undefined ? formatRelativeTime(modifiedSecs * 1000, t) : null;
         return { path, name, relTime };
       });
-  }, [recentFiles, modifiedMap, flatFilesSet]);
+  }, [recentFiles, modifiedMap, flatFilesSet, t]);
 
   const totalLinks = useMemo(() => {
     let count = 0;
