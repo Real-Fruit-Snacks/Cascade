@@ -1,10 +1,30 @@
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
 import type { AccentColor } from '../stores/settings-store';
+import type { IndentGuideStyle } from '../stores/settings-store';
+
+/** Currently active guide color CSS value */
+let guideColor = 'var(--ctp-lavender)';
+let guideStyle: IndentGuideStyle = 'solid';
+
+function makeGradient(): string {
+  const color = guideColor;
+  if (guideStyle === 'dashed') {
+    return `repeating-linear-gradient(to bottom, ${color} 0px, ${color} 4px, transparent 4px, transparent 8px)`;
+  }
+  if (guideStyle === 'dotted') {
+    return `repeating-linear-gradient(to bottom, ${color} 0px, ${color} 2px, transparent 2px, transparent 5px)`;
+  }
+  // solid
+  return `linear-gradient(to bottom, ${color}, ${color})`;
+}
 
 function buildDecorations(view: EditorView): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
   const tabSize = view.state.tabSize;
+  const charWidth = view.defaultCharacterWidth;
+  const indentWidth = charWidth * tabSize;
+  const gradient = makeGradient();
 
   for (const { from, to } of view.visibleRanges) {
     for (let pos = from; pos <= to; ) {
@@ -21,10 +41,30 @@ function buildDecorations(view: EditorView): DecorationSet {
 
       const levels = Math.floor(indent / tabSize);
       if (levels > 0 && text.trim().length > 0) {
+        const gradients: string[] = [];
+        const positions: string[] = [];
+        const sizes: string[] = [];
+
+        for (let i = 0; i < levels; i++) {
+          const x = Math.round(indentWidth * (i + 1) - 0.5);
+          gradients.push(gradient);
+          positions.push(`${x}px 0`);
+          sizes.push('1px 100%');
+        }
+
         builder.add(
           line.from,
           line.from,
-          Decoration.line({ attributes: { 'data-indent-levels': String(levels) } }),
+          Decoration.line({
+            attributes: {
+              style: [
+                `background-image: ${gradients.join(', ')}`,
+                `background-position: ${positions.join(', ')}`,
+                `background-size: ${sizes.join(', ')}`,
+                `background-repeat: no-repeat`,
+              ].join('; '),
+            },
+          }),
         );
       }
 
@@ -42,7 +82,7 @@ const plugin = ViewPlugin.fromClass(
       this.decorations = buildDecorations(view);
     }
     update(update: ViewUpdate) {
-      if (update.docChanged || update.viewportChanged) {
+      if (update.docChanged || update.viewportChanged || update.geometryChanged) {
         this.decorations = buildDecorations(update.view);
       }
     }
@@ -52,21 +92,7 @@ const plugin = ViewPlugin.fromClass(
 
 /** Create the indent guides extension with the given color and style. */
 export function indentGuides(color: AccentColor, style: string) {
-  const borderStyle = `1px ${style} var(--ctp-${color})`;
-
-  const guideTheme = EditorView.theme({
-    '.cm-line[data-indent-levels]': {
-      '--indent-guide-border': borderStyle,
-    },
-  });
-
-  return [plugin, guideTheme, indentGuideBaseTheme];
+  guideColor = `var(--ctp-${color})`;
+  guideStyle = style as IndentGuideStyle;
+  return [plugin];
 }
-
-/** Base theme for indent guide rendering using pseudo-elements can't work in CM6,
- *  so we use a background-image approach instead. */
-const indentGuideBaseTheme = EditorView.baseTheme({
-  '.cm-line[data-indent-levels]': {
-    backgroundRepeat: 'no-repeat',
-  },
-});
