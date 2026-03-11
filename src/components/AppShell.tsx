@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { TitleBar } from './TitleBar';
@@ -6,12 +6,10 @@ import { Sidebar } from './sidebar/Sidebar';
 import { SplitPaneContainer } from './SplitPaneContainer';
 import { ErrorBoundary } from './ErrorBoundary';
 import { QuickOpen } from './QuickOpen';
-import type { QuickOpenMode } from './QuickOpen';
 import { CommandPalette } from './CommandPalette';
 import { NewFileModal } from './NewFileModal';
 import { SetVariableModal } from './SetVariableModal';
 import { ListVariablesModal } from './ListVariablesModal';
-import { getVariablesOptions } from '../hooks/use-variables-options';
 
 const SearchModal = lazy(() => import('./SearchModal').then((m) => ({ default: m.SearchModal })));
 const SettingsModal = lazy(() => import('./SettingsModal').then((m) => ({ default: m.SettingsModal })));
@@ -25,131 +23,39 @@ import { FileConflictDialog } from './FileConflictDialog';
 import { useToastStore } from '../stores/toast-store';
 import { quickOpenBus } from '../lib/quick-open-bus';
 import { useCommands } from '../hooks/use-commands';
-import { commandRegistry } from '../lib/command-registry';
 import { useEditorStore } from '../stores/editor-store';
 import { useVaultStore } from '../stores/vault-store';
 import { useSettingsStore } from '../stores/settings-store';
-import type { VariableMatch } from '../lib/tidemark';
 import { writeFile } from '../lib/tauri-commands';
 import { useSyncTimer } from '../hooks/use-sync-timer';
 
-const SIDEBAR_STORAGE_KEY = 'cascade-sidebar-visible';
-
-function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
-  const parts = shortcut.split('+');
-  const key = parts[parts.length - 1];
-  const needsCtrl = parts.includes('Ctrl');
-  const needsShift = parts.includes('Shift');
-  const needsAlt = parts.includes('Alt');
-  const needsMeta = parts.includes('Meta');
-
-  const mod = e.ctrlKey || e.metaKey;
-  const ctrlOrMeta = needsCtrl ? mod : !e.ctrlKey && !e.metaKey;
-  const shift = needsShift ? e.shiftKey : !e.shiftKey;
-  const alt = needsAlt ? e.altKey : !e.altKey;
-  const meta = needsMeta ? e.metaKey : true; // Meta handled via ctrlOrMeta
-
-  if (!ctrlOrMeta || !shift || !alt || !meta) return false;
-
-  // Normalize key comparison
-  const eventKey = e.key;
-  // For letter keys: shortcut stores uppercase, event.key is case-sensitive
-  return eventKey.toLowerCase() === key.toLowerCase() || eventKey === key;
-}
+import { useModalState } from '../hooks/use-modal-state';
+import { useCascadeEvents } from '../hooks/use-cascade-events';
+import type { CascadeEventCallbacks } from '../hooks/use-cascade-events';
+import { useVariablesFeature } from '../hooks/use-variables-feature';
+import type { VariablesFeatureCallbacks } from '../hooks/use-variables-feature';
+import { useKeyboardShortcuts } from '../hooks/use-keyboard-shortcuts';
+import { useGlobalDragDrop } from '../hooks/use-global-drag-drop';
+import { useThemeSetup } from '../hooks/use-theme-setup';
 
 export function AppShell() {
   const { t } = useTranslation(['common', 'dialogs']);
   useSyncTimer();
+  useThemeSetup();
+  useKeyboardShortcuts();
+  useGlobalDragDrop();
+
   const sidebarPosition = useSettingsStore((s) => s.sidebarPosition);
-  const accentColor = useSettingsStore((s) => s.accentColor);
-  const uiFontSize = useSettingsStore((s) => s.uiFontSize);
   const vaultPath = useVaultStore((s) => s.vaultPath);
 
-  // Apply accent color as CSS custom property
-  useEffect(() => {
-    document.documentElement.style.setProperty('--ctp-accent', `var(--ctp-${accentColor})`);
-  }, [accentColor]);
+  const modal = useModalState();
 
-  // Apply UI font size
-  useEffect(() => {
-    document.documentElement.style.fontSize = uiFontSize + 'px';
-    return () => { document.documentElement.style.fontSize = ''; };
-  }, [uiFontSize]);
-
-  const [quickOpenVisible, setQuickOpenVisible] = useState(false);
-  const [quickOpenMode, setQuickOpenMode] = useState<QuickOpenMode>('open');
-  const [insertLinkCallback, setInsertLinkCallback] = useState<((name: string) => void) | null>(null);
-  const [commandPaletteVisible, setCommandPaletteVisible] = useState(false);
-  const [searchModalVisible, setSearchModalVisible] = useState(false);
-  const [newFileModalVisible, setNewFileModalVisible] = useState(false);
-  const [newCanvasModalVisible, setNewCanvasModalVisible] = useState(false);
-  const [settingsVisible, setSettingsVisible] = useState(false);
-  const [exportVisible, setExportVisible] = useState(false);
-  const [exportDefaultScope, setExportDefaultScope] = useState<'current' | 'vault'>('current');
-  const [aboutOpen, setAboutOpen] = useState(false);
-  const [importVisible, setImportVisible] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState<{
-    title: string;
-    message: string;
-    kind: 'info' | 'warning';
-    confirmLabel: string;
-    onConfirm: () => void;
-  } | null>(null);
-  const [sidebarVisible, setSidebarVisible] = useState<boolean>(() => {
-    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-    return stored === null ? true : stored === 'true';
+  useCommands({
+    openCommandPalette: modal.openCommandPalette,
+    openQuickOpen: modal.openQuickOpen,
+    toggleSidebar: modal.toggleSidebar,
+    openSettings: modal.openSettings,
   });
-
-  // Variables feature modals
-  const [setVarModal, setSetVarModal] = useState<{ name: string; currentValue: string } | null>(null);
-  const [listVarsModal, setListVarsModal] = useState<VariableMatch[] | null>(null);
-
-  const openQuickOpen = useCallback(() => {
-    setQuickOpenMode('open');
-    setInsertLinkCallback(null);
-    setQuickOpenVisible(true);
-  }, []);
-
-  const openCommandPalette = useCallback(() => {
-    setCommandPaletteVisible(true);
-  }, []);
-
-  const closeCommandPalette = useCallback(() => {
-    setCommandPaletteVisible(false);
-  }, []);
-
-  const closeSearchModal = useCallback(() => {
-    setSearchModalVisible(false);
-  }, []);
-
-  const toggleSidebar = useCallback(() => {
-    setSidebarVisible((v) => {
-      const next = !v;
-      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
-      return next;
-    });
-  }, []);
-
-  const openSettings = useCallback(() => {
-    setSettingsVisible(true);
-  }, []);
-
-  const closeSettings = useCallback(() => {
-    setSettingsVisible(false);
-  }, []);
-
-  const closeExport = useCallback(() => {
-    setExportVisible(false);
-    setExportDefaultScope('current');
-  }, []);
-
-  const closeImport = useCallback(() => setImportVisible(false), []);
-  const closeAbout = useCallback(() => setAboutOpen(false), []);
-  const closeSetVarModal = useCallback(() => setSetVarModal(null), []);
-  const closeListVarsModal = useCallback(() => setListVarsModal(null), []);
-  const closeConfirmDialog = useCallback(() => setConfirmDialog(null), []);
-
-  useCommands({ openCommandPalette, openQuickOpen, toggleSidebar, openSettings });
 
   // Suppress the default browser context menu globally
   useEffect(() => {
@@ -160,317 +66,67 @@ export function AppShell() {
     return () => document.removeEventListener('contextmenu', suppress);
   }, []);
 
-  // Global drag-drop support — WebView2 on Windows requires native DOM listeners
-  // in the capture phase to ensure drops are allowed. React synthetic events and
-  // dataTransfer.types checks are unreliable on WebView2.
-  useEffect(() => {
-    let isDraggingInternal = false;
-    const onDragStart = () => { isDraggingInternal = true; };
-    const onDragEnd = () => { isDraggingInternal = false; };
-    const onDragOver = (e: DragEvent) => {
-      if (!isDraggingInternal) return;
-      e.preventDefault();
-      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-    };
-    const onDrop = (e: DragEvent) => {
-      if (!isDraggingInternal) return;
-      // Prevent browser default (navigating to the dragged content).
-      // Actual drop logic is handled by React onDrop on specific targets.
-      e.preventDefault();
-      isDraggingInternal = false;
-    };
-    document.addEventListener('dragstart', onDragStart, true);
-    document.addEventListener('dragend', onDragEnd, true);
-    document.addEventListener('dragover', onDragOver, true);
-    document.addEventListener('drop', onDrop, true);
-    return () => {
-      document.removeEventListener('dragstart', onDragStart, true);
-      document.removeEventListener('dragend', onDragEnd, true);
-      document.removeEventListener('dragover', onDragOver, true);
-      document.removeEventListener('drop', onDrop, true);
-    };
-  }, []);
-
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Skip non-shortcut keystrokes early (no modifier held)
-    if (!e.ctrlKey && !e.metaKey && !e.altKey) return;
-
-    // Dispatch shortcuts via command registry
-    const cmds = commandRegistry.getAll();
-    for (const cmd of cmds) {
-      if (!cmd.shortcut) continue;
-      if (matchesShortcut(e, cmd.shortcut)) {
-        e.preventDefault();
-        cmd.run();
-        return;
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
-
-  // Note: beforeunload is NOT used — onCloseRequested handles dirty-tab checks.
-  // Using both causes double-blocking on Tauri v2 Windows.
-
   // Intercept Tauri window close (Alt+F4, taskbar close, system close)
   useEffect(() => {
     const appWindow = getCurrentWindow();
     const unlisten = appWindow.onCloseRequested(async (event) => {
       if (useEditorStore.getState().hasDirtyTabs()) {
         event.preventDefault();
-        setConfirmDialog({
+        modal.setConfirmDialog({
           title: t('dialogs:unsavedChanges.title'),
           message: t('dialogs:unsavedChanges.message'),
           kind: 'warning',
           confirmLabel: t('dialogs:unsavedChanges.confirmLabel'),
           onConfirm: () => {
-            setConfirmDialog(null);
+            modal.setConfirmDialog(null);
             appWindow.destroy();
           },
         });
       }
     });
     return () => { unlisten.then((fn) => fn()); };
-  }, [t]);
+  }, [t, modal.setConfirmDialog]);
 
-  // R1: Consolidated cascade:* event listeners
-  useEffect(() => {
-    const openSearch = () => {
-      if (useSettingsStore.getState().enableSearch) setSearchModalVisible(true);
-    };
-    const newFile = () => setNewFileModalVisible(true);
-    const newCanvas = () => setNewCanvasModalVisible(true);
-    const openSettings = () => setSettingsVisible(true);
-    const openCmdPalette = () => setCommandPaletteVisible(true);
-    const openExport = () => { setExportDefaultScope('current'); setExportVisible(true); };
-    const openBatchExport = () => { setExportDefaultScope('vault'); setExportVisible(true); };
-    const openImport = () => setImportVisible(true);
-    const openAbout = () => setAboutOpen(true);
-    const doCloseVault = () => {
-      const store = useEditorStore.getState();
-      for (let i = store.tabs.length - 1; i >= 0; i--) {
-        if (store.tabs[i].isPinned) store.unpinTab(i);
-        store.closeTab(i, true);
-      }
-      useVaultStore.getState().closeVault();
-    };
-    const closeVault = (e: Event) => {
-      // Skip confirm dialog when force flag is set (programmatic use)
-      if ((e as CustomEvent).detail?.force) {
-        doCloseVault();
-        return;
-      }
-      const hasDirty = useEditorStore.getState().hasDirtyTabs();
-      setConfirmDialog({
-        title: t('dialogs:closeVault.title'),
-        message: hasDirty
-          ? t('dialogs:closeVault.messageDirty')
-          : t('dialogs:closeVault.messageClean'),
-        kind: hasDirty ? 'warning' : 'info',
-        confirmLabel: t('dialogs:closeVault.confirmLabel'),
-        onConfirm: () => {
-          setConfirmDialog(null);
-          doCloseVault();
-        },
-      });
-    };
+  // Stable callback objects for event hooks (avoid re-registering listeners on every render)
+  const cascadeEventCallbacks = useMemo<CascadeEventCallbacks>(() => ({
+    setSearchModalVisible: modal.setSearchModalVisible,
+    setNewFileModalVisible: modal.setNewFileModalVisible,
+    setNewCanvasModalVisible: modal.setNewCanvasModalVisible,
+    setSettingsVisible: modal.setSettingsVisible,
+    setCommandPaletteVisible: modal.setCommandPaletteVisible,
+    setExportVisible: modal.setExportVisible,
+    setExportDefaultScope: modal.setExportDefaultScope,
+    setImportVisible: modal.setImportVisible,
+    setAboutOpen: modal.setAboutOpen,
+    setConfirmDialog: modal.setConfirmDialog,
+  }), [
+    modal.setSearchModalVisible,
+    modal.setNewFileModalVisible,
+    modal.setNewCanvasModalVisible,
+    modal.setSettingsVisible,
+    modal.setCommandPaletteVisible,
+    modal.setExportVisible,
+    modal.setExportDefaultScope,
+    modal.setImportVisible,
+    modal.setAboutOpen,
+    modal.setConfirmDialog,
+  ]);
 
-    const events: [string, EventListener][] = [
-      ['cascade:open-search', openSearch],
-      ['cascade:new-file', newFile],
-      ['cascade:new-canvas', newCanvas],
-      ['cascade:open-settings', openSettings],
-      ['cascade:open-command-palette', openCmdPalette],
-      ['cascade:export', openExport],
-      ['cascade:export-batch', openBatchExport],
-      ['cascade:import', openImport],
-      ['cascade:close-vault', closeVault],
-      ['cascade:about', openAbout],
-    ];
-    for (const [evt, fn] of events) window.addEventListener(evt, fn);
-    return () => { for (const [evt, fn] of events) window.removeEventListener(evt, fn); };
-  }, [t]);
+  useCascadeEvents(cascadeEventCallbacks);
 
-  // Variables commands
-  useEffect(() => {
-    const handleReplaceAll = async () => {
-      const { enableVariables } = useSettingsStore.getState();
-      if (!enableVariables) return;
-      const view = useEditorStore.getState().editorViewRef.current;
-      const vaultPath = useVaultStore.getState().vaultPath;
-      if (!view || !vaultPath) return;
+  const variablesCallbacks = useMemo<VariablesFeatureCallbacks>(() => ({
+    setSetVarModal: modal.setSetVarModal,
+    setListVarsModal: modal.setListVarsModal,
+  }), [modal.setSetVarModal, modal.setListVarsModal]);
 
-      const { extractFrontmatter, parseFrontmatter, replaceVariables } = await import('../lib/tidemark');
-      const opts = getVariablesOptions();
+  useVariablesFeature(variablesCallbacks);
 
-      const doc = view.state.doc.toString();
-      const fm = extractFrontmatter(doc);
-      if (!fm) return;
-      const frontmatter = parseFrontmatter(fm.raw);
-      const body = doc.slice(fm.bodyStart);
-      const replaced = replaceVariables(body, frontmatter, opts);
-      if (replaced !== body) {
-        view.dispatch({
-          changes: { from: fm.bodyStart, to: doc.length, insert: replaced },
-        });
-      }
-    };
-
-    const handleCopyReplaced = async () => {
-      const { enableVariables } = useSettingsStore.getState();
-      if (!enableVariables) return;
-      const view = useEditorStore.getState().editorViewRef.current;
-      if (!view) return;
-
-      const { extractFrontmatter, parseFrontmatter, replaceVariables } = await import('../lib/tidemark');
-      const opts = getVariablesOptions();
-
-      const doc = view.state.doc.toString();
-      const fm = extractFrontmatter(doc);
-      if (!fm) {
-        await navigator.clipboard.writeText(doc);
-        return;
-      }
-      const frontmatter = parseFrontmatter(fm.raw);
-      const body = doc.slice(fm.bodyStart);
-      const replaced = replaceVariables(body, frontmatter, opts);
-      await navigator.clipboard.writeText(replaced);
-    };
-
-    const handleSetVariable = async () => {
-      const { enableVariables } = useSettingsStore.getState();
-      if (!enableVariables) return;
-      const view = useEditorStore.getState().editorViewRef.current;
-      if (!view) return;
-
-      const { extractFrontmatter, parseFrontmatter, getVariableAtPosition } = await import('../lib/tidemark');
-      const opts = getVariablesOptions();
-
-      const doc = view.state.doc.toString();
-      const fm = extractFrontmatter(doc);
-      const frontmatter = fm ? parseFrontmatter(fm.raw) : {};
-      const bodyStart = fm?.bodyStart ?? 0;
-      const body = doc.slice(bodyStart);
-      const cursor = view.state.selection.main.head;
-      const bodyOffset = cursor - bodyStart;
-
-      const match = getVariableAtPosition(body, bodyOffset, frontmatter, opts);
-      if (!match) {
-        useToastStore.getState().addToast(t('common:noVariableAtCursor'), 'info');
-        return;
-      }
-
-      const currentVal = match.status === 'exists' ? match.resolvedValue : '';
-      setSetVarModal({ name: match.name, currentValue: currentVal });
-    };
-
-    const handleListVariables = async () => {
-      const { enableVariables } = useSettingsStore.getState();
-      if (!enableVariables) return;
-      const view = useEditorStore.getState().editorViewRef.current;
-      if (!view) return;
-
-      const { extractFrontmatter, parseFrontmatter, scanDocumentVariables } = await import('../lib/tidemark');
-      const opts = getVariablesOptions();
-
-      const doc = view.state.doc.toString();
-      const fm = extractFrontmatter(doc);
-      const frontmatter = fm ? parseFrontmatter(fm.raw) : {};
-      const body = doc.slice(fm?.bodyStart ?? 0);
-      const vars = scanDocumentVariables(body, frontmatter, opts);
-      setListVarsModal(vars);
-    };
-
-    const handleCopyLineReplaced = async () => {
-      const { enableVariables } = useSettingsStore.getState();
-      if (!enableVariables) return;
-      const view = useEditorStore.getState().editorViewRef.current;
-      if (!view) return;
-
-      const { extractFrontmatter, parseFrontmatter, replaceVariables } = await import('../lib/tidemark');
-      const opts = getVariablesOptions();
-
-      const doc = view.state.doc.toString();
-      const fm = extractFrontmatter(doc);
-      const frontmatter = fm ? parseFrontmatter(fm.raw) : {};
-      const line = view.state.doc.lineAt(view.state.selection.main.head);
-      const replaced = replaceVariables(line.text, frontmatter, opts);
-      await navigator.clipboard.writeText(replaced);
-      useToastStore.getState().addToast(t('common:lineCopiedWithVariables'), 'success');
-    };
-
-    const handleCopySelectionReplaced = async () => {
-      const { enableVariables } = useSettingsStore.getState();
-      if (!enableVariables) return;
-      const view = useEditorStore.getState().editorViewRef.current;
-      if (!view) return;
-
-      const { extractFrontmatter, parseFrontmatter, replaceVariables } = await import('../lib/tidemark');
-      const opts = getVariablesOptions();
-
-      const doc = view.state.doc.toString();
-      const fm = extractFrontmatter(doc);
-      const frontmatter = fm ? parseFrontmatter(fm.raw) : {};
-      const { from, to } = view.state.selection.main;
-      const selected = from === to
-        ? view.state.doc.lineAt(from).text
-        : view.state.sliceDoc(from, to);
-      const replaced = replaceVariables(selected, frontmatter, opts);
-      await navigator.clipboard.writeText(replaced);
-      useToastStore.getState().addToast(t('common:selectionCopiedWithVariables'), 'success');
-    };
-
-    const handleReplaceSelection = async () => {
-      const { enableVariables } = useSettingsStore.getState();
-      if (!enableVariables) return;
-      const view = useEditorStore.getState().editorViewRef.current;
-      if (!view) return;
-
-      const { extractFrontmatter, parseFrontmatter, replaceVariables } = await import('../lib/tidemark');
-      const opts = getVariablesOptions();
-
-      const doc = view.state.doc.toString();
-      const fm = extractFrontmatter(doc);
-      const frontmatter = fm ? parseFrontmatter(fm.raw) : {};
-      const { from, to } = view.state.selection.main;
-      if (from === to) return;
-      const selected = view.state.sliceDoc(from, to);
-      const replaced = replaceVariables(selected, frontmatter, opts);
-      if (replaced !== selected) {
-        view.dispatch({ changes: { from, to, insert: replaced } });
-      }
-    };
-
-    window.addEventListener('cascade:variables-replace-all', handleReplaceAll);
-    window.addEventListener('cascade:variables-copy-replaced', handleCopyReplaced);
-    window.addEventListener('cascade:variables-set', handleSetVariable);
-    window.addEventListener('cascade:variables-list', handleListVariables);
-    window.addEventListener('cascade:variables-copy-line', handleCopyLineReplaced);
-    window.addEventListener('cascade:variables-copy-selection', handleCopySelectionReplaced);
-    window.addEventListener('cascade:variables-replace-selection', handleReplaceSelection);
-    return () => {
-      window.removeEventListener('cascade:variables-replace-all', handleReplaceAll);
-      window.removeEventListener('cascade:variables-copy-replaced', handleCopyReplaced);
-      window.removeEventListener('cascade:variables-set', handleSetVariable);
-      window.removeEventListener('cascade:variables-list', handleListVariables);
-      window.removeEventListener('cascade:variables-copy-line', handleCopyLineReplaced);
-      window.removeEventListener('cascade:variables-copy-selection', handleCopySelectionReplaced);
-      window.removeEventListener('cascade:variables-replace-selection', handleReplaceSelection);
-    };
-  }, [t]);
-
-  const closeNewFileModal = useCallback(() => {
-    setNewFileModalVisible(false);
-  }, []);
-
+  // File/canvas creation handlers
   const handleCreateFile = useCallback((path: string) => {
-    const vaultPath = useVaultStore.getState().vaultPath;
-    if (!vaultPath) return;
+    const vp = useVaultStore.getState().vaultPath;
+    if (!vp) return;
     useVaultStore.getState().createFile(path).then(() => {
-      useEditorStore.getState().openFile(vaultPath, path);
+      useEditorStore.getState().openFile(vp, path);
     }).catch((err) => {
       console.error('Failed to create file:', path, err);
       const fileName = path.replace(/\\/g, '/').split('/').pop() ?? path;
@@ -478,18 +134,14 @@ export function AppShell() {
     });
   }, [t]);
 
-  const closeNewCanvasModal = useCallback(() => {
-    setNewCanvasModalVisible(false);
-  }, []);
-
   const handleCreateCanvas = useCallback((path: string) => {
-    const vaultPath = useVaultStore.getState().vaultPath;
-    if (!vaultPath) return;
+    const vp = useVaultStore.getState().vaultPath;
+    if (!vp) return;
     const canvasPath = path.endsWith('.canvas') ? path : `${path}.canvas`;
     useVaultStore.getState().createFile(canvasPath).then(() => {
-      return writeFile(vaultPath, canvasPath, '{"nodes":[],"edges":[]}');
+      return writeFile(vp, canvasPath, '{"nodes":[],"edges":[]}');
     }).then(() => {
-      useEditorStore.getState().openFile(vaultPath, canvasPath);
+      useEditorStore.getState().openFile(vp, canvasPath);
     }).catch((err) => {
       console.error('Failed to create canvas:', canvasPath, err);
       const fileName = canvasPath.replace(/\\/g, '/').split('/').pop() ?? canvasPath;
@@ -500,32 +152,33 @@ export function AppShell() {
   // Listen for link-picker requests from the editor
   useEffect(() => {
     const unsub = quickOpenBus.subscribe((callback) => {
-      setQuickOpenMode('link');
+      modal.setQuickOpenMode('link');
       // Wrap in a function so React doesn't call it as a state initializer
-      setInsertLinkCallback(() => callback);
-      setQuickOpenVisible(true);
+      modal.setInsertLinkCallback(() => callback);
+      modal.setQuickOpenVisible(true);
     });
     return unsub;
-  }, []);
+  }, [modal.setQuickOpenMode, modal.setInsertLinkCallback, modal.setQuickOpenVisible]);
 
-  const handleClose = useCallback(() => {
-    setQuickOpenVisible(false);
-    setInsertLinkCallback(null);
-  }, []);
+  const handleQuickOpenClose = useCallback(() => {
+    modal.setQuickOpenVisible(false);
+    modal.setInsertLinkCallback(null);
+  }, [modal.setQuickOpenVisible, modal.setInsertLinkCallback]);
 
+  // Variable modal save handlers
   const handleSetVarSave = useCallback(async (value: string) => {
-    if (!setVarModal) return;
+    if (!modal.setVarModal) return;
     const view = useEditorStore.getState().editorViewRef.current;
     if (!view) return;
 
     const { updateFrontmatter } = await import('../lib/tidemark');
     const doc = view.state.doc.toString();
-    const newDoc = updateFrontmatter(doc, setVarModal.name, value);
+    const newDoc = updateFrontmatter(doc, modal.setVarModal.name, value);
     if (newDoc !== doc) {
       view.dispatch({ changes: { from: 0, to: doc.length, insert: newDoc } });
-      useToastStore.getState().addToast(t('common:setVariable', { name: setVarModal.name, value }), 'success');
+      useToastStore.getState().addToast(t('common:setVariable', { name: modal.setVarModal.name, value }), 'success');
     }
-  }, [setVarModal, t]);
+  }, [modal.setVarModal, t]);
 
   const handleListVarSave = useCallback(async (name: string, value: string) => {
     const view = useEditorStore.getState().editorViewRef.current;
@@ -554,9 +207,9 @@ export function AppShell() {
     const fm = extractFrontmatter(updatedDoc);
     const frontmatter = fm ? parseFrontmatter(fm.raw) : {};
     const body = updatedDoc.slice(fm?.bodyStart ?? 0);
-    setListVarsModal(scanDocumentVariables(body, frontmatter, opts));
+    modal.setListVarsModal(scanDocumentVariables(body, frontmatter, opts));
     useToastStore.getState().addToast(t('common:setVariable', { name, value }), 'success');
-  }, [t]);
+  }, [t, modal.setListVarsModal]);
 
   const focusModeActive = useEditorStore((s) => s.focusModeActive);
 
@@ -566,7 +219,7 @@ export function AppShell() {
       style={{ order: sidebarPosition === 'right' ? 2 : 0 }}
     >
       <ErrorBoundary name="sidebar">
-        <Sidebar collapsed={!sidebarVisible} onToggle={toggleSidebar} />
+        <Sidebar collapsed={!modal.sidebarVisible} onToggle={modal.toggleSidebar} />
       </ErrorBoundary>
     </div>
   );
@@ -580,6 +233,14 @@ export function AppShell() {
     );
   }
 
+  const suspenseFallback = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="rounded-xl p-8" style={{ backgroundColor: 'var(--ctp-base)', width: 500 }}>
+        <div className="w-6 h-6 mx-auto border-2 rounded-full animate-spin" style={{ borderColor: 'var(--ctp-surface2)', borderTopColor: 'var(--ctp-accent)' }} />
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col h-screen overflow-hidden" style={{ backgroundColor: 'var(--ctp-base)' }}>
       <TitleBar />
@@ -592,81 +253,81 @@ export function AppShell() {
         </div>
       </div>
       <QuickOpen
-        open={quickOpenVisible}
-        mode={quickOpenMode}
-        onClose={handleClose}
-        onInsertLink={insertLinkCallback ?? undefined}
+        open={modal.quickOpenVisible}
+        mode={modal.quickOpenMode}
+        onClose={handleQuickOpenClose}
+        onInsertLink={modal.insertLinkCallback ?? undefined}
       />
       <CommandPalette
-        open={commandPaletteVisible}
-        onClose={closeCommandPalette}
+        open={modal.commandPaletteVisible}
+        onClose={modal.closeCommandPalette}
       />
       <ErrorBoundary name="search-modal">
-        <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}><div className="rounded-xl p-8" style={{ backgroundColor: 'var(--ctp-base)', width: 500 }}><div className="w-6 h-6 mx-auto border-2 rounded-full animate-spin" style={{ borderColor: 'var(--ctp-surface2)', borderTopColor: 'var(--ctp-accent)' }} /></div></div>}>
+        <Suspense fallback={suspenseFallback}>
           <SearchModal
-            open={searchModalVisible}
-            onClose={closeSearchModal}
+            open={modal.searchModalVisible}
+            onClose={modal.closeSearchModal}
           />
         </Suspense>
       </ErrorBoundary>
       <NewFileModal
-        open={newFileModalVisible}
-        onClose={closeNewFileModal}
+        open={modal.newFileModalVisible}
+        onClose={modal.closeNewFileModal}
         onCreate={handleCreateFile}
       />
       <NewFileModal
-        open={newCanvasModalVisible}
-        onClose={closeNewCanvasModal}
+        open={modal.newCanvasModalVisible}
+        onClose={modal.closeNewCanvasModal}
         onCreate={handleCreateCanvas}
       />
       <ErrorBoundary name="settings-modal">
-        <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}><div className="rounded-xl p-8" style={{ backgroundColor: 'var(--ctp-base)', width: 500 }}><div className="w-6 h-6 mx-auto border-2 rounded-full animate-spin" style={{ borderColor: 'var(--ctp-surface2)', borderTopColor: 'var(--ctp-accent)' }} /></div></div>}>
+        <Suspense fallback={suspenseFallback}>
           <SettingsModal
-            open={settingsVisible}
-            onClose={closeSettings}
+            open={modal.settingsVisible}
+            onClose={modal.closeSettings}
           />
         </Suspense>
       </ErrorBoundary>
       <ErrorBoundary name="export-modal">
-        <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}><div className="rounded-xl p-8" style={{ backgroundColor: 'var(--ctp-base)', width: 500 }}><div className="w-6 h-6 mx-auto border-2 rounded-full animate-spin" style={{ borderColor: 'var(--ctp-surface2)', borderTopColor: 'var(--ctp-accent)' }} /></div></div>}>
+        <Suspense fallback={suspenseFallback}>
           <ExportModal
-            open={exportVisible}
-            onClose={closeExport}
-            defaultScope={exportDefaultScope}
+            open={modal.exportVisible}
+            onClose={modal.closeExport}
+            defaultScope={modal.exportDefaultScope}
           />
         </Suspense>
       </ErrorBoundary>
       <ListVariablesModal
-        open={listVarsModal !== null}
-        variables={listVarsModal ?? []}
-        onClose={closeListVarsModal}
+        open={modal.listVarsModal !== null}
+        variables={modal.listVarsModal ?? []}
+        onClose={modal.closeListVarsModal}
         onSave={handleListVarSave}
       />
       <ErrorBoundary name="import-modal">
-        <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}><div className="rounded-xl p-8" style={{ backgroundColor: 'var(--ctp-base)', width: 500 }}><div className="w-6 h-6 mx-auto border-2 rounded-full animate-spin" style={{ borderColor: 'var(--ctp-surface2)', borderTopColor: 'var(--ctp-accent)' }} /></div></div>}>
+        <Suspense fallback={suspenseFallback}>
           <ImportWizard
-            open={importVisible}
-            onClose={closeImport}
+            open={modal.importVisible}
+            onClose={modal.closeImport}
           />
         </Suspense>
       </ErrorBoundary>
-      <AboutDialog open={aboutOpen} onClose={closeAbout} />
+      <AboutDialog open={modal.aboutOpen} onClose={modal.closeAbout} />
       <ConfirmDialog
-        open={confirmDialog !== null}
-        title={confirmDialog?.title ?? ''}
-        message={confirmDialog?.message ?? ''}
-        kind={confirmDialog?.kind ?? 'info'}
-        confirmLabel={confirmDialog?.confirmLabel ?? 'Confirm'}
-        onConfirm={confirmDialog?.onConfirm ?? (() => {})}
-        onCancel={closeConfirmDialog}
+        open={modal.confirmDialog !== null}
+        title={modal.confirmDialog?.title ?? ''}
+        message={modal.confirmDialog?.message ?? ''}
+        kind={modal.confirmDialog?.kind ?? 'info'}
+        confirmLabel={modal.confirmDialog?.confirmLabel ?? 'Confirm'}
+        onConfirm={modal.confirmDialog?.onConfirm ?? (() => {})}
+        onCancel={modal.closeConfirmDialog}
       />
       <ToastContainer />
       <FileConflictDialog />
       <SetVariableModal
-        open={setVarModal !== null}
-        variableName={setVarModal?.name ?? ''}
-        currentValue={setVarModal?.currentValue ?? ''}
-        onClose={closeSetVarModal}
+        open={modal.setVarModal !== null}
+        variableName={modal.setVarModal?.name ?? ''}
+        currentValue={modal.setVarModal?.currentValue ?? ''}
+        onClose={modal.closeSetVarModal}
         onSave={handleSetVarSave}
       />
     </div>
