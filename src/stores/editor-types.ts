@@ -69,6 +69,7 @@ export interface EditorActions {
   unpinTab: (index: number) => void;
   updateContent: (content: string) => void;
   saveFile: (vaultRoot: string) => Promise<void>;
+  saveAllDirty: (vaultRoot: string) => Promise<void>;
   handleExternalChange: (vaultRoot: string, relPath: string) => Promise<void>;
   setViewMode: (mode: ViewMode) => void;
   setEditorView: (view: EditorView | null) => void;

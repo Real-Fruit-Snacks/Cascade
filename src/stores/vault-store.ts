@@ -56,7 +56,7 @@ interface VaultActions {
   renameFile: (oldPath: string, newPath: string) => Promise<void>;
   moveFile: (srcPath: string, destDir: string) => Promise<string | null>;
   getFolders: () => string[];
-  closeVault: () => void;
+  closeVault: () => Promise<void>;
 }
 
 let buildTagSeq = 0;
@@ -130,7 +130,16 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
     }
   },
 
-  closeVault: () => {
+  closeVault: async () => {
+    const vaultPath = get().vaultPath;
+    // Flush all dirty tabs to disk before closing
+    if (vaultPath) {
+      const { useEditorStore } = await import('./editor-store');
+      const editorState = useEditorStore.getState();
+      if (editorState.hasDirtyTabs()) {
+        await editorState.saveAllDirty(vaultPath);
+      }
+    }
     import('./plugin-store').then(({ usePluginStore }) => {
       usePluginStore.getState().unloadAll();
     });

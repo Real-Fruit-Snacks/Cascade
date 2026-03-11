@@ -108,9 +108,22 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
   const closeTab = useCallback(async (index: number) => {
     const tab = tabsMeta[index];
     if (tab?.isDirty) {
-      const name = tab.path.replace(/\\/g, '/').split('/').pop() ?? tab.path;
-      const confirmed = await ask(t('dialogs.unsavedChangesMessage', { name }), { title: t('dialogs.unsavedChangesTitle'), kind: 'warning' });
-      if (!confirmed) return;
+      const s = useSettingsStore.getState();
+      if (s.autoSaveEnabled) {
+        // Auto-save before closing when autosave is enabled
+        const vaultPath = useVaultStore.getState().vaultPath;
+        if (vaultPath) {
+          if (isPane) {
+            await useEditorStore.getState().savePaneFile(paneIndex, vaultPath);
+          } else {
+            await useEditorStore.getState().saveFile(vaultPath);
+          }
+        }
+      } else {
+        const name = tab.path.replace(/\\/g, '/').split('/').pop() ?? tab.path;
+        const confirmed = await ask(t('dialogs.unsavedChangesMessage', { name }), { title: t('dialogs.unsavedChangesTitle'), kind: 'warning' });
+        if (!confirmed) return;
+      }
     }
     if (isPane) {
       useEditorStore.getState().closePaneTab(paneIndex, index, true);

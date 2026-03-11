@@ -275,10 +275,10 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
   switchTab: (index: number) => {
     const { tabs, activeTabIndex, editorViewRef } = get();
     if (index < 0 || index >= tabs.length) return;
-    // Auto-save dirty file on tab switch (focus-change mode)
+    // Auto-save dirty file on tab switch
     if (get().isDirty) {
       const s = useSettingsStore.getState();
-      if (s.autoSaveEnabled && s.autoSaveMode === 'focus-change') {
+      if (s.autoSaveEnabled) {
         const vaultPath = useVaultStore.getState().vaultPath;
         if (vaultPath) get().saveFile(vaultPath);
       }
@@ -418,6 +418,52 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
     dirtyPaths.delete(tab.path);
     set({ tabs: newTabs, justSaved: true, dirtyPaths, ...derived(newTabs, activeTabIndex) });
     setTimeout(() => set({ justSaved: false }), 1500);
+  },
+
+  saveAllDirty: async (vaultRoot: string) => {
+    const { tabs, panes, activeTabIndex } = get();
+    let newTabs = [...tabs];
+    const dirtyPaths = new Set(get().dirtyPaths);
+    let changed = false;
+
+    // Save all dirty main tabs
+    for (let i = 0; i < newTabs.length; i++) {
+      const tab = newTabs[i];
+      if (!tab.isDirty) continue;
+      if (tab.type && tab.type !== 'markdown') continue;
+      // For the active tab, use the editor view; for others, pass null
+      const view = i === activeTabIndex ? get().editorViewRef.current : null;
+      const updated = await performSave(tab, view, vaultRoot);
+      if (updated) {
+        newTabs[i] = updated;
+        dirtyPaths.delete(tab.path);
+        changed = true;
+      }
+    }
+
+    // Save all dirty pane tabs
+    const newPanes = [...panes];
+    for (let p = 0; p < newPanes.length; p++) {
+      const pane = newPanes[p];
+      let paneTabs = [...pane.tabs];
+      for (let i = 0; i < paneTabs.length; i++) {
+        const tab = paneTabs[i];
+        if (!tab.isDirty) continue;
+        if (tab.type && tab.type !== 'markdown') continue;
+        const view = i === pane.activeTabIndex ? pane.editorViewRef.current : null;
+        const updated = await performSave(tab, view, vaultRoot);
+        if (updated) {
+          paneTabs[i] = updated;
+          dirtyPaths.delete(tab.path);
+          changed = true;
+        }
+      }
+      if (changed) newPanes[p] = { ...pane, tabs: paneTabs };
+    }
+
+    if (changed) {
+      set({ tabs: newTabs, panes: newPanes, dirtyPaths, ...derived(newTabs, activeTabIndex) });
+    }
   },
 
   handleExternalChange: async (vaultRoot: string, relPath: string) => {
@@ -750,11 +796,17 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
 // Auto-save drafts every 5 seconds
 setInterval(() => saveDrafts(useEditorStore), 5000);
 
-// Save drafts and session on page unload
+// Save drafts, dirty files, and session on page unload
 window.addEventListener('beforeunload', () => {
   saveDrafts(useEditorStore);
   const vaultRoot = useVaultStore.getState().vaultPath;
-  if (vaultRoot) saveSession(vaultRoot, useEditorStore);
+  if (vaultRoot) {
+    // Fire-and-forget: flush all dirty tabs to disk
+    if (useEditorStore.getState().hasDirtyTabs()) {
+      useEditorStore.getState().saveAllDirty(vaultRoot);
+    }
+    saveSession(vaultRoot, useEditorStore);
+  }
 });
 
 // Re-export types and functions for backward compatibility
