@@ -234,9 +234,10 @@ export function AppShell() {
   }
 
   const suspenseFallback = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="rounded-xl p-8" style={{ backgroundColor: 'var(--ctp-base)', width: 500 }}>
-        <div className="w-6 h-6 mx-auto border-2 rounded-full animate-spin" style={{ borderColor: 'var(--ctp-surface2)', borderTopColor: 'var(--ctp-accent)' }} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'var(--ctp-base)' }}>
+      <div className="flex flex-col items-center gap-4">
+        <img src="/app-icon.png" alt="Cascade" style={{ width: 48, height: 48, opacity: 0.7 }} draggable={false} />
+        <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--ctp-surface2)', borderTopColor: 'var(--ctp-accent)' }} />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { Folder, FolderOpen } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Folder, FolderOpen, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useVaultStore } from '../stores/vault-store';
@@ -11,7 +11,9 @@ export function OnboardingScreen() {
   const { t } = useTranslation('common');
   const recentVaults = useVaultStore((s) => s.recentVaults);
   const openVault = useVaultStore((s) => s.openVault);
+  const isLoading = useVaultStore((s) => s.isLoading);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [loadingPath, setLoadingPath] = useState<string | null>(null);
 
   // Apply Mocha theme locally to the onboarding screen
   useEffect(() => {
@@ -27,6 +29,7 @@ export function OnboardingScreen() {
   const handleOpenVault = useCallback(async () => {
     const selected = await open({ directory: true, multiple: false, title: 'Open Vault' });
     if (selected && typeof selected === 'string') {
+      setLoadingPath(selected);
       await openVault(selected);
     }
   }, [openVault]);
@@ -34,14 +37,57 @@ export function OnboardingScreen() {
   const handleCreateVault = useCallback(async () => {
     const selected = await open({ directory: true, multiple: false, title: 'Select Folder for New Vault' });
     if (selected && typeof selected === 'string') {
-      // Opens the selected folder as a vault — the folder can be empty or pre-existing
+      setLoadingPath(selected);
       await openVault(selected);
     }
   }, [openVault]);
 
   const handleOpenRecent = useCallback(async (path: string) => {
+    setLoadingPath(path);
     await openVault(path);
   }, [openVault]);
+
+  // Full-screen loading overlay when vault is being opened
+  if (isLoading && loadingPath) {
+    const vaultName = loadingPath.replace(/\\/g, '/').split('/').pop() ?? loadingPath;
+    return (
+      <div
+        ref={containerRef}
+        className="flex flex-col items-center justify-center flex-1 w-full"
+        style={{ backgroundColor: 'var(--ctp-base)' }}
+      >
+        <div className="flex flex-col items-center gap-6">
+          <img
+            src="/app-icon.png"
+            alt="Cascade"
+            style={{ width: 80, height: 80, opacity: 0.9 }}
+            draggable={false}
+          />
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex items-center gap-3">
+              <Loader2
+                size={18}
+                className="animate-spin"
+                style={{ color: 'var(--ctp-mauve)' }}
+              />
+              <span
+                className="text-sm font-medium"
+                style={{ color: 'var(--ctp-text)' }}
+              >
+                {t('onboarding.openingVault', { name: vaultName })}
+              </span>
+            </div>
+            <span
+              className="text-xs"
+              style={{ color: 'var(--ctp-overlay0)' }}
+            >
+              {loadingPath}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -74,7 +120,8 @@ export function OnboardingScreen() {
       <div className="flex flex-col items-center gap-3 w-full" style={{ maxWidth: 280 }}>
         <button
           onClick={handleOpenVault}
-          className="w-full flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-medium transition-colors hover:bg-[var(--ctp-lavender)]"
+          disabled={isLoading}
+          className="w-full flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-medium transition-colors hover:bg-[var(--ctp-lavender)] disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             backgroundColor: 'var(--ctp-mauve)',
             color: 'var(--ctp-base)',
@@ -85,7 +132,8 @@ export function OnboardingScreen() {
         </button>
         <button
           onClick={handleCreateVault}
-          className="w-full flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm transition-colors hover:bg-[var(--ctp-surface1)]"
+          disabled={isLoading}
+          className="w-full flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm transition-colors hover:bg-[var(--ctp-surface1)] disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             backgroundColor: 'var(--ctp-surface0)',
             color: 'var(--ctp-text)',

@@ -57,7 +57,8 @@
     "recentVaults": "Recent Vaults",
     "shortcutOpenVault": "Open vault",
     "shortcutNewFile": "New file",
-    "shortcutCommandPalette": "Command palette"
+    "shortcutCommandPalette": "Command palette",
+    "openingVault": "Opening {{name}}..."
   },
   "featureWiki": {
     "aboutThisFeature": "About this feature",
