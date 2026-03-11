@@ -422,7 +422,7 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
 
   saveAllDirty: async (vaultRoot: string) => {
     const { tabs, panes, activeTabIndex } = get();
-    let newTabs = [...tabs];
+    const newTabs = [...tabs];
     const dirtyPaths = new Set(get().dirtyPaths);
     let changed = false;
 
@@ -445,7 +445,7 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
     const newPanes = [...panes];
     for (let p = 0; p < newPanes.length; p++) {
       const pane = newPanes[p];
-      let paneTabs = [...pane.tabs];
+      const paneTabs = [...pane.tabs];
       for (let i = 0; i < paneTabs.length; i++) {
         const tab = paneTabs[i];
         if (!tab.isDirty) continue;
