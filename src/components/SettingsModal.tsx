@@ -48,6 +48,7 @@ import {
   SpellcheckOptionsPage,
   TemplatesOptionsPage,
   SearchOptionsPage,
+  SlashCommandsOptionsPage,
   FocusModeOptionsPage,
   WordCountGoalOptionsPage,
   CanvasOptionsPage,
@@ -558,6 +559,7 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
   { id: 'spellcheckOptions', category: 'spellcheck-options' as SettingsCategory, keywords: 'spell check spelling browser options' },
   { id: 'templatesOptions', category: 'templates-options' as SettingsCategory, keywords: 'templates folder variables cursor clipboard date options' },
   { id: 'searchOptions', category: 'search-options' as SettingsCategory, keywords: 'search case sensitive regex whole word options' },
+  { id: 'slashCommandsOptions', category: 'slashcommands-options' as SettingsCategory, keywords: 'slash commands menu inline insert options' },
   { id: 'syncOptions', category: 'sync-options' as SettingsCategory, keywords: 'sync github git repository backup cloud push pull auto-sync interval token' },
   { id: 'syncEnabled', category: 'features', keywords: 'sync github git cloud backup toggle feature enable disable' },
 ];
@@ -1657,6 +1659,13 @@ function SettingsContent(props: SettingsContentProps) {
         <>
           {isSearching && <SectionHeader label={ts('featurePages.search')} />}
           <SearchOptionsPage settings={settings} />
+        </>
+      )}
+
+      {shouldShowCategory('slashcommands-options') && (
+        <>
+          {isSearching && <SectionHeader label={ts('featurePages.slashCommands')} />}
+          <SlashCommandsOptionsPage settings={settings} />
         </>
       )}
 

@@ -16,6 +16,7 @@ export { AutoSaveOptionsPage } from './AutoSaveOptionsPage';
 export { SpellcheckOptionsPage } from './SpellcheckOptionsPage';
 export { TemplatesOptionsPage } from './TemplatesOptionsPage';
 export { SearchOptionsPage } from './SearchOptionsPage';
+export { SlashCommandsOptionsPage } from './SlashCommandsOptionsPage';
 export { FocusModeOptionsPage } from './FocusModeOptionsPage';
 export { WordCountGoalOptionsPage } from './WordCountGoalOptionsPage';
 export { CanvasOptionsPage } from './CanvasOptionsPage';

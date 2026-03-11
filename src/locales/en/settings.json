@@ -756,6 +756,10 @@
       "cursor": "Cursor position after template is applied"
     }
   },
+  "slashCommandsOptions": {
+    "title": "Slash Commands Options",
+    "description": "Configure the inline slash command menu."
+  },
   "searchOptions": {
     "title": "Search Options",
     "description": "Configure default search behavior for vault-wide search (Ctrl+Shift+F).",

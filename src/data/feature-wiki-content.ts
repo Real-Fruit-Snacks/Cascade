@@ -396,6 +396,32 @@ export const featureWikiContent: Record<string, FeatureWikiEntry> = {
     ],
   },
 
+  "slashcommands-options": {
+    overview:
+      "Slash commands give you quick access to formatting and content insertion via an inline menu. Type / at the start of a line or after a space to open a floating dropdown with commands organized into groups: Text & Headings, Code & Media, Structured, and Embeds.",
+    usage: [
+      "Type `/` at the beginning of a line or after a space to open the command menu.",
+      "Start typing to filter commands — for example, `/head` shows only heading options.",
+      "Use Arrow Up/Down to navigate the menu, then press Enter to insert the selected command.",
+      "Press Escape to dismiss the menu without inserting anything.",
+      "Click any item in the menu to insert it directly.",
+      "Toggle the feature on or off in Settings → Features → Slash Commands.",
+    ],
+    tips: [
+      "Slash commands only trigger at word boundaries — typing a `/` in the middle of a URL or file path won't open the menu.",
+      "Use `/callout` to quickly insert a callout block with the `> [!NOTE]` syntax.",
+      "The `/template` command opens the Quick Open dialog filtered to your templates folder.",
+      "The `/embed` command opens the link picker so you can search for a note to embed.",
+      "Filter keywords work beyond the label — try `/todo` for task lists or `/hr` for horizontal dividers.",
+    ],
+    shortcuts: [
+      { key: "/", action: "Open slash command menu" },
+      { key: "↑ / ↓", action: "Navigate menu items" },
+      { key: "Enter", action: "Insert selected command" },
+      { key: "Escape", action: "Dismiss menu" },
+    ],
+  },
+
   "search-options": {
     overview:
       "Search lets you find text across every file in your vault instantly, with support for case-sensitive, whole-word, and regular expression queries.",
