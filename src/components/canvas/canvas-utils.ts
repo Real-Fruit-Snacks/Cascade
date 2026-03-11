@@ -1,4 +1,5 @@
-import type { EdgeSide } from '../../types/canvas';
+import type { EdgeSide, CanvasNode } from '../../types/canvas';
+import { BEZIER_SAMPLE_COUNT, type ClipboardData } from './canvas-types';
 
 /** Compute the anchor point (world coords) for a given side on a node */
 export function anchorPoint(
@@ -37,4 +38,70 @@ export function getComputedColor(cssVar: string): string {
     return getComputedStyle(document.documentElement).getPropertyValue(match[1]).trim() || '#cdd6f4';
   }
   return cssVar;
+}
+
+// Clipboard helpers
+export async function writeCanvasClipboard(data: ClipboardData): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(JSON.stringify({ __cascadeCanvas: true, ...data }));
+  } catch { /* clipboard access denied */ }
+}
+
+export async function readCanvasClipboard(): Promise<ClipboardData | null> {
+  try {
+    const raw = await navigator.clipboard.readText();
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.__cascadeCanvas && Array.isArray(parsed.nodes)) return parsed;
+  } catch { /* not canvas data or clipboard access denied */ }
+  return null;
+}
+
+// Bezier sampling
+export function bezierPoint(
+  p0x: number, p0y: number,
+  cp1x: number, cp1y: number,
+  cp2x: number, cp2y: number,
+  p1x: number, p1y: number,
+  t: number,
+): { x: number; y: number } {
+  const mt = 1 - t;
+  return {
+    x: mt * mt * mt * p0x + 3 * mt * mt * t * cp1x + 3 * mt * t * t * cp2x + t * t * t * p1x,
+    y: mt * mt * mt * p0y + 3 * mt * mt * t * cp1y + 3 * mt * t * t * cp2y + t * t * t * p1y,
+  };
+}
+
+// Hit-test a screen point against a bezier curve
+export function isNearBezier(
+  mx: number, my: number,
+  p0x: number, p0y: number,
+  cp1x: number, cp1y: number,
+  cp2x: number, cp2y: number,
+  p1x: number, p1y: number,
+  hitRadius: number,
+): boolean {
+  for (let i = 0; i <= BEZIER_SAMPLE_COUNT; i++) {
+    const t = i / BEZIER_SAMPLE_COUNT;
+    const pt = bezierPoint(p0x, p0y, cp1x, cp1y, cp2x, cp2y, p1x, p1y, t);
+    const dx = mx - pt.x;
+    const dy = my - pt.y;
+    if (dx * dx + dy * dy <= hitRadius * hitRadius) return true;
+  }
+  return false;
+}
+
+// Determine which side of a node a world point is closest to
+export function closestSide(node: CanvasNode, wx: number, wy: number): EdgeSide {
+  const cx = node.x + node.width / 2;
+  const cy = node.y + node.height / 2;
+  const dx = wx - cx;
+  const dy = wy - cy;
+  const nx = dx / (node.width / 2);
+  const ny = dy / (node.height / 2);
+  if (Math.abs(nx) >= Math.abs(ny)) {
+    return nx >= 0 ? 'right' : 'left';
+  } else {
+    return ny >= 0 ? 'bottom' : 'top';
+  }
 }

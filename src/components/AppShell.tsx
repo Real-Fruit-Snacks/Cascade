@@ -5,13 +5,13 @@ import { TitleBar } from './TitleBar';
 import { Sidebar } from './sidebar/Sidebar';
 import { SplitPaneContainer } from './SplitPaneContainer';
 import { ErrorBoundary } from './ErrorBoundary';
-import { QuickOpen } from './QuickOpen';
+import { QuickOpen } from './quick-open';
 import { CommandPalette } from './CommandPalette';
 import { NewFileModal } from './NewFileModal';
 import { SetVariableModal } from './SetVariableModal';
 import { ListVariablesModal } from './ListVariablesModal';
 
-const SearchModal = lazy(() => import('./SearchModal').then((m) => ({ default: m.SearchModal })));
+const SearchModal = lazy(() => import('./search').then((m) => ({ default: m.SearchModal })));
 const SettingsModal = lazy(() => import('./SettingsModal').then((m) => ({ default: m.SettingsModal })));
 const ExportModal = lazy(() => import('./ExportModal').then((m) => ({ default: m.ExportModal })));
 const ImportWizard = lazy(() => import('./ImportWizard').then((m) => ({ default: m.ImportWizard })));

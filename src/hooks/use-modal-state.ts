@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { QuickOpenMode } from '../components/QuickOpen';
+import type { QuickOpenMode } from '../components/quick-open';
 import type { VariableMatch } from '../lib/tidemark';
 
 const SIDEBAR_STORAGE_KEY = 'cascade-sidebar-visible';
