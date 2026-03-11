@@ -29,12 +29,32 @@
 **Editor**
 - Live Preview, Source, and Reading view modes
 - CodeMirror 6 with syntax highlighting, code folding, and bracket matching
-- Wiki-links (`[[note]]`) with autocomplete and backlink tracking
-- YAML frontmatter properties editor
-- Inline image and PDF preview
+- Wiki-links (`[[note]]`) with autocomplete, backlink tracking, and heading links
+- Slash commands — type `/` to open an inline command menu (headings, code blocks, callouts, tables, and more)
+- YAML frontmatter properties editor with type indicators
+- Inline image preview with resize and alignment controls
+- Math (LaTeX) block preview
+- Mermaid diagram rendering
+- Callout blocks (`> [!NOTE]`, `> [!WARNING]`, etc.)
+- Table editor with column/row manipulation
+- Tags with autocomplete, nested tag support, and tag panel
+- Highlight syntax (`==highlighted==`)
 - Find and replace across notes (Ctrl+Shift+F)
 - Spellcheck with custom dictionary support
 - Vim mode (optional)
+- Smart lists (auto-continue bullets, tasks, numbered lists)
+- Indent guides with customizable style and color
+- Code block line numbers
+- Embed preview for transclusion (`![[note]]`)
+- Query/Dataview-like preview blocks
+
+**Focus & Writing**
+- Focus mode with paragraph dimming
+- Typewriter mode (keeps current line centered)
+- Word count goals with progress tracking
+- Auto-save with timer and focus-change modes
+- Split panes for side-by-side editing
+- Status bar (word count, character count, reading time, selection info)
 
 **Canvas Whiteboard**
 - Infinite canvas for visual thinking with pan, zoom, and snap-to-grid
@@ -48,10 +68,12 @@
 
 **Knowledge Management**
 - Backlinks panel showing all notes that link to the current note
-- Tag index with tag panel for browsing
+- Tag index with tag panel for browsing and renaming
 - Graph view visualizing connections between notes
 - Bookmarks for quick access to frequently used notes
 - Outline panel for heading navigation
+- Table of contents generation
+- Daily, weekly, monthly, quarterly, and yearly notes with templates
 
 **Organization**
 - Vault-based file management with folder tree
@@ -60,6 +82,9 @@
 - Drag-and-drop file reorganization
 - File properties dialog (word count, character count, backlinks, tags)
 - Template system for creating notes from templates
+- Variable replacement system with custom delimiters
+- Folder colors with multiple display styles
+- GitHub sync for vault backup and collaboration
 
 **Import & Export**
 - Import from Obsidian, Notion, Logseq, Roam Research, and plain markdown
@@ -68,16 +93,19 @@
 
 **Customization**
 - Four Catppuccin themes: Mocha, Macchiato, Frappe, Latte (dark and light)
+- Custom theme support via JSON
 - Configurable fonts (UI and editor), font sizes, and line height
-- Plugin system with sandboxed iframe execution
-- 20+ configurable settings categories
-- Internationalization ready (i18next)
+- Plugin system with sandboxed iframe execution and marketplace
+- 30+ configurable feature toggles with per-feature option pages
+- Customizable keyboard shortcuts
+- Internationalization ready (i18next, 2200+ keys)
 
 **Performance & Security**
 - Native desktop app — no Electron, no browser overhead
 - Rust backend for file I/O with path traversal protection
 - Files stay on your disk, no cloud dependency
 - Lazy-loaded components and namespaced i18n bundles
+- Deep link support (`cascade://open/vault/note`)
 
 ## Screenshots
 
@@ -248,6 +276,7 @@ npx playwright test
 | `Ctrl+F` | Find in File |
 | `Ctrl+H` | Find and Replace |
 | `Ctrl+Shift+C` | New Canvas |
+| `Alt+D` | Open Daily Note |
 | `Ctrl+Z` | Undo |
 | `Ctrl+Shift+Z` | Redo |
 
