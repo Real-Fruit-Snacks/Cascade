@@ -91,10 +91,10 @@ function App() {
     if (!vaultPath) return;
     // Only restore if no tabs are already open (prevents double-restore)
     if (useEditorStore.getState().tabs.length === 0) {
-      restoreSession(vaultPath);
+      restoreSession(vaultPath, useEditorStore);
     }
     return () => {
-      saveSession(vaultPath);
+      saveSession(vaultPath, useEditorStore);
     };
   }, [vaultPath]);
 
