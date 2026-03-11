@@ -23,6 +23,7 @@ import { mermaidPreview, mermaidPreviewTheme } from './mermaid-preview';
 import { queryPreview, queryPreviewTheme } from './query-preview';
 import { typewriterMode, typewriterPadding, focusMode } from './typewriter-mode';
 import { customSpellcheck } from './custom-spellcheck';
+import { slashCommandExtension } from './slash-commands/slash-command-extension';
 import { initDictionary, setVaultPath as setSpellcheckVault } from './spellcheck-engine';
 import { formattingKeymap } from './formatting-commands';
 import { smartListKeymap } from './smart-lists';
@@ -48,6 +49,7 @@ interface Compartments extends RenderCompartments {
   codeFoldingComp: Compartment;
   typewriterComp: Compartment;
   focusModeComp: Compartment;
+  slashCommandsComp: Compartment;
 }
 
 function createCompartments(): Compartments {
@@ -61,6 +63,7 @@ function createCompartments(): Compartments {
     codeFoldingComp: new Compartment(),
     typewriterComp: new Compartment(),
     focusModeComp: new Compartment(),
+    slashCommandsComp: new Compartment(),
   };
 }
 
@@ -197,7 +200,7 @@ export function useCodeMirror() {
     wikiLinksComp, tagsComp, tidemarkComp, codeFoldingComp, typewriterComp,
     indentGuidesComp, imagePreviewComp, mathPreviewComp, calloutPreviewComp,
     mermaidPreviewComp, queryPreviewComp, focusModeComp, highlightSyntaxComp,
-    markdownComp,
+    markdownComp, slashCommandsComp,
   } = compsRef.current;
 
   const updateContent = useEditorStore((s) => s.updateContent);
@@ -257,6 +260,7 @@ export function useCodeMirror() {
   const spellcheckSkipCapitalized = useSettingsStore((s) => s.spellcheckSkipCapitalized);
   const enableProperties = useSettingsStore((s) => s.enableProperties);
   const propertiesShowTypes = useSettingsStore((s) => s.propertiesShowTypes);
+  const enableSlashCommands = useSettingsStore((s) => s.enableSlashCommands);
   // Ref avoids re-creating the EditorView when save dependencies change
   const handleSaveRef = useRef(() => {});
   handleSaveRef.current = () => {
@@ -326,6 +330,7 @@ export function useCodeMirror() {
         smartListKeymap,
         formattingKeymap,
         dropHandler,
+        slashCommandsComp.of(enableSlashCommands ? slashCommandExtension : []),
         // Prevent right-click from moving cursor / triggering live preview edit mode
         // Return true to consume for CM6 (no cursor move), but don't preventDefault
         EditorView.domEventHandlers({
@@ -571,6 +576,13 @@ export function useCodeMirror() {
     view.dispatch({ effects: queryPreviewComp.reconfigure(enableQueryPreview ? [queryPreview, queryPreviewTheme] : []) });
   }, [enableQueryPreview]);
 
+  // Slash commands
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({ effects: slashCommandsComp.reconfigure(enableSlashCommands ? slashCommandExtension : []) });
+  }, [enableSlashCommands]);
+
   // Live preview: reconfigure when any sub-toggle or related setting changes
   useEffect(() => {
     const view = viewRef.current;
@@ -645,5 +657,5 @@ export function useCodeMirror() {
 
   const getView = useCallback(() => viewRef.current, []);
 
-  return { editorRef, setValue, getValue, getView };
+  return { editorRef, setValue, getValue, getView, viewRef };
 }

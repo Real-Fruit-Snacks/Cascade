@@ -102,5 +102,31 @@
   },
   "pluginView": {
     "iframeTitle": "Plugin view: {{viewType}}"
+  },
+  "slashCommands": {
+    "placeholder": "Filter commands...",
+    "groups": {
+      "textAndHeadings": "Text & Headings",
+      "codeAndMedia": "Code & Media",
+      "structured": "Structured",
+      "embeds": "Embeds"
+    },
+    "items": {
+      "heading1": "Heading 1",
+      "heading2": "Heading 2",
+      "heading3": "Heading 3",
+      "bulletList": "Bullet List",
+      "numberedList": "Numbered List",
+      "taskList": "Task List",
+      "blockquote": "Blockquote",
+      "callout": "Callout",
+      "codeBlock": "Code Block",
+      "mathBlock": "Math Block",
+      "divider": "Horizontal Divider",
+      "table": "Table",
+      "template": "Template",
+      "image": "Image",
+      "embedNote": "Embed Note"
+    }
   }
 }

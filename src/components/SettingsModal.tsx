@@ -526,6 +526,7 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
   { id: 'enableStatusBar', category: 'features', keywords: 'status bar word count toggle feature enable disable' },
   { id: 'enableTemplates', category: 'features', keywords: 'templates variables toggle feature enable disable' },
   { id: 'enableSearch', category: 'features', keywords: 'search vault find toggle feature enable disable' },
+  { id: 'enableSlashCommands', category: 'features', keywords: 'slash commands menu inline insert toggle feature enable disable' },
   { id: 'enableFocusMode', category: 'features', keywords: 'focus mode zen distraction free toggle feature enable disable' },
   { id: 'enableWordCountGoal', category: 'features', keywords: 'word count goal target writing toggle feature enable disable' },
   { id: 'enableBookmarks', category: 'features', keywords: 'bookmarks favorites star files toggle feature enable disable' },
@@ -1282,6 +1283,14 @@ function SettingsContent(props: SettingsContentProps) {
               <ToggleSwitch
                 checked={settings.spellcheck}
                 onChange={(v) => settings.update({ spellcheck: v })}
+              />
+            </SettingRow>
+          )}
+          {(!visibleFeaturesIds || visibleFeaturesIds.has('enableSlashCommands')) && (
+            <SettingRow label={ts('features.slashCommands.label')} description={ts('features.slashCommands.description')}>
+              <ToggleSwitch
+                checked={settings.enableSlashCommands}
+                onChange={(v) => settings.update({ enableSlashCommands: v })}
               />
             </SettingRow>
           )}

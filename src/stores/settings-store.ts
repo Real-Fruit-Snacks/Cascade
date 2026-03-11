@@ -65,6 +65,7 @@ export interface Settings {
   // Features (toggleable)
   showWelcomeView: boolean;
   enableFolderColors: boolean;
+  enableSlashCommands: boolean;
   enableWikiLinks: boolean;
   enableLivePreview: boolean;
   enableTags: boolean;
@@ -265,6 +266,7 @@ export const DEFAULTS: Settings = {
   customKeybindings: {},
   showWelcomeView: true,
   enableFolderColors: false,
+  enableSlashCommands: true,
   enableWikiLinks: true,
   enableLivePreview: true,
   enableTags: true,

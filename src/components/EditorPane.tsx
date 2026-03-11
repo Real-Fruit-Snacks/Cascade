@@ -17,6 +17,7 @@ import { consumeRightClickCapture } from '../editor/custom-spellcheck';
 import { useTranslation } from 'react-i18next';
 
 import { FloatingVimBadge } from './editor/FloatingVimBadge';
+import { SlashCommandMenu } from './SlashCommandMenu';
 import { WelcomeScreen } from './editor/WelcomeScreen';
 import { TabBar } from './editor/TabBar';
 import { BreadcrumbBar } from './editor/BreadcrumbBar';
@@ -151,7 +152,7 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
 
   const setEditorView = useEditorStore((s) => s.setEditorView);
   const setPaneEditorView = useEditorStore((s) => s.setPaneEditorView);
-  const { editorRef, setValue, getView } = useCodeMirror();
+  const { editorRef, setValue, getView, viewRef } = useCodeMirror();
 
   // Editor context menu
   const [editorMenu, setEditorMenu] = useState<{ x: number; y: number; docPos: number | null; spellcheck: { word: string; from: number; to: number } | null } | null>(null);
@@ -346,6 +347,8 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
           flexDirection: 'column',
         }}
       />
+
+      <SlashCommandMenu editorViewRef={viewRef} />
 
       {/* Welcome screen when no file open */}
       {!activeFilePath && (showWelcomeView ? <WelcomeView /> : <WelcomeScreen />)}

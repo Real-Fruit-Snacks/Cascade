@@ -1,5 +1,5 @@
 import i18n from '../../../i18n';
-import { Settings as SettingsIcon, Type, Palette, FolderOpen, Sliders, ToggleRight, Puzzle, Keyboard, Save, ArrowLeftRight, Star, LayoutGrid, ChevronsDownUp, Calendar, Maximize2, Paintbrush, Network, Highlighter, Image, Columns, Eye, MonitorPlay, List, FileJson2, Database, Search, SpellCheck, Cloud, PanelBottom, ListTree, Hash, FileStack, AlignCenter, Target, Link } from 'lucide-react';
+import { Settings as SettingsIcon, Type, Palette, FolderOpen, Sliders, ToggleRight, Puzzle, Keyboard, Save, ArrowLeftRight, Star, LayoutGrid, ChevronsDownUp, Calendar, Maximize2, Paintbrush, Network, Highlighter, Image, Columns, Eye, MonitorPlay, List, FileJson2, Database, Search, SpellCheck, Cloud, PanelBottom, ListTree, Hash, FileStack, AlignCenter, Target, Link, Command } from 'lucide-react';
 import { VariablesIcon } from '../../icons/VariablesIcon';
 import type { Settings } from '../../../stores/settings-store';
 
@@ -67,7 +67,7 @@ export function formatKeyCombo(e: KeyboardEvent): string | null {
   return parts.join('+');
 }
 
-export type SettingsCategory = 'editor' | 'appearance' | 'files' | 'folder-colors' | 'general' | 'sync-options' | 'features' | 'shortcuts' | 'plugins' | 'wikilinks-options' | 'livepreview-options' | 'tags-options' | 'graph-options' | 'backlinks-options' | 'outline-options' | 'variables-options' | 'dailynotes-options' | 'codefolding-options' | 'highlight-options' | 'properties-options' | 'statusbar-options' | 'autosave-options' | 'spellcheck-options' | 'templates-options' | 'search-options' | 'focusmode-options' | 'wordcountgoal-options' | 'bookmarks-options' | 'typewriter-options' | 'indentguides-options' | 'imagepreview-options' | 'toc-options' | 'query-options' | 'mediaviewer-options' | 'canvas-options';
+export type SettingsCategory = 'editor' | 'appearance' | 'files' | 'folder-colors' | 'general' | 'sync-options' | 'features' | 'shortcuts' | 'plugins' | 'wikilinks-options' | 'livepreview-options' | 'tags-options' | 'graph-options' | 'backlinks-options' | 'outline-options' | 'variables-options' | 'dailynotes-options' | 'codefolding-options' | 'highlight-options' | 'properties-options' | 'statusbar-options' | 'autosave-options' | 'spellcheck-options' | 'templates-options' | 'search-options' | 'slashcommands-options' | 'focusmode-options' | 'wordcountgoal-options' | 'bookmarks-options' | 'typewriter-options' | 'indentguides-options' | 'imagepreview-options' | 'toc-options' | 'query-options' | 'mediaviewer-options' | 'canvas-options';
 
 export const CATEGORIES: { id: SettingsCategory; labelKey: string; icon: typeof SettingsIcon }[] = [
   { id: 'editor', labelKey: 'categories.editor', icon: Type },
@@ -99,6 +99,7 @@ export const FEATURE_OPTION_PAGES: { id: SettingsCategory; labelKey: string; ico
   { id: 'properties-options', labelKey: 'featurePages.properties', icon: FileJson2, settingsKey: 'enableProperties' },
   { id: 'query-options', labelKey: 'featurePages.queryPreview', icon: Database, settingsKey: 'enableQueryPreview' },
   { id: 'search-options', labelKey: 'featurePages.search', icon: Search, settingsKey: 'enableSearch' },
+  { id: 'slashcommands-options' as SettingsCategory, labelKey: 'featurePages.slashCommands', icon: Command, settingsKey: 'enableSlashCommands' },
   { id: 'spellcheck-options', labelKey: 'featurePages.spellcheck', icon: SpellCheck, settingsKey: 'spellcheck' },
   { id: 'sync-options', labelKey: 'featurePages.sync', icon: Cloud, settingsKey: 'syncEnabled' },
   { id: 'statusbar-options', labelKey: 'featurePages.statusBar', icon: PanelBottom, settingsKey: 'enableStatusBar' },

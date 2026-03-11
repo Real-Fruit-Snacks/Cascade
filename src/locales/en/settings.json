@@ -50,6 +50,7 @@
     "variables": "Variables",
     "wikiLinks": "Wiki Links",
     "wordCountGoal": "Word Count Goal",
+    "slashCommands": "Slash Commands",
     "sync": "GitHub Sync"
   },
   "systemMonospace": "System Monospace",
@@ -323,6 +324,10 @@
     "searchInVault": {
       "label": "Search in Vault",
       "description": "Search across all files in the vault with Ctrl+Shift+F"
+    },
+    "slashCommands": {
+      "label": "Slash Commands",
+      "description": "Type / at the start of a line to open an inline command menu for inserting headings, code blocks, callouts, and more"
     },
     "spellcheck": {
       "label": "Spellcheck",
