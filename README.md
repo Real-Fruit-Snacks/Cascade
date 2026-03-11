@@ -1,12 +1,8 @@
 <p align="center">
-  <img src="public/app-icon.png" alt="Cascade logo" width="128" />
+  <img src="public/app-icon.png" alt="Cascade logo" width="150" />
 </p>
 
 <h1 align="center">Cascade</h1>
-
-<p align="center">
-  <img src="docs/screenshots/editor-main.png" alt="Cascade Editor" width="800" />
-</p>
 
 <p align="center">
   A fast, beautiful markdown note-taking app for personal knowledge management.
@@ -15,11 +11,22 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/Real-Fruit-Snacks/Cascade/releases"><img src="https://img.shields.io/github/v/release/Real-Fruit-Snacks/Cascade" alt="Release" /></a>
+  <a href="https://github.com/Real-Fruit-Snacks/Cascade/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Real-Fruit-Snacks/Cascade" alt="License" /></a>
+  <a href="https://github.com/Real-Fruit-Snacks/Cascade/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Real-Fruit-Snacks/Cascade/ci.yml" alt="CI" /></a>
+  <a href="https://github.com/Real-Fruit-Snacks/Cascade/stargazers"><img src="https://img.shields.io/github/stars/Real-Fruit-Snacks/Cascade" alt="Stars" /></a>
+</p>
+
+<p align="center">
   <a href="#features">Features</a> &bull;
   <a href="#screenshots">Screenshots</a> &bull;
   <a href="#installation">Installation</a> &bull;
   <a href="#development">Development</a> &bull;
   <a href="#license">License</a>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/editor-main.png" alt="Cascade Editor" width="800" />
 </p>
 
 ---
