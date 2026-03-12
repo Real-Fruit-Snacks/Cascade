@@ -89,8 +89,12 @@ const spellcheckPlugin = ViewPlugin.fromClass(
           // Map existing decorations for immediate display
           this.decorations = this.decorations.map(update.changes);
         } else {
-          // Viewport change — rebuild immediately
-          this.decorations = this.buildDecorations(update.view);
+          // Viewport change — debounce to avoid per-frame rebuilds during fast scroll
+          if (this.debounceTimer) clearTimeout(this.debounceTimer);
+          this.debounceTimer = setTimeout(() => {
+            this.decorations = this.buildDecorations(update.view);
+            update.view.requestMeasure();
+          }, 150);
         }
       }
     }

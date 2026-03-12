@@ -44,11 +44,6 @@ export function createCatppuccinTheme(dark: boolean): Extension {
     '.cm-scroller': {
       overscrollBehavior: 'contain',
       willChange: 'scroll-position',
-      contain: 'strict',
-    },
-    '.cm-line': {
-      contentVisibility: 'auto',
-      containIntrinsicSize: 'auto 1.6em',
     },
   }, { dark });
 }
