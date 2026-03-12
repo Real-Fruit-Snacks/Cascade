@@ -68,6 +68,10 @@ const LINK_RE = /\[([^\]]*)\]\(([^)]+)\)/g;
 
 export const markdownLinkClickHandler = EditorView.domEventHandlers({
   click(event, view) {
+    // Require Ctrl/Cmd+Click to follow links; plain click places cursor for editing
+    // In reading mode (not editable), allow plain click to follow links
+    if (!event.ctrlKey && !event.metaKey && view.state.facet(EditorView.editable)) return false;
+
     const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
     if (pos === null) return false;
 
@@ -99,8 +103,7 @@ export const markdownLinkClickHandler = EditorView.domEventHandlers({
           if (imageExts.test(url)) return true; // Don't navigate to image files
           const target = url.endsWith('.md') ? url : `${url}.md`;
           const settings = useSettingsStore.getState();
-          const forceNewTab = event.ctrlKey || event.metaKey;
-          useEditorStore.getState().openFile(vaultPath, target, forceNewTab || settings.wikiLinksOpenInNewTab);
+          useEditorStore.getState().openFile(vaultPath, target, settings.wikiLinksOpenInNewTab);
         }
         return true;
       }

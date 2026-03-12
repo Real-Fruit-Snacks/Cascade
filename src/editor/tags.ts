@@ -105,6 +105,10 @@ export const tagAutocompletion = EditorState.languageData.of(() => [{ autocomple
 
 export const tagClickHandler = EditorView.domEventHandlers({
   click(event, view) {
+    // Require Ctrl/Cmd+Click to follow tags; plain click places cursor for editing
+    // In reading mode (not editable), allow plain click to follow tags
+    if (!event.ctrlKey && !event.metaKey && view.state.facet(EditorView.editable)) return false;
+
     const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
     if (pos === null) return false;
 

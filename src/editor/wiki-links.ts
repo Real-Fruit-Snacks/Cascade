@@ -107,6 +107,10 @@ export const wikiLinks = ViewPlugin.fromClass(
 
 export const wikiLinkClickHandler = EditorView.domEventHandlers({
   click(event, view) {
+    // Require Ctrl/Cmd+Click to follow links; plain click places cursor for editing
+    // In reading mode (not editable), allow plain click to follow links
+    if (!event.ctrlKey && !event.metaKey && view.state.facet(EditorView.editable)) return false;
+
     const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
     if (pos === null) return false;
 
@@ -130,14 +134,13 @@ export const wikiLinkClickHandler = EditorView.domEventHandlers({
         if (!vaultPath) return true;
 
         const settings = useSettingsStore.getState();
-        const forceNewTab = event.ctrlKey || event.metaKey;
         if (resolved) {
           if (heading) {
             useEditorStore.setState({ pendingScrollHeading: heading });
           } else if (blockId) {
             useEditorStore.setState({ pendingScrollBlockId: blockId });
           }
-          useEditorStore.getState().openFile(vaultPath, resolved, forceNewTab || settings.wikiLinksOpenInNewTab);
+          useEditorStore.getState().openFile(vaultPath, resolved, settings.wikiLinksOpenInNewTab);
         } else if (settings.wikiLinksCreateOnFollow) {
           const fileName = fileTarget.endsWith('.md') ? fileTarget : `${fileTarget}.md`;
           if (fileName.includes('..') || fileName.startsWith('/') || fileName.startsWith('\\') || /[<>:"|?*]/.test(fileName)) {
@@ -145,7 +148,7 @@ export const wikiLinkClickHandler = EditorView.domEventHandlers({
             return true;
           }
           useVaultStore.getState().createFile(fileName).then(() => {
-            useEditorStore.getState().openFile(vaultPath, fileName, forceNewTab || settings.wikiLinksOpenInNewTab);
+            useEditorStore.getState().openFile(vaultPath, fileName, settings.wikiLinksOpenInNewTab);
           }).catch(() => {
             useToastStore.getState().addToast(`Failed to create file: ${fileName}`, 'error');
           });
