@@ -18,6 +18,7 @@ const ImportWizard = lazy(() => import('./ImportWizard').then((m) => ({ default:
 import { OnboardingScreen } from './OnboardingScreen';
 import { AboutDialog } from './AboutDialog';
 import { ConfirmDialog } from './ConfirmDialog';
+import { ConfirmDialogProvider } from './ConfirmDialogProvider';
 import { ToastContainer } from './ToastContainer';
 import { FileConflictDialog } from './FileConflictDialog';
 import { useToastStore } from '../stores/toast-store';
@@ -322,6 +323,7 @@ export function AppShell() {
         onConfirm={modal.confirmDialog?.onConfirm ?? (() => {})}
         onCancel={modal.closeConfirmDialog}
       />
+      <ConfirmDialogProvider />
       <ToastContainer />
       <FileConflictDialog />
       <SetVariableModal

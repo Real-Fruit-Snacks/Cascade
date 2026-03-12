@@ -8,6 +8,7 @@ import { useEditorStore } from '../../stores/editor-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import * as cmd from '../../lib/tauri-commands';
 import type { SearchMatch, ReplaceResult } from '../../lib/tauri-commands';
+import { showConfirm } from '../../stores/confirm-store';
 import { highlightQuery, parseSearchScope, filterByScope, groupByFile, type FileGroup } from './search-utils';
 
 interface SearchModalProps {
@@ -176,9 +177,12 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
       if (filePaths.length === 0) return;
 
       if (allFiles && filePaths.length > 1) {
-        const confirmed = window.confirm(
-          t('replace.confirmAll', { files: filePaths.length })
-        );
+        const confirmed = await showConfirm({
+          title: t('replace.confirmTitle', 'Replace All'),
+          message: t('replace.confirmAll', { files: filePaths.length }),
+          kind: 'warning',
+          confirmLabel: t('replace.confirmLabel', 'Replace'),
+        });
         if (!confirmed) return;
       }
 

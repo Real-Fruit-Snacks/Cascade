@@ -7,6 +7,7 @@ import { ContextMenu } from '../sidebar/ContextMenu';
 import type { MenuItem } from '../sidebar/ContextMenu';
 import { useCanvasStore } from '../../stores/canvas-store';
 import { useEditorStore } from '../../stores/editor-store';
+import { showConfirm } from '../../stores/confirm-store';
 import { CANVAS_COLORS } from '../../types/canvas';
 import type { CanvasColor, TextNode, LinkNode, GroupNode } from '../../types/canvas';
 
@@ -460,12 +461,15 @@ export function CanvasContextMenu({
       label: 'Clear All',
       icon: <XCircle size={14} />,
       danger: true,
-      onClick: () => {
+      onClick: async () => {
         const count = store.nodes.length + store.edges.length;
         if (count === 0) return;
-        const confirmed = window.confirm(
-          `Delete all ${store.nodes.length} card${store.nodes.length !== 1 ? 's' : ''}${store.edges.length > 0 ? ` and ${store.edges.length} connection${store.edges.length !== 1 ? 's' : ''}` : ''}? This cannot be undone.`,
-        );
+        const confirmed = await showConfirm({
+          title: 'Clear All',
+          message: `Delete all ${store.nodes.length} card${store.nodes.length !== 1 ? 's' : ''}${store.edges.length > 0 ? ` and ${store.edges.length} connection${store.edges.length !== 1 ? 's' : ''}` : ''}? This cannot be undone.`,
+          kind: 'warning',
+          confirmLabel: 'Delete',
+        });
         if (!confirmed) return;
         const filePath = store.filePath;
         store.clearCanvas();
