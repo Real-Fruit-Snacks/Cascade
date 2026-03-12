@@ -18,6 +18,7 @@ lerna-debug.log*
 
 # ─── Test Artifacts ───────────────────────────────────────────
 .playwright/
+.playwright-cli/
 test-results/
 test-vault/
 playwright-report/
@@ -35,11 +36,14 @@ blob-report/
 .copilot/
 .aider*
 .bolt/
+.superpowers/
 AGENTS.md
 docs/agents/
 docs/plans/
+docs/superpowers/
 .claude-*
 scripts/take-screenshots.ts
+tests/take-canvas-screenshot.ts
 
 # ─── Example Vault (demo only, not for distribution) ────────
 docs/My Notes/
@@ -94,3 +98,4 @@ src-tauri/NSIS/
 .cache/
 tmp/
 temp/
+readme_look.png

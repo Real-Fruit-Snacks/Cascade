@@ -96,8 +96,8 @@ Built with Tauri, React, and CodeMirror.
 - Batch export with customizable options
 
 **Customization**
-- Four Catppuccin themes: Mocha, Macchiato, Frappe, Latte (dark and light)
-- Custom theme support via JSON
+- 21+ built-in themes: Catppuccin (Mocha, Macchiato, Frappe, Latte), Nord, Dracula, Gruvbox, Tokyo Night, One Dark, Solarized, Rosé Pine, GitHub, Monokai, Material, Night Owl, Ayu, Kanagawa, Everforest
+- Custom theme support via JSON with visual card picker
 - Configurable fonts (UI and editor), font sizes, and line height
 - Plugin system with sandboxed iframe execution and marketplace
 - 30+ configurable feature toggles with per-feature option pages
@@ -241,7 +241,7 @@ cascade/
 | Styling  | [Tailwind CSS](https://tailwindcss.com/) |
 | State    | [Zustand 5](https://zustand.docs.pmnd.rs/) |
 | i18n     | [react-i18next](https://react.i18next.com/) |
-| Themes   | [Catppuccin](https://catppuccin.com/) |
+| Themes   | [Catppuccin](https://catppuccin.com/) + 17 more |
 | Testing  | [Playwright](https://playwright.dev/) |
 
 ### Running Tests
