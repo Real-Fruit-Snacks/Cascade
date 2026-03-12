@@ -20,6 +20,8 @@ const WIKI_LINK_RE = /\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/g;
 // ── Helpers ────────────────────────────────────────────────
 
 function cursorOnLines(state: EditorState, from: number, to: number): boolean {
+  // In reading mode (not editable), never reveal source — always show formatted preview
+  if (!state.facet(EditorView.editable)) return false;
   const head = state.selection.main.head;
   const cursorLine = state.doc.lineAt(head).number;
   const lineFrom = state.doc.lineAt(from).number;

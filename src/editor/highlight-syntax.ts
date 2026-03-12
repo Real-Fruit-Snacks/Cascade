@@ -18,6 +18,7 @@ const contentDeco = Decoration.mark({ class: 'cm-highlight' });
 
 function buildDecorations(view: EditorView): DecorationSet {
   const { state } = view;
+  const editable = state.facet(EditorView.editable);
   const cursorHead = state.selection.main.head;
   const deco: Range<Decoration>[] = [];
 
@@ -37,7 +38,8 @@ function buildDecorations(view: EditorView): DecorationSet {
       const innerTo = closeDelimFrom;
 
       // Reveal delimiters when cursor is inside this highlight span
-      const cursorInside = cursorHead >= matchFrom && cursorHead <= matchTo;
+      // In reading mode, never reveal source
+      const cursorInside = editable && cursorHead >= matchFrom && cursorHead <= matchTo;
 
       if (!cursorInside) {
         deco.push(delimHideDeco.range(openDelimFrom, openDelimTo));

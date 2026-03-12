@@ -17,7 +17,11 @@ class ImageWidget extends WidgetType {
     return this.src === other.src && this.maxHeight === other.maxHeight && this.pipeWidth === other.pipeWidth && this.align === other.align;
   }
 
-  toDOM() {
+  get estimatedHeight(): number {
+    return this.maxHeight + 8; // image max-height + wrapper padding
+  }
+
+  toDOM(view: EditorView) {
     const wrapper = document.createElement('div');
     wrapper.className = 'cm-image-preview';
     wrapper.style.padding = '4px 0';
@@ -37,11 +41,21 @@ class ImageWidget extends WidgetType {
     img.style.display = 'block';
     img.draggable = false;
 
+    img.onload = () => {
+      // Image loaded — actual height is now known, re-measure
+      view.requestMeasure();
+    };
+
     img.onerror = () => {
       wrapper.style.display = 'none';
+      view.requestMeasure();
     };
 
     wrapper.appendChild(img);
+
+    // Tell CM to re-measure heights after this widget is mounted
+    requestAnimationFrame(() => view.requestMeasure());
+
     return wrapper;
   }
 
@@ -54,6 +68,7 @@ const IMAGE_RE = /!\[([^\]]*)\]\(([^)]+)\)/g;
 
 function buildDecorations(state: EditorState, maxHeight: number): DecorationSet {
   const decos: Range<Decoration>[] = [];
+  const editable = state.facet(EditorView.editable);
   const cursor = state.selection.main.head;
 
   for (let i = 1; i <= state.doc.lines; i++) {
@@ -65,8 +80,8 @@ function buildDecorations(state: EditorState, maxHeight: number): DecorationSet 
       const start = line.from + match.index;
       const end = start + match[0].length;
 
-      // Don't replace if cursor is inside the image syntax
-      if (cursor >= start && cursor <= end) continue;
+      // Don't replace if cursor is inside the image syntax (skip in reading mode)
+      if (editable && cursor >= start && cursor <= end) continue;
 
       // Only handle images that are on their own line
       if (line.text.trim() !== match[0]) continue;

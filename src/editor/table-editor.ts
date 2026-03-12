@@ -338,6 +338,11 @@ class InteractiveTableWidget extends WidgetType {
     });
   }
 
+  get estimatedHeight(): number {
+    // container chrome (~10px) + header row (~30px) + data rows (~30px each)
+    return 10 + 30 + this.rows.length * 30;
+  }
+
   toDOM(view: EditorView): HTMLElement {
     const { headers, rows, alignments, from, to } = this;
 
@@ -407,6 +412,9 @@ class InteractiveTableWidget extends WidgetType {
     table.appendChild(tbody);
     tableWrapper.appendChild(table);
     container.appendChild(tableWrapper);
+
+    // Tell CM to re-measure heights after this widget is mounted
+    requestAnimationFrame(() => view.requestMeasure());
 
     return container;
   }

@@ -21,7 +21,11 @@ class QueryWidget extends WidgetType {
     return this.code === other.code;
   }
 
-  toDOM() {
+  get estimatedHeight(): number {
+    return 80; // reasonable default for query result block
+  }
+
+  toDOM(view: EditorView) {
     const wrap = document.createElement('div');
     wrap.className = 'cm-query-result';
 
@@ -39,6 +43,9 @@ class QueryWidget extends WidgetType {
     loading.className = 'cm-query-loading';
     loading.textContent = 'Running query…';
     wrap.appendChild(loading);
+
+    // Tell CM to re-measure heights after this widget is mounted
+    requestAnimationFrame(() => view.requestMeasure());
 
     const vaultPath = useVaultStore.getState().vaultPath;
     if (!vaultPath) {
@@ -127,6 +134,9 @@ class QueryWidget extends WidgetType {
         footer.className = 'cm-query-footer';
         footer.textContent = `${result.total} result${result.total === 1 ? '' : 's'}`;
         wrap.appendChild(footer);
+
+        // Results rendered — actual height is now known, re-measure
+        view.requestMeasure();
       })
       .catch((err: unknown) => {
         wrap.innerHTML = '';

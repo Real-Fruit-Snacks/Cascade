@@ -1,4 +1,5 @@
 import type { EditorState } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { useVaultStore } from '../../stores/vault-store';
 import { useEditorStore } from '../../stores/editor-store';
@@ -371,6 +372,8 @@ export function renderMarkdownPreview(md: string): string {
 // ── General helpers ────────────────────────────────────────
 
 export function cursorOnLines(state: EditorState, from: number, to: number): boolean {
+  // In reading mode (not editable), never reveal source — always show formatted preview
+  if (!state.facet(EditorView.editable)) return false;
   const cursorLine = state.field(cursorLineField);
   const lineFrom = state.doc.lineAt(from).number;
   const lineTo = state.doc.lineAt(to).number;

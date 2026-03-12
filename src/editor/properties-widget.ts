@@ -126,6 +126,11 @@ export class PropertiesWidget extends WidgetType {
            this.properties.every(([k, v], i) => other.properties[i][0] === k && other.properties[i][1] === v);
   }
 
+  get estimatedHeight(): number {
+    // header (~31px) + rows (~33px each) + add-btn (~24px) + container chrome (~16px)
+    return 31 + this.properties.length * 33 + 24 + 16;
+  }
+
   private toProps(): { key: string; value: string; type: PropType }[] {
     return this.properties.map(([k, v]) => ({ key: k, value: v, type: detectType(k, v) }));
   }
@@ -201,6 +206,9 @@ export class PropertiesWidget extends WidgetType {
         }
       });
     }
+
+    // Tell CM to re-measure heights after this widget is mounted
+    requestAnimationFrame(() => view.requestMeasure());
 
     return wrapper;
   }
