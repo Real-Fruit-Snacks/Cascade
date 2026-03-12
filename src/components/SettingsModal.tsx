@@ -7,8 +7,8 @@ import { usePluginStore } from '../stores/plugin-store';
 import { useVaultStore } from '../stores/vault-store';
 import { commandRegistry } from '../lib/command-registry';
 import { useFocusTrap } from '../hooks/use-focus-trap';
-import { flavorLabels, registerCustomTheme, unregisterCustomTheme, type CustomTheme, type FlavorColors } from '../styles/catppuccin-flavors';
-import { listCustomThemes, saveCustomTheme, deleteCustomTheme } from '../lib/tauri-commands';
+import { registerCustomTheme, type CustomTheme } from '../styles/catppuccin-flavors';
+import { listCustomThemes } from '../lib/tauri-commands';
 import type { ViewMode } from '../types/index';
 import { FeatureWiki } from './FeatureWiki';
 
@@ -26,6 +26,7 @@ import {
 import { ToggleSwitch } from './settings/shared/ToggleSwitch';
 import { SettingRow } from './settings/shared/SettingRow';
 import { AccentColorPicker } from './settings/shared/AccentColorPicker';
+import { ThemeCardGrid } from './settings/ThemeCardGrid';
 import { UiFontSizeSlider } from './settings/shared/UiFontSizeSlider';
 import { KeyCaptureInput } from './settings/shared/KeyCaptureInput';
 import { SectionHeader } from './settings/shared/SectionHeader';
@@ -595,7 +596,7 @@ function SettingsContent(props: SettingsContentProps) {
     category, searchQuery, settings, intervalValue, setIntervalValue, commitInterval,
     shortcutCommands, editingId, capturedKey, handleKeyCapture,
     startEditing, saveBinding, resetBinding, cancelEditing,
-    customThemesList, vaultPath, loadCustomThemes, settingsTabs,
+    customThemesList, loadCustomThemes, settingsTabs,
   } = props;
 
   // Render plugin settings tab iframe if this is a plugin tab
@@ -812,109 +813,10 @@ function SettingsContent(props: SettingsContentProps) {
           {isSearching && <SectionHeader label={ts('categories.appearance')} />}
           {!isSearching && <SubHeader label={ts('appearance.subheaders.theme')} />}
           {(!visibleAppearanceIds || visibleAppearanceIds.has('theme')) && (
-            <SettingRow label={ts('appearance.theme.label')} description={ts('appearance.theme.description')}>
-              <div className="flex items-center gap-2">
-                <select
-                  value={settings.theme}
-                  onChange={(e) => settings.update({ theme: e.target.value })}
-                  className="text-xs px-2 py-1 rounded outline-none"
-                  style={{
-                    backgroundColor: 'var(--ctp-surface0)',
-                    color: 'var(--ctp-text)',
-                    border: '1px solid var(--ctp-surface2)',
-                  }}
-                >
-                  <optgroup label={ts('appearance.theme.catppuccin')}>
-                    {['mocha', 'macchiato', 'frappe', 'latte'].map((f) => (
-                      <option key={f} value={f}>{flavorLabels[f]}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label={ts('appearance.theme.dark')}>
-                    {['nord', 'dracula', 'gruvbox-dark', 'tokyo-night', 'one-dark', 'solarized-dark', 'rose-pine-moon'].map((f) => (
-                      <option key={f} value={f}>{flavorLabels[f]}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label={ts('appearance.theme.light')}>
-                    {['gruvbox-light', 'solarized-light', 'rose-pine-dawn'].map((f) => (
-                      <option key={f} value={f}>{flavorLabels[f]}</option>
-                    ))}
-                  </optgroup>
-                  {customThemesList.length > 0 && (
-                    <optgroup label={ts('appearance.theme.custom')}>
-                      {customThemesList.map((t) => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
-                <button
-                  className="text-xs px-2 py-1 rounded transition-colors"
-                  style={{
-                    backgroundColor: 'var(--ctp-surface0)',
-                    color: 'var(--ctp-accent)',
-                    border: '1px solid var(--ctp-surface2)',
-                  }}
-                  onClick={async () => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '.json';
-                    input.onchange = async () => {
-                      const file = input.files?.[0];
-                      if (!file || !vaultPath) return;
-                      try {
-                        const text = await file.text();
-                        const parsed = JSON.parse(text) as CustomTheme;
-                        if (!parsed.id || !parsed.name || !parsed.colors) {
-                          alert(ts('appearance.theme.invalidThemeFile'));
-                          return;
-                        }
-                        // Validate that colors has all required keys
-                        const requiredKeys: (keyof FlavorColors)[] = [
-                          'rosewater','flamingo','pink','mauve','red','maroon','peach','yellow',
-                          'green','teal','sky','sapphire','blue','lavender','text','subtext1',
-                          'subtext0','overlay2','overlay1','overlay0','surface2','surface1',
-                          'surface0','base','mantle','crust',
-                        ];
-                        const missing = requiredKeys.filter((k) => !parsed.colors[k]);
-                        if (missing.length > 0) {
-                          alert(ts('appearance.theme.missingColors', { colors: missing.join(', ') }));
-                          return;
-                        }
-                        await saveCustomTheme(vaultPath, parsed.id, text);
-                        registerCustomTheme(parsed);
-                        loadCustomThemes();
-                        settings.update({ theme: parsed.id });
-                      } catch {
-                        alert(ts('appearance.theme.parseError'));
-                      }
-                    };
-                    input.click();
-                  }}
-                >
-                  {ts('appearance.theme.installTheme')}
-                </button>
-                {customThemesList.some((t) => t.id === settings.theme) && (
-                  <button
-                    className="text-xs px-2 py-1 rounded transition-colors"
-                    style={{
-                      backgroundColor: 'var(--ctp-surface0)',
-                      color: 'var(--ctp-red)',
-                      border: '1px solid var(--ctp-surface2)',
-                    }}
-                    onClick={async () => {
-                      if (!vaultPath) return;
-                      const themeId = settings.theme;
-                      await deleteCustomTheme(vaultPath, themeId);
-                      unregisterCustomTheme(themeId);
-                      settings.update({ theme: 'mocha' });
-                      loadCustomThemes();
-                    }}
-                  >
-                    {ts('appearance.theme.deleteTheme')}
-                  </button>
-                )}
-              </div>
-            </SettingRow>
+            <ThemeCardGrid
+              customThemesList={customThemesList}
+              loadCustomThemes={loadCustomThemes}
+            />
           )}
           {!isSearching && <SubHeader label={ts('appearance.subheaders.colors')} />}
           {(!visibleAppearanceIds || visibleAppearanceIds.has('accentColor')) && (
