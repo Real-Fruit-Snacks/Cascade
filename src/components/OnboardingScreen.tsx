@@ -61,7 +61,7 @@ export function OnboardingScreen() {
           <img
             src="/app-icon.png"
             alt="Cascade"
-            style={{ width: 80, height: 80, opacity: 0.9 }}
+            style={{ width: 120, height: 120, opacity: 0.9 }}
             draggable={false}
           />
           <div className="flex flex-col items-center gap-3">
@@ -101,7 +101,7 @@ export function OnboardingScreen() {
         <img
           src="/app-icon.png"
           alt="Cascade"
-          style={{ width: 140, height: 140 }}
+          style={{ width: 180, height: 180 }}
           draggable={false}
         />
         <div className="flex flex-col items-center gap-1">
