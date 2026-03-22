@@ -5,6 +5,7 @@ import * as cmd from '../lib/tauri-commands';
 import { useVaultStore } from './vault-store';
 import { useSettingsStore } from './settings-store';
 import { useToastStore } from './toast-store';
+import { useRecentFilesStore } from './recent-files-store';
 import type { Tab, Pane, SplitDirection, EditorState, EditorActions, EditorDerived } from './editor-types';
 import { getTabType, FILE_SIZE_LIMIT } from './editor-types';
 import { consumeDraft, saveDrafts } from './editor-drafts';
@@ -20,7 +21,6 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
   justSaved: false,
   viewMode: useSettingsStore.getState().defaultViewMode,
   editorViewRef: { current: null },
-  recentFiles: [],
   isFileLoading: false,
   pendingScrollLine: null,
   pendingScrollHeading: null,
@@ -38,32 +38,6 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
   content: '',
   isDirty: false,
 
-  loadRecentFiles: (vaultRoot: string) => {
-    const key = `cascade-recent-files:${vaultRoot}`;
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          set({ recentFiles: parsed.filter((p): p is string => typeof p === 'string') });
-          return;
-        }
-      }
-    } catch { /* ignore corrupt localStorage */ }
-    set({ recentFiles: [] });
-  },
-
-  addRecentFile: (vaultRoot: string, path: string) => {
-    if (path.startsWith('__')) return;
-    const key = `cascade-recent-files:${vaultRoot}`;
-    set((s) => {
-      const filtered = s.recentFiles.filter((p) => p !== path);
-      const updated = [path, ...filtered].slice(0, 20);
-      try { localStorage.setItem(key, JSON.stringify(updated)); } catch { /* ignore quota errors */ }
-      return { recentFiles: updated };
-    });
-  },
-
   openFile: async (vaultRoot: string, path: string, newTab?: boolean, background?: boolean) => {
     // If already open in a tab, just switch to it (unless background)
     const { tabs } = get();
@@ -71,7 +45,7 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
     if (existing !== -1) {
       if (!background) {
         set({ activeTabIndex: existing, isFileLoading: false, ...derived(tabs, existing) });
-        get().addRecentFile(vaultRoot, path);
+        useRecentFilesStore.getState().addRecentFile(path, vaultRoot);
         // If there's a pending scroll line, scroll to it now
         const scrollLine = get().pendingScrollLine;
         if (scrollLine !== null) {
@@ -160,7 +134,7 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
             return { tabs: newTabs, isFileLoading: false, ...derived(newTabs, s.activeTabIndex) };
           });
         }
-        if (!background) get().addRecentFile(vaultRoot, path);
+        if (!background) useRecentFilesStore.getState().addRecentFile(path, vaultRoot);
         return;
       }
 
@@ -207,7 +181,7 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
         const name = path.replace(/\\/g, '/').split('/').pop() ?? path;
         useToastStore.getState().addToast(`Recovered unsaved changes for "${name}"`, 'info');
       }
-      if (!background) get().addRecentFile(vaultRoot, path);
+      if (!background) useRecentFilesStore.getState().addRecentFile(path, vaultRoot);
     } catch (e) {
       set({ isFileLoading: false });
       console.error('Failed to open file:', path, e);
@@ -657,7 +631,7 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
       i === paneIndex ? { ...p, tabs: newPaneTabs, activeTabIndex: newPaneActiveIdx } : p
     );
     set({ panes: newPanes, activePaneIndex: paneIndex });
-    get().addRecentFile(vaultRoot, path);
+    useRecentFilesStore.getState().addRecentFile(path, vaultRoot);
   },
 
   switchPaneTab: (paneIndex: number, tabIndex: number) => {

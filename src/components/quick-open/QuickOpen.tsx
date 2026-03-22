@@ -5,6 +5,7 @@ import { useFocusTrap } from '../../hooks/use-focus-trap';
 import { useCloseAnimation } from '../../hooks/use-close-animation';
 import { useVaultStore } from '../../stores/vault-store';
 import { useEditorStore } from '../../stores/editor-store';
+import { useRecentFilesStore } from '../../stores/recent-files-store';
 import * as cmd from '../../lib/tauri-commands';
 import { fuzzyMatch } from '../../lib/fuzzy-match';
 import { renderMarkdownPreview, MAX_PREVIEW_LINES } from './markdown-preview';
@@ -45,8 +46,8 @@ export function QuickOpen({ open, mode = 'open', onClose, onInsertLink }: QuickO
   const flatFiles = useVaultStore((s) => s.flatFiles);
   const vaultPath = useVaultStore((s) => s.vaultPath);
   const openFile = useEditorStore((s) => s.openFile);
-  const recentFiles = useEditorStore((s) => s.recentFiles);
-  const loadRecentFiles = useEditorStore((s) => s.loadRecentFiles);
+  const recentFiles = useRecentFilesStore((s) => s.recentFiles);
+  const loadRecentFiles = useRecentFilesStore((s) => s.loadRecentFiles);
 
   // Load recent files from localStorage when vault is known
   useEffect(() => {

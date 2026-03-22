@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
-import { ArrowLeftRight, Command, FolderOpen, Hash, List, LogOut, Search, Settings, Share2, Star } from 'lucide-react';
+import { ArrowLeftRight, Command, FolderOpen, Hash, List, LogOut, Search, Settings, Share2, Star, Trash2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { VariablesIcon } from '../icons/VariablesIcon';
 import { ContextMenu, type MenuItem } from './ContextMenu';
@@ -10,12 +10,13 @@ import { TagPanel } from './TagPanel';
 import { BacklinksPanel } from './BacklinksPanel';
 import { OutlinePanel } from './OutlinePanel';
 import { BookmarksPanel } from './BookmarksPanel';
+import { TrashPanel } from './TrashPanel';
 import { Tooltip } from '../Tooltip';
 import { useEditorStore } from '../../stores/editor-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { usePluginStore } from '../../stores/plugin-store';
 
-type SidebarView = 'files' | 'tags' | 'backlinks' | 'outline' | 'bookmarks';
+type SidebarView = 'files' | 'tags' | 'backlinks' | 'outline' | 'bookmarks' | 'trash';
 
 const STORAGE_KEY = 'cascade-sidebar-width';
 const VIEW_KEY = 'cascade-sidebar-view';
@@ -34,7 +35,7 @@ function getSavedWidth(): number {
 
 function getSavedView(): SidebarView {
   const saved = localStorage.getItem(VIEW_KEY);
-  if (saved === 'files' || saved === 'tags' || saved === 'backlinks' || saved === 'outline' || saved === 'bookmarks') return saved;
+  if (saved === 'files' || saved === 'tags' || saved === 'backlinks' || saved === 'outline' || saved === 'bookmarks' || saved === 'trash') return saved;
   return 'files';
 }
 
@@ -92,6 +93,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
     { id: 'backlinks', icon: ArrowLeftRight, label: t('views.backlinks') },
     { id: 'outline', icon: List, label: t('views.outline') },
     { id: 'bookmarks', icon: Star, label: t('views.bookmarks') },
+    { id: 'trash', icon: Trash2, label: t('views.trash') },
   ];
 
   const [width, setWidth] = useState(getSavedWidth);
@@ -173,6 +175,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
     if (id === 'backlinks') return enableBacklinks;
     if (id === 'outline') return enableOutline;
     if (id === 'bookmarks') return enableBookmarks;
+    if (id === 'trash') return true;
     return true; // 'files' always visible
   });
 
@@ -380,6 +383,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
           {activeView === 'backlinks' && enableBacklinks && <BacklinksPanel />}
           {activeView === 'outline' && enableOutline && <OutlinePanel />}
           {activeView === 'bookmarks' && enableBookmarks && <BookmarksPanel />}
+          {activeView === 'trash' && <TrashPanel />}
         </div>
         {sidebarPanels.size > 0 && Array.from(sidebarPanels.entries()).map(([id, panel]) => (
           <div key={id} className="border-t" style={{ borderColor: 'var(--ctp-surface0)' }}>

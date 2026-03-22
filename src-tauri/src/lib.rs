@@ -8,6 +8,7 @@ mod notion_importer;
 mod query;
 mod roam_importer;
 mod search;
+mod sync_log;
 mod types;
 mod vault;
 mod watcher;
@@ -72,15 +73,21 @@ pub fn run() {
             vault::write_integrity_file,
             vault::verify_plugin_integrity,
             vault::extract_plugin_zip,
+            vault::list_trash,
+            vault::restore_from_trash,
+            vault::delete_from_trash,
+            vault::empty_trash,
             git::git_test_connection,
             git::git_init_repo,
             git::git_clone_repo,
             git::git_sync,
             git::git_status,
             git::git_disconnect,
+            git::open_sync_log_folder,
             git::store_sync_pat,
-            git::read_sync_pat,
+            git::has_sync_pat,
             git::delete_sync_pat,
+            sync_log::write_sync_log,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

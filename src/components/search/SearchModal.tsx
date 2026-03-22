@@ -9,6 +9,7 @@ import { useSettingsStore } from '../../stores/settings-store';
 import * as cmd from '../../lib/tauri-commands';
 import type { SearchMatch, ReplaceResult } from '../../lib/tauri-commands';
 import { showConfirm } from '../../stores/confirm-store';
+import { useToastStore } from '../../stores/toast-store';
 import { highlightQuery, parseSearchScope, filterByScope, groupByFile, type FileGroup } from './search-utils';
 
 interface SearchModalProps {
@@ -101,6 +102,8 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
         const msg = String(e);
         if (useRegex && msg.includes('Invalid regex')) {
           setRegexError(msg.replace('Invalid regex: ', ''));
+        } else {
+          useToastStore.getState().addToast(`Search failed: ${msg}`, 'error');
         }
         setResults([]);
       } finally {
@@ -143,6 +146,8 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
       const msg = String(e);
       if (useRegex && msg.includes('Invalid regex')) {
         setRegexError(msg.replace('Invalid regex: ', ''));
+      } else {
+        useToastStore.getState().addToast(`Search failed: ${msg}`, 'error');
       }
       setResults([]);
     }

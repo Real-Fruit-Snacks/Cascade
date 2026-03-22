@@ -6,6 +6,7 @@ import { useEditorStore } from '../stores/editor-store';
 import { useVaultStore } from '../stores/vault-store';
 import { useSettingsStore } from '../stores/settings-store';
 import { openDailyNote, openWeeklyNote, openMonthlyNote, openQuarterlyNote, openYearlyNote } from '../lib/daily-notes';
+import { emit } from '../lib/cascade-events';
 
 export function useCommands(options: {
   openCommandPalette: () => void;
@@ -45,12 +46,12 @@ export function useCommands(options: {
 
     // File operations
     reg('file.new', i18n.t('commands:labels.newFile'), 'Ctrl+N', () => {
-      window.dispatchEvent(new Event('cascade:new-file'));
+      emit('cascade:new-file');
     });
 
     if (enableCanvas) {
       reg('file.new-canvas', i18n.t('commands:labels.newCanvas'), '', () => {
-        window.dispatchEvent(new Event('cascade:new-canvas'));
+        emit('cascade:new-canvas');
       });
     }
 
@@ -74,10 +75,10 @@ export function useCommands(options: {
       if (!tab) return;
       if (tab.isDirty) {
         const name = tab.path.replace(/\\/g, '/').split('/').pop() ?? tab.path;
-        message(`Save changes to "${name}" before closing?`, {
-          title: 'Unsaved Changes',
+        message(i18n.t('dialogs:saveBeforeClose.message', { name }), {
+          title: i18n.t('dialogs:saveBeforeClose.title'),
           kind: 'warning',
-          buttons: { yes: 'Save', no: "Don't Save", cancel: 'Cancel' },
+          buttons: { yes: i18n.t('dialogs:saveBeforeClose.save'), no: i18n.t('dialogs:saveBeforeClose.dontSave'), cancel: i18n.t('dialogs:saveBeforeClose.cancel') },
         }).then((result) => {
           if (result === 'Cancel') return;
           if (result === 'Yes') {
@@ -129,25 +130,25 @@ export function useCommands(options: {
 
     if (enableSearch) {
       reg('view.search', i18n.t('commands:labels.searchInVault'), 'Ctrl+Shift+F', () => {
-        window.dispatchEvent(new Event('cascade:open-search'));
+        emit('cascade:open-search');
       });
 
       reg('view.search-replace', i18n.t('commands:labels.searchReplaceInVault'), 'Ctrl+Shift+H', () => {
-        window.dispatchEvent(new Event('cascade:open-search'));
-        window.dispatchEvent(new CustomEvent('cascade:open-search-replace'));
+        emit('cascade:open-search');
+        emit('cascade:open-search-replace');
       });
     }
 
     reg('file.export', i18n.t('commands:labels.export'), undefined, () => {
-      window.dispatchEvent(new Event('cascade:export'));
+      emit('cascade:export');
     });
 
     reg('file.batchExport', i18n.t('commands:labels.exportVaultFolder'), 'Ctrl+Shift+B', () => {
-      window.dispatchEvent(new Event('cascade:export-batch'));
+      emit('cascade:export-batch');
     });
 
     reg('file.import', i18n.t('commands:labels.importSettings'), undefined, () => {
-      window.dispatchEvent(new Event('cascade:import'));
+      emit('cascade:import');
     });
 
     reg('view.toggle-sidebar', i18n.t('commands:labels.toggleSidebar'), 'Ctrl+B', () => {
@@ -157,78 +158,82 @@ export function useCommands(options: {
 
     // Sidebar view shortcuts
     reg('sidebar.files', i18n.t('commands:labels.sidebarFiles'), 'Ctrl+Shift+E', () => {
-      window.dispatchEvent(new CustomEvent('cascade:sidebar-view', { detail: 'files' }));
+      emit('cascade:sidebar-view', 'files');
       focusEditor();
     });
 
     if (enableTags) {
       reg('sidebar.tags', i18n.t('commands:labels.sidebarTags'), 'Ctrl+Shift+T', () => {
-        window.dispatchEvent(new CustomEvent('cascade:sidebar-view', { detail: 'tags' }));
+        emit('cascade:sidebar-view', 'tags');
         focusEditor();
       });
     }
 
     if (enableBacklinks) {
       reg('sidebar.backlinks', i18n.t('commands:labels.sidebarBacklinks'), 'Ctrl+Shift+L', () => {
-        window.dispatchEvent(new CustomEvent('cascade:sidebar-view', { detail: 'backlinks' }));
+        emit('cascade:sidebar-view', 'backlinks');
         focusEditor();
       });
     }
 
     if (enableOutline) {
       reg('sidebar.outline', i18n.t('commands:labels.sidebarOutline'), 'Ctrl+Shift+O', () => {
-        window.dispatchEvent(new CustomEvent('cascade:sidebar-view', { detail: 'outline' }));
+        emit('cascade:sidebar-view', 'outline');
         focusEditor();
       });
     }
 
     if (enableBookmarks) {
       reg('sidebar.bookmarks', i18n.t('commands:labels.sidebarBookmarks'), 'Ctrl+Shift+K', () => {
-        window.dispatchEvent(new CustomEvent('cascade:sidebar-view', { detail: 'bookmarks' }));
+        emit('cascade:sidebar-view', 'bookmarks');
         focusEditor();
       });
     }
+
+    reg('sidebar.trash', i18n.t('commands:labels.openTrash'), undefined, () => {
+      emit('cascade:sidebar-view', 'trash');
+    });
 
     reg('app.settings', i18n.t('commands:labels.settings'), 'Ctrl+,', () => {
       openSettings();
     });
 
     reg('app.close-vault', i18n.t('commands:labels.closeVault'), undefined, () => {
-      window.dispatchEvent(new Event('cascade:close-vault'));
+      emit('cascade:close-vault');
     });
 
     reg('app.about', i18n.t('commands:labels.aboutCascade'), undefined, () => {
-      window.dispatchEvent(new Event('cascade:about'));
+      emit('cascade:about');
     });
 
     // Variables commands
     if (enableVariables) {
       reg('variables.set-value', i18n.t('commands:labels.variablesSetValue'), undefined, () => {
-        window.dispatchEvent(new Event('cascade:variables-set'));
+        emit('cascade:variables-set');
       });
 
       reg('variables.list', i18n.t('commands:labels.variablesList'), undefined, () => {
-        window.dispatchEvent(new Event('cascade:variables-list'));
+        emit('cascade:variables-list');
       });
 
       reg('variables.replace-all', i18n.t('commands:labels.variablesReplaceAll'), undefined, () => {
-        window.dispatchEvent(new Event('cascade:variables-replace-all'));
+        emit('cascade:variables-replace-all');
       });
 
       reg('variables.replace-selection', i18n.t('commands:labels.variablesReplaceSelection'), undefined, () => {
-        window.dispatchEvent(new Event('cascade:variables-replace-selection'));
+        emit('cascade:variables-replace-selection');
       });
 
       reg('variables.copy-replaced', i18n.t('commands:labels.variablesCopyReplaced'), undefined, () => {
-        window.dispatchEvent(new Event('cascade:variables-copy-replaced'));
+        emit('cascade:variables-copy-replaced');
       });
 
       reg('variables.copy-line', i18n.t('commands:labels.variablesCopyLine'), undefined, () => {
-        window.dispatchEvent(new Event('cascade:variables-copy-line'));
+        emit('cascade:variables-copy-line');
       });
 
       reg('variables.copy-selection', i18n.t('commands:labels.variablesCopySelection'), undefined, () => {
-        window.dispatchEvent(new Event('cascade:variables-copy-selection'));
+        emit('cascade:variables-copy-selection');
       });
     }
 
@@ -326,6 +331,15 @@ export function useCommands(options: {
         openYearlyNote(vaultPath);
       });
     }
+
+    reg('note.random', i18n.t('commands:labels.openRandomNote'), undefined, () => {
+      const { flatFiles, vaultPath } = useVaultStore.getState();
+      if (!vaultPath) return;
+      const mdFiles = flatFiles.filter((f) => f.endsWith('.md'));
+      if (mdFiles.length === 0) return;
+      const randomFile = mdFiles[Math.floor(Math.random() * mdFiles.length)];
+      useEditorStore.getState().openFile(vaultPath, randomFile);
+    });
 
     return () => {
       unregFns.forEach((fn) => fn());

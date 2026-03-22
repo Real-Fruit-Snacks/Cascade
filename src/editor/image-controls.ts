@@ -10,6 +10,7 @@ import {
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { useVaultStore } from '../stores/vault-store';
 import { showConfirm } from '../stores/confirm-store';
+import i18n from '../i18n';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -331,7 +332,7 @@ class ImageToolbarWidget extends WidgetType {
     const deleteBtn = this.makeActionBtn('<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>', 'Delete image', async (e) => {
       e.preventDefault();
       const confirmed = await showConfirm({
-        title: 'Delete Image',
+        title: i18n.t('dialogs:deleteImage.title'),
         message: 'Delete this image from the document?',
         kind: 'warning',
         confirmLabel: 'Delete',

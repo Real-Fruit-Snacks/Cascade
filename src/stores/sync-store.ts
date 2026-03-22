@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { gitSync, gitStatus, readSyncPat } from '../lib/tauri-commands';
+import { gitSync, gitStatus, writeSyncLog } from '../lib/tauri-commands';
 import { useSettingsStore } from './settings-store';
 import { useVaultStore } from './vault-store';
 import { useToastStore } from './toast-store';
@@ -25,21 +25,29 @@ export const useSyncStore = create<SyncState>((set, get) => ({
 
   triggerSync: async () => {
     const { syncStatus } = get();
-    if (syncStatus === 'syncing') return;
+    if (syncStatus === 'syncing') {
+      return;
+    }
 
     const settings = useSettingsStore.getState();
     const vaultPath = useVaultStore.getState().vaultPath;
-    if (!settings.syncEnabled || !vaultPath) return;
+    if (!settings.syncEnabled || !vaultPath) {
+      return;
+    }
+
+    const log = (level: string, msg: string) => writeSyncLog(vaultPath, level, msg).catch(() => {});
 
     set({ syncStatus: 'syncing', lastError: null });
+    await log('INFO', `Sync triggered (repoUrl=${settings.syncRepoUrl})`);
 
     try {
-      const pat = await readSyncPat(vaultPath);
-      if (!pat) {
-        set({ syncStatus: 'error', lastError: 'No PAT configured — add your token in Sync settings' });
-        return;
+      // PAT is now read internally by the Rust backend via git credential helper
+      const result = await gitSync(vaultPath, settings.syncSshKeyPath || '');
+
+      if (result.push_status === 'auth_error') {
+        useToastStore.getState().addToast('Push failed: 403 Forbidden — your PAT may not have push permissions. Ensure it has the "repo" scope.', 'error');
+        await log('ERROR', 'Push auth error — PAT likely missing "repo" scope');
       }
-      const result = await gitSync(vaultPath, pat);
 
       if (result.conflicts.length > 0) {
         useToastStore.getState().addToast(
@@ -49,13 +57,15 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       }
 
       set({
-        syncStatus: result.push_status === 'offline' ? 'offline' : 'idle',
+        syncStatus: result.push_status === 'auth_error' ? 'error' : result.push_status === 'offline' ? 'offline' : 'idle',
+        lastError: result.push_status === 'auth_error' ? 'PAT lacks push permissions — regenerate with "repo" scope' : null,
         lastSyncTime: Date.now(),
         conflictFiles: result.conflicts,
         unpushedCommits: result.push_status === 'offline' ? get().unpushedCommits + (result.committed_files.length > 0 ? 1 : 0) : 0,
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
+      await log('ERROR', `Sync failed: ${msg}`);
       const lowerMsg = msg.toLowerCase();
       if (lowerMsg.includes('auth') || lowerMsg.includes('401') || lowerMsg.includes('403')) {
         useToastStore.getState().addToast('Sync failed: authentication error — check your PAT in settings', 'error');
@@ -83,7 +93,12 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       if (!status.is_repo || !status.has_remote) {
         set({ syncStatus: 'disconnected' });
       } else {
-        set({ unpushedCommits: status.unpushed_commits });
+        // Transition from disconnected to idle when repo is found
+        const prev = get().syncStatus;
+        set({
+          syncStatus: prev === 'disconnected' ? 'idle' : prev,
+          unpushedCommits: status.unpushed_commits,
+        });
       }
     } catch {
       // Non-critical

@@ -51,7 +51,7 @@
     "wikiLinks": "Wiki Links",
     "wordCountGoal": "Word Count Goal",
     "slashCommands": "Slash Commands",
-    "sync": "GitHub Sync"
+    "sync": "Git Sync"
   },
   "systemMonospace": "System Monospace",
   "editor": {
@@ -370,8 +370,8 @@
       "description": "Set a target word count and track progress in the status bar"
     },
     "sync": {
-      "label": "GitHub Sync",
-      "description": "Sync your vault to a GitHub repository for backup and cross-device access"
+      "label": "Git Sync",
+      "description": "Sync your vault to a Git repository for backup and cross-device access"
     }
   },
   "folderColors": {
@@ -913,8 +913,8 @@
     }
   },
   "syncOptions": {
-    "title": "GitHub Sync",
-    "description": "Sync your vault to a GitHub repository for backup and cross-device access.",
+    "title": "Git Sync",
+    "description": "Sync your vault to a Git repository (GitHub, GitLab, etc.) for backup and cross-device access.",
     "statusSyncing": "Syncing...",
     "statusError": "Sync Error",
     "statusOffline": "Offline — commits pending",
@@ -925,8 +925,19 @@
     "repository": "Repository",
     "repositoryUrl": "Repository URL",
     "personalAccessToken": "Personal Access Token",
-    "patHintPrefix": "Generate at GitHub → Settings → Developer settings → Personal access tokens. Requires ",
-    "patHintSuffix": " scope.",
+    "patHintPrefix": "Generate a token with repository access. GitHub: Settings → Developer settings; GitLab: Settings → Access Tokens. Requires ",
+    "patHintSuffix": " scope (or write_repository for GitLab).",
+    "patSavedSecurely": "PAT saved securely in credential store",
+    "savePat": "Save PAT",
+    "patSaving": "Saving...",
+    "deletePat": "Delete PAT",
+    "patSavedSuccess": "PAT saved to credential store",
+    "patSaveFailed": "Failed to save PAT",
+    "patDeleted": "PAT removed from credential store",
+    "sshKeyLabel": "SSH Authentication",
+    "sshKeyHint": "Use an SSH URL (e.g. git@github.com:you/vault.git) to authenticate with an SSH key instead of a token. By default, Cascade looks for keys in ~/.ssh (id_ed25519, id_rsa, id_ecdsa).",
+    "sshCustomKeyPath": "Custom key path",
+    "sshCustomKeyPathDesc": "Use a specific SSH private key instead of the default locations",
     "testing": "Testing...",
     "testConnection": "Test Connection",
     "connecting": "Connecting...",
@@ -948,7 +959,10 @@
     "every10Minutes": "Every 10 minutes",
     "every30Minutes": "Every 30 minutes",
     "never": "never",
-    "justNow": "just now"
+    "justNow": "just now",
+    "syncLogs": "Sync Logs",
+    "syncLogsDesc": "View detailed sync operation logs for troubleshooting",
+    "viewLogs": "Open Log Folder"
   },
   "tocOptions": {
     "title": "Table of Contents Options",

@@ -3,6 +3,7 @@ import { Folder, FolderOpen, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useVaultStore } from '../stores/vault-store';
+import i18n from '../i18n';
 import { flavors } from '../styles/catppuccin-flavors';
 
 const mod = navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl';
@@ -27,7 +28,7 @@ export function OnboardingScreen() {
   }, []);
 
   const handleOpenVault = useCallback(async () => {
-    const selected = await open({ directory: true, multiple: false, title: 'Open Vault' });
+    const selected = await open({ directory: true, multiple: false, title: i18n.t('dialogs:openVault.title') });
     if (selected && typeof selected === 'string') {
       setLoadingPath(selected);
       await openVault(selected);
@@ -35,7 +36,7 @@ export function OnboardingScreen() {
   }, [openVault]);
 
   const handleCreateVault = useCallback(async () => {
-    const selected = await open({ directory: true, multiple: false, title: 'Select Folder for New Vault' });
+    const selected = await open({ directory: true, multiple: false, title: i18n.t('dialogs:openVault.selectFolder') });
     if (selected && typeof selected === 'string') {
       setLoadingPath(selected);
       await openVault(selected);
@@ -191,12 +192,9 @@ export function OnboardingScreen() {
 
       {/* Keyboard shortcuts reference */}
       <div
-        className="flex items-center gap-6 mt-12 text-xs"
-        style={{ color: 'var(--ctp-overlay0)' }}
+        className="flex items-center gap-6 mt-12 text-xs ctp-overlay0"
       >
         <span><kbd style={{ fontFamily: 'monospace' }}>{`${mod}+O`}</kbd> {t('onboarding.shortcutOpenVault')}</span>
-        <span><kbd style={{ fontFamily: 'monospace' }}>{`${mod}+N`}</kbd> {t('onboarding.shortcutNewFile')}</span>
-        <span><kbd style={{ fontFamily: 'monospace' }}>{`${mod}+P`}</kbd> {t('onboarding.shortcutCommandPalette')}</span>
       </div>
     </div>
   );

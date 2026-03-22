@@ -33,6 +33,28 @@ export function trashFile(vaultRoot: string, path: string): Promise<string> {
   return invoke<string>('trash_file', { vaultRoot, path });
 }
 
+export interface TrashEntry {
+  name: string;
+  size: number;
+  trashed_at: number;
+}
+
+export function listTrash(vaultRoot: string): Promise<TrashEntry[]> {
+  return invoke<TrashEntry[]>('list_trash', { vaultRoot });
+}
+
+export function restoreFromTrash(vaultRoot: string, name: string): Promise<void> {
+  return invoke<void>('restore_from_trash', { vaultRoot, name });
+}
+
+export function deleteFromTrash(vaultRoot: string, name: string): Promise<void> {
+  return invoke<void>('delete_from_trash', { vaultRoot, name });
+}
+
+export function emptyTrash(vaultRoot: string): Promise<void> {
+  return invoke<void>('empty_trash', { vaultRoot });
+}
+
 export function createFolder(vaultRoot: string, path: string): Promise<void> {
   return invoke<void>('create_folder', { vaultRoot, path });
 }
@@ -240,7 +262,7 @@ export function extractPluginZip(vaultRoot: string, pluginId: string, data: numb
 export interface SyncResult {
   committed_files: string[];
   conflicts: string[];
-  push_status: 'pushed' | 'nothing_to_push' | 'offline';
+  push_status: 'pushed' | 'nothing_to_push' | 'offline' | 'auth_error';
 }
 
 export interface GitStatus {
@@ -250,20 +272,20 @@ export interface GitStatus {
   unpushed_commits: number;
 }
 
-export function gitTestConnection(remoteUrl: string, pat: string): Promise<void> {
-  return invoke<void>('git_test_connection', { remoteUrl, pat });
+export function gitTestConnection(vaultPath: string, remoteUrl: string, sshKeyPath: string): Promise<void> {
+  return invoke<void>('git_test_connection', { vaultPath, remoteUrl, sshKeyPath });
 }
 
-export function gitInitRepo(vaultPath: string, remoteUrl: string, pat: string): Promise<void> {
-  return invoke<void>('git_init_repo', { vaultPath, remoteUrl, pat });
+export function gitInitRepo(vaultPath: string, remoteUrl: string, sshKeyPath: string): Promise<void> {
+  return invoke<void>('git_init_repo', { vaultPath, remoteUrl, sshKeyPath });
 }
 
-export function gitCloneRepo(vaultPath: string, remoteUrl: string, pat: string): Promise<void> {
-  return invoke<void>('git_clone_repo', { vaultPath, remoteUrl, pat });
+export function gitCloneRepo(vaultPath: string, remoteUrl: string, sshKeyPath: string): Promise<void> {
+  return invoke<void>('git_clone_repo', { vaultPath, remoteUrl, sshKeyPath });
 }
 
-export function gitSync(vaultPath: string, pat: string): Promise<SyncResult> {
-  return invoke<SyncResult>('git_sync', { vaultPath, pat });
+export function gitSync(vaultPath: string, sshKeyPath: string): Promise<SyncResult> {
+  return invoke<SyncResult>('git_sync', { vaultPath, sshKeyPath });
 }
 
 export function gitStatus(vaultPath: string): Promise<GitStatus> {
@@ -274,16 +296,24 @@ export function gitDisconnect(vaultPath: string): Promise<void> {
   return invoke<void>('git_disconnect', { vaultPath });
 }
 
-// ── Secure PAT storage ───────────────────────────────────────────
-
-export function storeSyncPat(vaultPath: string, pat: string): Promise<void> {
-  return invoke<void>('store_sync_pat', { vaultPath, pat });
+export function writeSyncLog(vaultPath: string, level: string, message: string): Promise<void> {
+  return invoke<void>('write_sync_log', { vaultPath, level, message });
 }
 
-export function readSyncPat(vaultPath: string): Promise<string> {
-  return invoke<string>('read_sync_pat', { vaultPath });
+// ── Secure PAT storage (git credential helper) ──────────────────────
+
+export function storeSyncPat(vaultPath: string, remoteUrl: string, pat: string): Promise<void> {
+  return invoke<void>('store_sync_pat', { vaultPath, remoteUrl, pat });
 }
 
-export function deleteSyncPat(vaultPath: string): Promise<void> {
-  return invoke<void>('delete_sync_pat', { vaultPath });
+export function hasSyncPat(vaultPath: string, remoteUrl: string): Promise<boolean> {
+  return invoke<boolean>('has_sync_pat', { vaultPath, remoteUrl });
+}
+
+export function deleteSyncPat(vaultPath: string, remoteUrl: string): Promise<void> {
+  return invoke<void>('delete_sync_pat', { vaultPath, remoteUrl });
+}
+
+export function openSyncLogFolder(vaultPath: string): Promise<string> {
+  return invoke<string>('open_sync_log_folder', { vaultPath });
 }

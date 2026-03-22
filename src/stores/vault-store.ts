@@ -103,8 +103,8 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
         useSettingsStore.getState().loadFromVault(path),
       ]);
       // Load per-vault recent files so the welcome screen shows the right list
-      const { useEditorStore } = await import('./editor-store');
-      useEditorStore.getState().loadRecentFiles(path);
+      const { useRecentFilesStore } = await import('./recent-files-store');
+      useRecentFilesStore.getState().loadRecentFiles(path);
       set((s) => ({
         vaultPath: path,
         fileTree: tree,
@@ -201,8 +201,9 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
       }
 
       set({ tagIndex: tagIdx, backlinkIndex: linkIdx, fileToTags: fileToTagsNew, fileToLinks: fileToLinksNew, isIndexing: false });
-    } catch {
+    } catch (err) {
       if (seq === buildTagSeq) set({ isIndexing: false });
+      useToastStore.getState().addToast(`Indexing failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
     }
   },
 
@@ -311,6 +312,7 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
     const fmInlineRe = new RegExp(`(?<=[[,]\\s*)${escaped}(?=\\s*[,\\]])`, 'gi');
 
     let count = 0;
+    let failed = 0;
     for (const filePath of files) {
       try {
         const text = await cmd.readFile(vaultPath, filePath);
@@ -333,8 +335,12 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
           count++;
         }
       } catch {
-        // Skip files that can't be read/written
+        failed++;
       }
+    }
+
+    if (failed > 0) {
+      useToastStore.getState().addToast(`Tag rename: ${count} updated, ${failed} failed`, 'warning');
     }
 
     // Rebuild the tag index to reflect changes
@@ -414,6 +420,7 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
         const re = new RegExp(`(\\[\\[)${escaped}(\\]\\]|\\|)`, 'gi');
 
         // Update all backlinks in parallel instead of serially
+        let backlinkFailures = 0;
         await Promise.all(
           [...linkers]
             .filter((filePath) => filePath !== oldPath)
@@ -425,10 +432,13 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
                   await cmd.writeFile(vaultPath, filePath, replaced);
                 }
               } catch {
-                // Skip files that can't be read/written
+                backlinkFailures++;
               }
             }),
         );
+        if (backlinkFailures > 0) {
+          useToastStore.getState().addToast(`Renamed file, but ${backlinkFailures} backlink update(s) failed`, 'warning');
+        }
       }
     }
 

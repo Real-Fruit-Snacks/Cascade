@@ -40,7 +40,6 @@ export interface EditorState {
   justSaved: boolean;
   viewMode: ViewMode;
   editorViewRef: { current: EditorView | null };
-  recentFiles: string[];
   isFileLoading: boolean;
   pendingScrollLine: number | null;
   pendingScrollHeading: string | null;
@@ -54,8 +53,6 @@ export interface EditorState {
 
 export interface EditorActions {
   openFile: (vaultRoot: string, path: string, newTab?: boolean, background?: boolean) => Promise<void>;
-  addRecentFile: (vaultRoot: string, path: string) => void;
-  loadRecentFiles: (vaultRoot: string) => void;
   openSpecialTab: (id: string) => void;
   closeTab: (index: number, force?: boolean) => void;
   closeActiveTab: () => void;

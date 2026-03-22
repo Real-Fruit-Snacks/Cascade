@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 
 use regex::Regex;
 use walkdir::WalkDir;
@@ -8,6 +9,10 @@ use walkdir::WalkDir;
 use tauri::Emitter;
 
 use crate::error::CascadeError;
+
+static BEAR_TAG_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"#([^#\n]+)#").unwrap());
+static BEAR_HIGHLIGHT_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"::([^:]+)::").unwrap());
+static BEAR_ATTACHMENT_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[file:([^\]]+)\]").unwrap());
 use crate::importer::ImportResult;
 
 /// Characters not allowed in Windows filenames.
@@ -52,10 +57,9 @@ fn convert_tags_in_line(line: &str, tag_re: &Regex) -> String {
 
 /// Convert Bear-specific markdown syntax to standard markdown.
 fn convert_bear_markdown(content: &str) -> String {
-    // Compile regexes (cheap enough for per-file use; Bear exports are one-off imports)
-    let tag_re = Regex::new(r"#([^#\n]+)#").expect("valid regex");
-    let highlight_re = Regex::new(r"::([^:]+)::").expect("valid regex");
-    let attachment_re = Regex::new(r"\[file:([^\]]+)\]").expect("valid regex");
+    let tag_re = &*BEAR_TAG_RE;
+    let highlight_re = &*BEAR_HIGHLIGHT_RE;
+    let attachment_re = &*BEAR_ATTACHMENT_RE;
 
     // 1. Convert Bear tags: #tag# or #multi word tag# → #tag or #multi-word-tag
     //    Process line by line, skipping fenced code blocks and inline code spans.

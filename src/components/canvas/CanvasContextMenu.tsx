@@ -10,6 +10,7 @@ import { useEditorStore } from '../../stores/editor-store';
 import { showConfirm } from '../../stores/confirm-store';
 import { CANVAS_COLORS } from '../../types/canvas';
 import type { CanvasColor, TextNode, LinkNode, GroupNode } from '../../types/canvas';
+import i18n from '../../i18n';
 
 interface CanvasContextMenuProps {
   x: number;
@@ -465,7 +466,7 @@ export function CanvasContextMenu({
         const count = store.nodes.length + store.edges.length;
         if (count === 0) return;
         const confirmed = await showConfirm({
-          title: 'Clear All',
+          title: i18n.t('dialogs:clearAll.title'),
           message: `Delete all ${store.nodes.length} card${store.nodes.length !== 1 ? 's' : ''}${store.edges.length > 0 ? ` and ${store.edges.length} connection${store.edges.length !== 1 ? 's' : ''}` : ''}? This cannot be undone.`,
           kind: 'warning',
           confirmLabel: 'Delete',

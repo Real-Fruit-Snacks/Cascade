@@ -217,6 +217,8 @@ export interface Settings {
   syncPat: string;
   syncAutoSync: boolean;
   syncInterval: number;
+  /** Optional custom SSH key path — if empty, defaults are used. */
+  syncSshKeyPath: string;
 }
 
 export const DEFAULTS: Settings = {
@@ -383,6 +385,7 @@ export const DEFAULTS: Settings = {
   syncPat: '',
   syncAutoSync: true,
   syncInterval: 5,
+  syncSshKeyPath: '',
 };
 
 // Current vault path for saving settings — set by loadFromVault

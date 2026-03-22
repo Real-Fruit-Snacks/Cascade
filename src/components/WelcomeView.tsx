@@ -3,6 +3,7 @@ import { FileText, Hash, Link, X, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useEditorStore } from '../stores/editor-store';
 import { useVaultStore } from '../stores/vault-store';
+import { useRecentFilesStore } from '../stores/recent-files-store';
 import { useSettingsStore } from '../stores/settings-store';
 import type { FileEntry } from '../types/index';
 
@@ -39,7 +40,7 @@ const mod = navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl';
 
 export function WelcomeView() {
   const { t } = useTranslation('editor');
-  const recentFiles = useEditorStore((s) => s.recentFiles);
+  const recentFiles = useRecentFilesStore((s) => s.recentFiles);
   const openFile = useEditorStore((s) => s.openFile);
   const vaultPath = useVaultStore((s) => s.vaultPath);
   const flatFiles = useVaultStore((s) => s.flatFiles);

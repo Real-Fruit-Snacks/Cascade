@@ -15,6 +15,51 @@
   .folder-chevron {
     transition: transform 0.15s ease;
   }
+
+  /* ── Theme text colors ── */
+  .ctp-text        { color: var(--ctp-text); }
+  .ctp-subtext0    { color: var(--ctp-subtext0); }
+  .ctp-subtext1    { color: var(--ctp-subtext1); }
+  .ctp-overlay0    { color: var(--ctp-overlay0); }
+  .ctp-overlay1    { color: var(--ctp-overlay1); }
+  .ctp-accent      { color: var(--ctp-accent); }
+  .ctp-red         { color: var(--ctp-red); }
+  .ctp-green       { color: var(--ctp-green); }
+  .ctp-yellow      { color: var(--ctp-yellow); }
+  .ctp-peach       { color: var(--ctp-peach); }
+  .ctp-blue        { color: var(--ctp-blue); }
+  .ctp-mauve       { color: var(--ctp-mauve); }
+
+  /* ── Theme backgrounds ── */
+  .bg-ctp-base     { background-color: var(--ctp-base); }
+  .bg-ctp-mantle   { background-color: var(--ctp-mantle); }
+  .bg-ctp-crust    { background-color: var(--ctp-crust); }
+  .bg-ctp-surface0 { background-color: var(--ctp-surface0); }
+  .bg-ctp-surface1 { background-color: var(--ctp-surface1); }
+  .bg-ctp-surface2 { background-color: var(--ctp-surface2); }
+  .bg-ctp-accent   { background-color: var(--ctp-accent); }
+
+  /* ── Theme borders ── */
+  .border-ctp-surface0   { border: 1px solid var(--ctp-surface0); }
+  .border-ctp-surface1   { border: 1px solid var(--ctp-surface1); }
+  .border-ctp-surface2   { border: 1px solid var(--ctp-surface2); }
+  .border-t-ctp-surface0 { border-top: 1px solid var(--ctp-surface0); }
+  .border-b-ctp-surface0 { border-bottom: 1px solid var(--ctp-surface0); }
+  .border-r-ctp-surface0 { border-right: 1px solid var(--ctp-surface0); }
+  .border-l-ctp-surface0 { border-left: 1px solid var(--ctp-surface0); }
+
+  /* ── Common composites ── */
+  .ctp-panel {
+    background-color: var(--ctp-mantle);
+    border: 1px solid var(--ctp-surface0);
+  }
+  .ctp-input {
+    background-color: var(--ctp-surface0);
+    color: var(--ctp-text);
+    border: 1px solid var(--ctp-surface2);
+  }
+  .ctp-icon { color: var(--ctp-overlay1); flex-shrink: 0; }
+  .ctp-icon-accent { color: var(--ctp-accent); flex-shrink: 0; }
 }
 
 /* Prevent scroll-through on modal overlays */

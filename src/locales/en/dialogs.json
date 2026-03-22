@@ -40,5 +40,25 @@
     "messageDirty": "You have unsaved changes. Close vault anyway?",
     "messageClean": "Are you sure you want to close this vault?",
     "confirmLabel": "Close Vault"
+  },
+  "saveBeforeClose": {
+    "title": "Unsaved Changes",
+    "message": "Save changes to \"{{name}}\" before closing?",
+    "save": "Save",
+    "dontSave": "Don't Save",
+    "cancel": "Cancel"
+  },
+  "loadPlugin": {
+    "title": "Load Plugin?"
+  },
+  "deleteImage": {
+    "title": "Delete Image"
+  },
+  "clearAll": {
+    "title": "Clear All"
+  },
+  "openVault": {
+    "title": "Open Vault",
+    "selectFolder": "Select Folder for New Vault"
   }
 }

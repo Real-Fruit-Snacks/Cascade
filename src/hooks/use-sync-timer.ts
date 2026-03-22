@@ -16,12 +16,12 @@ export function useSyncTimer() {
       return;
     }
 
-    refreshStatus();
-
-    if (!initialSyncDone.current) {
-      initialSyncDone.current = true;
-      triggerSync();
-    }
+    refreshStatus().then(() => {
+      if (!initialSyncDone.current) {
+        initialSyncDone.current = true;
+        triggerSync();
+      }
+    });
 
     if (!syncAutoSync) return;
 

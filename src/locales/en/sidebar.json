@@ -5,7 +5,8 @@
     "backlinks": "Links",
     "outline": "Outline",
     "bookmarks": "Bookmarks",
-    "graph": "Graph"
+    "graph": "Graph",
+    "trash": "Trash"
   },
   "views": {
     "files": "Files (Ctrl+Shift+E)",
@@ -13,6 +14,7 @@
     "backlinks": "Backlinks (Ctrl+Shift+L)",
     "outline": "Outline (Ctrl+Shift+O)",
     "bookmarks": "Bookmarks (Ctrl+Shift+K)",
+    "trash": "Trash",
     "graphView": "Graph View (Ctrl+Shift+G)",
     "variables": "Variables",
     "search": "Search (Ctrl+Shift+F)",
@@ -180,5 +182,13 @@
   "toast": {
     "failedFolderTemplate": "Failed to apply folder template — created empty folder instead",
     "failedTemplate": "Failed to apply template — created blank file instead"
+  },
+  "trash": {
+    "empty": "Trash is empty",
+    "emptyTrash": "Empty Trash",
+    "restore": "Restore",
+    "deletePermanently": "Delete permanently",
+    "restored": "Restored {{name}}",
+    "emptied": "Trash emptied"
   }
 }

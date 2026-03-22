@@ -57,6 +57,8 @@
     "newCanvas": "New Canvas",
     "splitRight": "Split Right",
     "splitDown": "Split Down",
-    "closeSplit": "Close Split Pane"
+    "closeSplit": "Close Split Pane",
+    "openRandomNote": "Open Random Note",
+    "openTrash": "Open Trash"
   }
 }

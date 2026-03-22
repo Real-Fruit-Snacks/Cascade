@@ -5,6 +5,7 @@ import * as cmd from '../lib/tauri-commands';
 import { useSettingsStore } from './settings-store';
 import { useVaultStore } from './vault-store';
 import { PluginSandbox } from '../plugin-api/sandbox';
+import i18n from '../i18n';
 
 export interface PluginEntry {
   manifest: PluginManifest;
@@ -145,7 +146,7 @@ export const usePluginStore = create<PluginState & PluginActions>((set, get) => 
     // Security: require explicit user confirmation before executing plugin code
     const approved = await confirm(
       `Plugin "${entry.manifest.name}" (${id}) wants to run sandboxed code in this vault.\n\nPermissions: ${(entry.manifest.permissions ?? []).join(', ') || 'none'}\n\nOnly allow plugins you trust.`,
-      { title: 'Load Plugin?', kind: 'warning' },
+      { title: i18n.t('dialogs:loadPlugin.title'), kind: 'warning' },
     );
     if (!approved) return;
 

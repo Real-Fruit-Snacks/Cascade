@@ -5,16 +5,15 @@ export function SettingRow({ label, description, children, onReset }: { label: s
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="text-sm" style={{ color: 'var(--ctp-text)' }}>{label}</span>
-        <span className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>{description}</span>
+        <span className="text-sm ctp-text">{label}</span>
+        <span className="text-xs ctp-overlay0">{description}</span>
       </div>
       <div className="shrink-0 flex items-center gap-1.5">
         {children}
         {onReset && (
           <button
             onClick={onReset}
-            className="p-0.5 rounded transition-colors hover:bg-[var(--ctp-surface1)]"
-            style={{ color: 'var(--ctp-overlay0)' }}
+            className="p-0.5 rounded transition-colors hover:bg-[var(--ctp-surface1)] ctp-overlay0"
             title={i18n.t('settings:resetToDefault')}
           >
             <RotateCcw size={11} />

@@ -1,11 +1,54 @@
 use crate::error::CascadeError;
+use crate::sync_log;
 use git2::{
     Cred, Direction, FetchOptions, IndexAddOption, PushOptions, RemoteCallbacks, Repository,
     Signature, StatusOptions,
 };
 use serde::Serialize;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
+
+fn is_ssh_url(url: &str) -> bool {
+    url.starts_with("git@") || url.starts_with("ssh://")
+}
+
+/// Resolve the SSH private key path.
+/// If `custom` is non-empty, use it directly.
+/// Otherwise scan ~/.ssh for common key names.
+fn resolve_ssh_key(custom: &str) -> Result<PathBuf, CascadeError> {
+    if !custom.is_empty() {
+        // Expand ~ to home directory
+        let expanded = if custom.starts_with("~/") || custom.starts_with("~\\") {
+            if let Some(home) = dirs::home_dir() {
+                home.join(&custom[2..])
+            } else {
+                PathBuf::from(custom)
+            }
+        } else {
+            PathBuf::from(custom)
+        };
+        if expanded.exists() {
+            return Ok(expanded);
+        }
+        return Err(CascadeError::Git(format!(
+            "SSH key not found at: {}",
+            expanded.display()
+        )));
+    }
+    let ssh_dir = dirs::home_dir()
+        .ok_or_else(|| CascadeError::Git("Cannot determine home directory".into()))?
+        .join(".ssh");
+    for name in &["id_ed25519", "id_rsa", "id_ecdsa"] {
+        let candidate = ssh_dir.join(name);
+        if candidate.exists() {
+            return Ok(candidate);
+        }
+    }
+    Err(CascadeError::Git(
+        "No SSH key found — add one in ~/.ssh or set a custom key path in Sync settings".into(),
+    ))
+}
 
 #[derive(Debug, Serialize, Clone)]
 pub struct ConflictInfo {
@@ -30,23 +73,44 @@ pub struct GitStatus {
     pub unpushed_commits: u32,
 }
 
-fn make_callbacks<'a>(pat: &'a str) -> RemoteCallbacks<'a> {
+/// Auth credentials for sync operations.
+#[derive(Clone)]
+enum SyncAuth {
+    /// HTTPS with personal access token.
+    Pat(String),
+    /// SSH with path to private key.
+    Ssh(PathBuf),
+}
+
+fn make_callbacks(auth: &SyncAuth) -> RemoteCallbacks<'_> {
     let mut callbacks = RemoteCallbacks::new();
-    callbacks.credentials(move |_url, _username_from_url, _allowed_types| {
-        Cred::userpass_plaintext("x-access-token", pat)
-    });
+    match auth {
+        SyncAuth::Pat(pat) => {
+            let pat = pat.clone();
+            callbacks.credentials(move |_url, _username_from_url, _allowed_types| {
+                Cred::userpass_plaintext("x-access-token", &pat)
+            });
+        }
+        SyncAuth::Ssh(key_path) => {
+            let key_path = key_path.clone();
+            callbacks.credentials(move |_url, username_from_url, _allowed_types| {
+                let user = username_from_url.unwrap_or("git");
+                Cred::ssh_key(user, None, &key_path, None)
+            });
+        }
+    }
     callbacks
 }
 
-fn make_fetch_options<'a>(pat: &'a str) -> FetchOptions<'a> {
+fn make_fetch_options(auth: &SyncAuth) -> FetchOptions<'_> {
     let mut fo = FetchOptions::new();
-    fo.remote_callbacks(make_callbacks(pat));
+    fo.remote_callbacks(make_callbacks(auth));
     fo
 }
 
-fn make_push_options<'a>(pat: &'a str) -> PushOptions<'a> {
+fn make_push_options(auth: &SyncAuth) -> PushOptions<'_> {
     let mut po = PushOptions::new();
-    po.remote_callbacks(make_callbacks(pat));
+    po.remote_callbacks(make_callbacks(auth));
     po
 }
 
@@ -65,10 +129,157 @@ fn ensure_gitignore(vault_path: &Path) -> Result<(), CascadeError> {
     Ok(())
 }
 
+// ── Git credential helper delegation ────────────────────────────────
+
+/// Parse a remote URL into protocol and host for git credential.
+fn parse_credential_url(remote_url: &str) -> Result<(String, String), CascadeError> {
+    if remote_url.starts_with("https://") || remote_url.starts_with("http://") {
+        let (protocol, rest) = if remote_url.starts_with("https://") {
+            ("https".to_string(), &remote_url[8..])
+        } else {
+            ("http".to_string(), &remote_url[7..])
+        };
+        let host = rest.split('/').next().unwrap_or("github.com").to_string();
+        Ok((protocol, host))
+    } else {
+        Err(CascadeError::Git("Cannot use credential helper with non-HTTPS URL".into()))
+    }
+}
+
+/// Read PAT from git credential helper. Called internally by sync functions.
+fn read_pat_from_credential_helper(remote_url: &str) -> Result<String, CascadeError> {
+    let (protocol, host) = parse_credential_url(remote_url)?;
+    let input = format!("protocol={}\nhost={}\n\n", protocol, host);
+
+    let output = Command::new("git")
+        .args(["credential", "fill"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .and_then(|mut child| {
+            use std::io::Write;
+            if let Some(stdin) = child.stdin.as_mut() {
+                stdin.write_all(input.as_bytes())?;
+            }
+            child.wait_with_output()
+        })
+        .map_err(|e| CascadeError::Git(format!("git credential fill failed: {e}")))?;
+
+    if !output.status.success() {
+        return Err(CascadeError::Git("git credential fill returned non-zero".into()));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    for line in stdout.lines() {
+        if let Some(password) = line.strip_prefix("password=") {
+            return Ok(password.to_string());
+        }
+    }
+
+    Ok(String::new())
+}
+
+/// Store PAT via git credential helper.
+fn store_pat_in_credential_helper(remote_url: &str, pat: &str) -> Result<(), CascadeError> {
+    let (protocol, host) = parse_credential_url(remote_url)?;
+    let input = format!(
+        "protocol={}\nhost={}\nusername=x-access-token\npassword={}\n\n",
+        protocol, host, pat
+    );
+
+    let output = Command::new("git")
+        .args(["credential", "approve"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .and_then(|mut child| {
+            use std::io::Write;
+            if let Some(stdin) = child.stdin.as_mut() {
+                stdin.write_all(input.as_bytes())?;
+            }
+            child.wait_with_output()
+        })
+        .map_err(|e| CascadeError::Git(format!("git credential approve failed: {e}")))?;
+
+    if !output.status.success() {
+        return Err(CascadeError::Git("git credential approve returned non-zero".into()));
+    }
+
+    Ok(())
+}
+
+/// Delete PAT from git credential helper.
+fn delete_pat_from_credential_helper(remote_url: &str) -> Result<(), CascadeError> {
+    let (protocol, host) = parse_credential_url(remote_url)?;
+    let input = format!(
+        "protocol={}\nhost={}\nusername=x-access-token\npassword=dummy\n\n",
+        protocol, host
+    );
+
+    let _ = Command::new("git")
+        .args(["credential", "reject"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .and_then(|mut child| {
+            use std::io::Write;
+            if let Some(stdin) = child.stdin.as_mut() {
+                stdin.write_all(input.as_bytes())?;
+            }
+            child.wait_with_output()
+        });
+
+    Ok(())
+}
+
+/// Build a SyncAuth from the URL and optional SSH key path.
+/// For HTTPS, reads the PAT internally from the git credential helper.
+fn resolve_auth(remote_url: &str, ssh_key_path: &str) -> Result<SyncAuth, CascadeError> {
+    if is_ssh_url(remote_url) {
+        let key = resolve_ssh_key(ssh_key_path)?;
+        Ok(SyncAuth::Ssh(key))
+    } else {
+        let pat = read_pat_from_credential_helper(remote_url)?;
+        if pat.is_empty() {
+            return Err(CascadeError::Git(
+                "No PAT found — save your token in Sync settings".into(),
+            ));
+        }
+        Ok(SyncAuth::Pat(pat))
+    }
+}
+
 #[tauri::command]
-pub fn git_test_connection(remote_url: String, pat: String) -> Result<(), CascadeError> {
-    let mut remote = git2::Remote::create_detached(&*remote_url)?;
-    remote.connect_auth(Direction::Fetch, Some(make_callbacks(&pat)), None)?;
+pub fn git_test_connection(vault_path: String, remote_url: String, ssh_key_path: String) -> Result<(), CascadeError> {
+    let path = Path::new(&vault_path);
+    sync_log::info(path, &format!("Testing connection to: {}", remote_url));
+    sync_log::debug(path, &format!("Auth method: {}", if is_ssh_url(&remote_url) { "SSH" } else { "HTTPS" }));
+    let auth = match resolve_auth(&remote_url, &ssh_key_path) {
+        Ok(a) => a,
+        Err(e) => {
+            sync_log::error(path, &format!("Auth resolution failed: {e}"));
+            return Err(e);
+        }
+    };
+    let mut remote = match git2::Remote::create_detached(&*remote_url) {
+        Ok(r) => r,
+        Err(e) => {
+            sync_log::error(path, &format!("Failed to create remote: {e}"));
+            return Err(e.into());
+        }
+    };
+    match remote.connect_auth(Direction::Fetch, Some(make_callbacks(&auth)), None) {
+        Ok(_) => {
+            sync_log::info(path, "Connection test successful");
+        }
+        Err(e) => {
+            sync_log::error(path, &format!("Connection failed: {e}"));
+            return Err(e.into());
+        }
+    }
     remote.disconnect()?;
     Ok(())
 }
@@ -77,9 +288,11 @@ pub fn git_test_connection(remote_url: String, pat: String) -> Result<(), Cascad
 pub fn git_init_repo(
     vault_path: String,
     remote_url: String,
-    pat: String,
+    ssh_key_path: String,
 ) -> Result<(), CascadeError> {
+    let auth = resolve_auth(&remote_url, &ssh_key_path)?;
     let path = Path::new(&vault_path);
+    sync_log::info(path, &format!("Initializing repository with remote: {}", remote_url));
     ensure_gitignore(path)?;
     let repo = Repository::init(path)?;
     repo.remote("origin", &remote_url)?;
@@ -98,8 +311,9 @@ pub fn git_init_repo(
     repo.set_head("refs/heads/main")?;
 
     let mut remote = repo.find_remote("origin")?;
-    let mut push_opts = make_push_options(&pat);
+    let mut push_opts = make_push_options(&auth);
     remote.push(&["refs/heads/main:refs/heads/main"], Some(&mut push_opts))?;
+    sync_log::info(path, "Repository initialized and initial push complete");
     Ok(())
 }
 
@@ -107,9 +321,10 @@ pub fn git_init_repo(
 pub fn git_clone_repo(
     vault_path: String,
     remote_url: String,
-    pat: String,
+    ssh_key_path: String,
 ) -> Result<(), CascadeError> {
-    let fo = make_fetch_options(&pat);
+    let auth = resolve_auth(&remote_url, &ssh_key_path)?;
+    let fo = make_fetch_options(&auth);
     let mut builder = git2::build::RepoBuilder::new();
     builder.fetch_options(fo);
     builder.clone(&remote_url, Path::new(&vault_path))?;
@@ -117,19 +332,27 @@ pub fn git_clone_repo(
 }
 
 #[tauri::command]
-pub fn git_sync(vault_path: String, pat: String) -> Result<SyncResult, CascadeError> {
+pub fn git_sync(vault_path: String, ssh_key_path: String) -> Result<SyncResult, CascadeError> {
     let path = Path::new(&vault_path);
+    sync_log::info(path, "Starting sync...");
     let repo = Repository::open(path)?;
+    let remote_url = repo.find_remote("origin")?
+        .url()
+        .unwrap_or_default()
+        .to_string();
+    let auth = resolve_auth(&remote_url, &ssh_key_path)?;
+    sync_log::debug(path, &format!("Auth method: {}", if is_ssh_url(&remote_url) { "SSH" } else { "HTTPS" }));
     let mut conflicts = Vec::new();
     let mut conflict_details = Vec::new();
 
     // 1. Fetch
     {
         let mut remote = repo.find_remote("origin")?;
-        let mut fo = make_fetch_options(&pat);
+        let mut fo = make_fetch_options(&auth);
         if let Err(e) = remote.fetch(&["main"], Some(&mut fo), None) {
             // Network/auth failure — commit locally and report offline
             eprintln!("[cascade sync] fetch failed: {e}");
+            sync_log::error(path, &format!("Fetch failed: {e}"));
             let committed = commit_changes(&repo)?;
             return Ok(SyncResult {
                 committed_files: committed,
@@ -138,6 +361,7 @@ pub fn git_sync(vault_path: String, pat: String) -> Result<SyncResult, CascadeEr
                 push_status: "offline".to_string(),
             });
         }
+        sync_log::debug(path, "Fetch complete");
     }
 
     // 2. Merge
@@ -198,6 +422,7 @@ pub fn git_sync(vault_path: String, pat: String) -> Result<SyncResult, CascadeEr
                             remote_content,
                         });
                     }
+                    sync_log::info(path, &format!("{} conflicts detected", conflict_details.len()));
                 }
 
                 // Resolve conflicts by keeping our side
@@ -247,11 +472,14 @@ pub fn git_sync(vault_path: String, pat: String) -> Result<SyncResult, CascadeEr
 
     // 3. Commit local changes
     let committed = commit_changes(&repo)?;
+    if !committed.is_empty() {
+        sync_log::info(path, &format!("Committed {} files", committed.len()));
+    }
 
     // 4. Push
     let push_status = {
         let mut remote = repo.find_remote("origin")?;
-        let mut po = make_push_options(&pat);
+        let mut po = make_push_options(&auth);
         match remote.push(&["refs/heads/main:refs/heads/main"], Some(&mut po)) {
             Ok(_) => {
                 if committed.is_empty() && conflicts.is_empty() {
@@ -261,12 +489,20 @@ pub fn git_sync(vault_path: String, pat: String) -> Result<SyncResult, CascadeEr
                 }
             }
             Err(e) => {
-                eprintln!("[cascade sync] push failed: {e}");
-                "offline"
+                let msg = e.to_string();
+                sync_log::error(path, &format!("Push failed: {msg}"));
+                if msg.contains("401") || msg.contains("403") || msg.contains("auth") {
+                    "auth_error"
+                } else {
+                    "offline"
+                }
             }
         }
         .to_string()
     };
+
+    sync_log::info(path, &format!("Push status: {}", push_status));
+    sync_log::info(path, "Sync complete");
 
     Ok(SyncResult {
         committed_files: committed,
@@ -371,42 +607,49 @@ pub fn git_disconnect(vault_path: String) -> Result<(), CascadeError> {
     Ok(())
 }
 
-// ── Secure PAT storage via OS credential store ──────────────────────
-
-const KEYRING_SERVICE: &str = "com.matt.cascade";
-
-fn keyring_key(vault_path: &str) -> String {
-    format!("sync-pat:{}", vault_path)
+#[tauri::command]
+pub fn open_sync_log_folder(vault_path: String) -> Result<String, CascadeError> {
+    let log_dir = Path::new(&vault_path).join(".cascade").join("logs");
+    fs::create_dir_all(&log_dir)
+        .map_err(|e| CascadeError::Git(format!("Failed to create log directory: {e}")))?;
+    Ok(log_dir.to_string_lossy().into_owned())
 }
 
+// ── PAT storage: git credential helper delegation ───────────────────
+
+/// Store PAT via git credential helper.
 #[tauri::command]
-pub fn store_sync_pat(vault_path: String, pat: String) -> Result<(), CascadeError> {
-    let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_key(&vault_path))
-        .map_err(|e| CascadeError::Git(format!("Keyring error: {e}")))?;
-    entry
-        .set_password(&pat)
-        .map_err(|e| CascadeError::Git(format!("Failed to store PAT: {e}")))?;
+pub fn store_sync_pat(vault_path: String, remote_url: String, pat: String) -> Result<(), CascadeError> {
+    let path = Path::new(&vault_path);
+    sync_log::debug(path, "Storing PAT via git credential helper");
+    store_pat_in_credential_helper(&remote_url, &pat)?;
+    sync_log::debug(path, "PAT stored via git credential helper");
     Ok(())
 }
 
+/// Check if a PAT exists. Returns boolean, NEVER the actual PAT.
 #[tauri::command]
-pub fn read_sync_pat(vault_path: String) -> Result<String, CascadeError> {
-    let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_key(&vault_path))
-        .map_err(|e| CascadeError::Git(format!("Keyring error: {e}")))?;
-    match entry.get_password() {
-        Ok(pat) => Ok(pat),
-        Err(keyring::Error::NoEntry) => Ok(String::new()),
-        Err(e) => Err(CascadeError::Git(format!("Failed to read PAT: {e}"))),
-    }
+pub fn has_sync_pat(vault_path: String, remote_url: String) -> Result<bool, CascadeError> {
+    let path = Path::new(&vault_path);
+    let pat = read_pat_from_credential_helper(&remote_url).unwrap_or_default();
+    let has = !pat.is_empty();
+    sync_log::debug(path, &format!("PAT check: {}", if has { "found" } else { "not found" }));
+    Ok(has)
 }
 
+/// Delete PAT from credential store.
 #[tauri::command]
-pub fn delete_sync_pat(vault_path: String) -> Result<(), CascadeError> {
-    let entry = keyring::Entry::new(KEYRING_SERVICE, &keyring_key(&vault_path))
-        .map_err(|e| CascadeError::Git(format!("Keyring error: {e}")))?;
-    match entry.delete_credential() {
-        Ok(()) => Ok(()),
-        Err(keyring::Error::NoEntry) => Ok(()),
-        Err(e) => Err(CascadeError::Git(format!("Failed to delete PAT: {e}"))),
+pub fn delete_sync_pat(vault_path: String, remote_url: String) -> Result<(), CascadeError> {
+    let path = Path::new(&vault_path);
+    sync_log::debug(path, "Deleting PAT from git credential helper");
+    delete_pat_from_credential_helper(&remote_url)?;
+    sync_log::debug(path, "PAT deleted");
+
+    // Clean up old base64 credential file if it exists
+    let old_cred = Path::new(&vault_path).join(".cascade").join("credentials");
+    if old_cred.exists() {
+        let _ = fs::remove_file(&old_cred);
     }
+
+    Ok(())
 }
