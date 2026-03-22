@@ -9,6 +9,7 @@ import { getSuggestions, addToCustomDictionary, ignoreWord } from '../editor/spe
 import type { MenuItem } from '../components/sidebar/ContextMenu';
 import type { EditorView } from '@codemirror/view';
 import type { TFunction } from 'i18next';
+import { emit } from '../lib/cascade-events';
 
 interface EditorMenuState {
   x: number;
@@ -128,7 +129,7 @@ export function useEditorContextMenu({ editorMenu, getView, t }: UseEditorContex
             }
             // Dispatch after cursor update has been processed
             requestAnimationFrame(() => {
-              window.dispatchEvent(new Event('cascade:variables-set'));
+              emit('cascade:variables-set');
             });
           },
         });
@@ -138,19 +139,19 @@ export function useEditorContextMenu({ editorMenu, getView, t }: UseEditorContex
         label: t('editorContextMenu.copyLineReplaced'),
         icon: React.createElement(CopyCheck, { size: 12 }),
         color: 'var(--ctp-blue)',
-        onClick: () => window.dispatchEvent(new Event('cascade:variables-copy-line')),
+        onClick: () => emit('cascade:variables-copy-line'),
       });
       items.push({
         label: t('editorContextMenu.copySelectionReplaced'),
         icon: React.createElement(FileOutput, { size: 12 }),
         color: 'var(--ctp-blue)',
-        onClick: () => window.dispatchEvent(new Event('cascade:variables-copy-selection')),
+        onClick: () => emit('cascade:variables-copy-selection'),
       });
       items.push({
         label: t('editorContextMenu.replaceInSelection'),
         icon: React.createElement(Replace, { size: 12 }),
         color: 'var(--ctp-peach)',
-        onClick: () => window.dispatchEvent(new Event('cascade:variables-replace-selection')),
+        onClick: () => emit('cascade:variables-replace-selection'),
       });
     }
 

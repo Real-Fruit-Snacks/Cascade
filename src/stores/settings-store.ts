@@ -213,8 +213,6 @@ export interface Settings {
   // Sync
   syncEnabled: boolean;
   syncRepoUrl: string;
-  /** Runtime-only — PAT is stored in OS credential store, never persisted to disk. */
-  syncPat: string;
   syncAutoSync: boolean;
   syncInterval: number;
   /** Optional custom SSH key path — if empty, defaults are used. */
@@ -382,7 +380,6 @@ export const DEFAULTS: Settings = {
   themeRegistries: [],
   syncEnabled: false,
   syncRepoUrl: '',
-  syncPat: '',
   syncAutoSync: true,
   syncInterval: 5,
   syncSshKeyPath: '',
@@ -428,7 +425,7 @@ export function getAppLevelSettings(): Partial<Settings> {
 }
 
 /** Keys that are never persisted to disk (stored securely elsewhere). */
-const EXCLUDED_FROM_DISK: (keyof Settings)[] = ['syncPat'];
+const EXCLUDED_FROM_DISK: (keyof Settings)[] = [];
 
 function saveSettingsToVault(settings: Settings) {
   saveAppLevelSettings(settings);

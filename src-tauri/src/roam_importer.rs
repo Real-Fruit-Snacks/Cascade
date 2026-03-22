@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::LazyLock;
 
 use regex::Regex;
 use serde::Deserialize;
@@ -9,6 +10,12 @@ use tauri::Emitter;
 
 use crate::error::CascadeError;
 use crate::importer::ImportResult;
+
+static EMBED_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\{\{embed:\s*\(\(([^)]+)\)\)\}\}").unwrap());
+static BLOCK_REF_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\(\(([^)]+)\)\)").unwrap());
+static NESTED_TAG_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"#\[\[([^\]]+)\]\]").unwrap());
+static ITALIC_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"__(.+?)__").unwrap());
+static HIGHLIGHT_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\^\^(.+?)\^\^").unwrap());
 
 #[derive(Deserialize, Debug)]
 struct RoamPage {
@@ -102,8 +109,7 @@ fn convert_roam_syntax(text: &str, uid_page_map: &HashMap<String, String>) -> St
     s = s.replace("{{DONE}}", "- [x]");
 
     // {{embed: ((uid))}} → ![[page#^uid]]
-    let embed_re = Regex::new(r"\{\{embed:\s*\(\(([^)]+)\)\)\}\}").unwrap();
-    s = embed_re
+    s = EMBED_RE
         .replace_all(&s, |caps: &regex::Captures| {
             let uid = &caps[1];
             let page = uid_page_map.get(uid).map(|t| t.as_str()).unwrap_or("unknown");
@@ -112,8 +118,7 @@ fn convert_roam_syntax(text: &str, uid_page_map: &HashMap<String, String>) -> St
         .into_owned();
 
     // ((block-uid)) → [[page#^uid]]
-    let block_ref_re = Regex::new(r"\(\(([^)]+)\)\)").unwrap();
-    s = block_ref_re
+    s = BLOCK_REF_RE
         .replace_all(&s, |caps: &regex::Captures| {
             let uid = &caps[1];
             let page = uid_page_map.get(uid).map(|t| t.as_str()).unwrap_or("unknown");
@@ -122,8 +127,7 @@ fn convert_roam_syntax(text: &str, uid_page_map: &HashMap<String, String>) -> St
         .into_owned();
 
     // #[[nested tag]] → #nested-tag (kebab-case)
-    let nested_tag_re = Regex::new(r"#\[\[([^\]]+)\]\]").unwrap();
-    s = nested_tag_re
+    s = NESTED_TAG_RE
         .replace_all(&s, |caps: &regex::Captures| {
             let tag = caps[1].trim().to_lowercase().replace(' ', "-");
             format!("#{}", tag)
@@ -133,12 +137,10 @@ fn convert_roam_syntax(text: &str, uid_page_map: &HashMap<String, String>) -> St
     // [[page links]] are already compatible — no change needed.
 
     // __italic__ → *italic*
-    let italic_re = Regex::new(r"__(.+?)__").unwrap();
-    s = italic_re.replace_all(&s, "*$1*").into_owned();
+    s = ITALIC_RE.replace_all(&s, "*$1*").into_owned();
 
     // ^^highlight^^ → ==highlight==
-    let highlight_re = Regex::new(r"\^\^(.+?)\^\^").unwrap();
-    s = highlight_re.replace_all(&s, "==$1==").into_owned();
+    s = HIGHLIGHT_RE.replace_all(&s, "==$1==").into_owned();
 
     s
 }

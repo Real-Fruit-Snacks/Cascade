@@ -9,6 +9,7 @@ import { EditorState, type Range } from '@codemirror/state';
 import { type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
 import { TAG_PATTERN } from '../lib/tag-utils';
 import { useSettingsStore } from '../stores/settings-store';
+import { emit } from '../lib/cascade-events';
 
 // ── Build decorations ──────────────────────────────────────
 
@@ -124,7 +125,7 @@ export const tagClickHandler = EditorView.domEventHandlers({
         event.preventDefault();
         const tag = match[1].toLowerCase();
         // Dispatch a custom event that the sidebar can listen to
-        window.dispatchEvent(new CustomEvent('cascade:filter-tag', { detail: tag }));
+        emit('cascade:filter-tag', tag);
         return true;
       }
     }

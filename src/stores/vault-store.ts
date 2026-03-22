@@ -129,6 +129,7 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
     const vaultPath = get().vaultPath;
     // Flush all dirty tabs to disk before closing
     if (vaultPath) {
+      // Lazy import required: editor-store imports vault-store (circular dep)
       const { useEditorStore } = await import('./editor-store');
       const editorState = useEditorStore.getState();
       if (editorState.hasDirtyTabs()) {

@@ -15,6 +15,7 @@ import { Tooltip } from '../Tooltip';
 import { useEditorStore } from '../../stores/editor-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { usePluginStore } from '../../stores/plugin-store';
+import { emit } from '../../lib/cascade-events';
 
 type SidebarView = 'files' | 'tags' | 'backlinks' | 'outline' | 'bookmarks' | 'trash';
 
@@ -64,7 +65,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
 
   const handleVarsClick = useCallback(() => {
     if (variablesSidebarAction === 'list') {
-      window.dispatchEvent(new Event('cascade:variables-list'));
+      emit('cascade:variables-list');
     } else {
       const rect = varsButtonRef.current?.getBoundingClientRect();
       if (rect) {
@@ -73,9 +74,9 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
     }
   }, [variablesSidebarAction]);
 
-  const dispatchAfterClose = useCallback((eventName: string) => {
+  const dispatchAfterClose = useCallback((eventName: Parameters<typeof emit>[0]) => {
     // Defer dispatch so the ContextMenu fully unmounts before the handler runs
-    setTimeout(() => window.dispatchEvent(new Event(eventName)), 0);
+    setTimeout(() => emit(eventName), 0);
   }, []);
 
   const varsMenuItems: MenuItem[] = [
@@ -282,7 +283,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
         {enableSearch && (
           <Tooltip label={t('views.search')} side="right">
             <button
-              onClick={() => window.dispatchEvent(new Event('cascade:open-search'))}
+              onClick={() => emit('cascade:open-search')}
               className="flex items-center justify-center rounded-md transition-colors hover:bg-[var(--ctp-surface0)] sidebar-btn-hover"
               style={{
                 width: 32,
@@ -298,7 +299,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
         )}
         <Tooltip label={t('views.commandPalette')} side="right">
           <button
-            onClick={() => window.dispatchEvent(new Event('cascade:open-command-palette'))}
+            onClick={() => emit('cascade:open-command-palette')}
             className="flex items-center justify-center rounded-md transition-colors hover:bg-[var(--ctp-surface0)] sidebar-btn-hover"
             style={{
               width: 32,
@@ -335,7 +336,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
         <div className="flex-1" />
         <Tooltip label={t('views.closeVault')} side="right">
           <button
-            onClick={() => window.dispatchEvent(new Event('cascade:close-vault'))}
+            onClick={() => emit('cascade:close-vault')}
             className="flex items-center justify-center rounded-md transition-colors hover:bg-[var(--ctp-surface0)] sidebar-btn-hover"
             style={{
               width: 32,
@@ -350,7 +351,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
         </Tooltip>
         <Tooltip label={t('views.settings')} side="right">
           <button
-            onClick={() => window.dispatchEvent(new Event('cascade:open-settings'))}
+            onClick={() => emit('cascade:open-settings')}
             className="flex items-center justify-center rounded-md transition-colors hover:bg-[var(--ctp-surface0)] sidebar-btn-hover"
             style={{
               width: 32,

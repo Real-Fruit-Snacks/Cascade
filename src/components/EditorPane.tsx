@@ -15,6 +15,7 @@ import { EditorView } from '@codemirror/view';
 import { openSearchPanel } from '@codemirror/search';
 import { consumeRightClickCapture } from '../editor/custom-spellcheck';
 import { useTranslation } from 'react-i18next';
+import { emit } from '../lib/cascade-events';
 
 import { FloatingVimBadge } from './editor/FloatingVimBadge';
 import { SlashCommandMenu } from './SlashCommandMenu';
@@ -400,7 +401,7 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
             }},
             { label: t('paneContextMenu.revealInFileTree'), icon: <FolderOpen size={14} />, onClick: () => {
               if (activeFilePath) {
-                window.dispatchEvent(new CustomEvent('cascade:reveal-in-tree', { detail: { path: activeFilePath } }));
+                emit('cascade:reveal-in-tree', { path: activeFilePath });
               }
             }},
             { label: t('paneContextMenu.copyFilePath'), icon: <Copy size={14} />, onClick: () => {
@@ -416,10 +417,10 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
             }},
             { label: '', separator: true, onClick: () => {} },
             { label: t('paneContextMenu.export'), icon: <FileOutput size={14} />, onClick: () => {
-              window.dispatchEvent(new Event('cascade:export'));
+              emit('cascade:export');
             }},
             { label: t('paneContextMenu.settings'), icon: <Settings size={14} />, onClick: () => {
-              window.dispatchEvent(new Event('cascade:open-settings'));
+              emit('cascade:open-settings');
             }},
           ]}
           onClose={() => setPaneMenu(null)}

@@ -189,6 +189,7 @@
     "restore": "Restore",
     "deletePermanently": "Delete permanently",
     "restored": "Restored {{name}}",
-    "emptied": "Trash emptied"
+    "emptied": "Trash emptied",
+    "loading": "Loading..."
   }
 }

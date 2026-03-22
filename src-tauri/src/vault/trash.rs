@@ -94,6 +94,12 @@ pub fn restore_from_trash(
     let canonical_root = get_canonical_root(&vault_root, &vault_root_state)?;
     let trash_dir = canonical_root.join(TRASH_DIR);
     let source = trash_dir.join(&name);
+    if !source.starts_with(&trash_dir) {
+        return Err(CascadeError::PathTraversal {
+            requested: name.clone(),
+            vault: trash_dir.to_string_lossy().into_owned(),
+        });
+    }
     if !source.exists() {
         return Err(CascadeError::InvalidPath(format!("not found in trash: {}", name)));
     }
@@ -122,6 +128,12 @@ pub fn delete_from_trash(
     let canonical_root = get_canonical_root(&vault_root, &vault_root_state)?;
     let trash_dir = canonical_root.join(TRASH_DIR);
     let target = trash_dir.join(&name);
+    if !target.starts_with(&trash_dir) {
+        return Err(CascadeError::PathTraversal {
+            requested: name.clone(),
+            vault: trash_dir.to_string_lossy().into_owned(),
+        });
+    }
     if !target.exists() {
         return Err(CascadeError::InvalidPath(format!("not found in trash: {}", name)));
     }

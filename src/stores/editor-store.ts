@@ -12,6 +12,7 @@ import { consumeDraft, saveDrafts } from './editor-drafts';
 import { saveSession } from './editor-session';
 import { performSave, derived, findHeadingPosition, findBlockIdPosition } from './editor-helpers';
 import { createLogger } from '../lib/logger';
+import { emit } from '../lib/cascade-events';
 
 const log = createLogger('EditorStore');
 
@@ -465,9 +466,7 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
 
     if (tab.isDirty) {
       // Tab has unsaved edits — show conflict dialog
-      window.dispatchEvent(new CustomEvent('cascade:file-conflict', {
-        detail: { path: relPath, externalContent: newContent },
-      }));
+      emit('cascade:file-conflict', { filePath: relPath, externalContent: newContent });
     } else {
       // No local edits — silently reload
       const updated: Tab = { ...tab, content: newContent, savedContent: newContent, isDirty: false };

@@ -259,9 +259,16 @@ export function extractPluginZip(vaultRoot: string, pluginId: string, data: numb
 
 // ── Git Sync ──────────────────────────────────────────────────
 
+export interface ConflictDetail {
+  path: string;
+  local_content: string;
+  remote_content: string;
+}
+
 export interface SyncResult {
   committed_files: string[];
   conflicts: string[];
+  conflict_details: ConflictDetail[];
   push_status: 'pushed' | 'nothing_to_push' | 'offline' | 'auth_error';
 }
 

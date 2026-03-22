@@ -10,7 +10,7 @@ import { applyTheme, registerCustomTheme } from './styles/catppuccin-flavors';
 import type { CustomTheme } from './styles/catppuccin-flavors';
 import { listCustomThemes } from './lib/tauri-commands';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
-import { on } from './lib/cascade-events';
+import { on, emit } from './lib/cascade-events';
 import { createLogger } from './lib/logger';
 import './i18n';
 
@@ -26,17 +26,17 @@ function handleDeepLink(url: string) {
       const parts = path.slice(5).split('/');
       const vaultName = decodeURIComponent(parts[0]);
       const notePath = parts.slice(1).map(decodeURIComponent).join('/');
-      window.dispatchEvent(new CustomEvent('cascade:deep-link-open', { detail: { vaultName, notePath } }));
+      emit('cascade:deep-link-open', { vaultName, notePath });
     } else if (path.startsWith('command/')) {
       const commandId = decodeURIComponent(path.slice(8));
-      window.dispatchEvent(new CustomEvent('cascade:execute-command', { detail: { commandId } }));
+      emit('cascade:execute-command', { commandId });
     } else if (path.startsWith('search')) {
       const query = parsed.searchParams.get('q') ?? '';
-      window.dispatchEvent(new CustomEvent('cascade:open-search', { detail: { query } }));
+      emit('cascade:open-search', { query });
     } else if (path.startsWith('new')) {
       const title = parsed.searchParams.get('title') ?? 'Untitled';
       const template = parsed.searchParams.get('template') ?? undefined;
-      window.dispatchEvent(new CustomEvent('cascade:deep-link-new', { detail: { title, template } }));
+      emit('cascade:deep-link-new', { title, template });
     }
   } catch (err) {
     log.error('Failed to handle deep link:', err);

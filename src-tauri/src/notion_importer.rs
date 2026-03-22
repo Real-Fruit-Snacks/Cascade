@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 
 use regex::Regex;
 use scraper::{ElementRef, Html, Selector};
@@ -10,11 +11,19 @@ use tauri::Emitter;
 use crate::error::CascadeError;
 use crate::importer::ImportResult;
 
+static NOTION_UUID_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s+[a-f0-9]{32}$").unwrap());
+static BLANK_LINES_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n{3,}").unwrap());
+static SEL_CODE: LazyLock<Selector> = LazyLock::new(|| Selector::parse("code").unwrap());
+static SEL_TR: LazyLock<Selector> = LazyLock::new(|| Selector::parse("tr").unwrap());
+static SEL_TD_TH: LazyLock<Selector> = LazyLock::new(|| Selector::parse("td, th").unwrap());
+static SEL_TABLE: LazyLock<Selector> = LazyLock::new(|| Selector::parse("table").unwrap());
+static SEL_BODY: LazyLock<Selector> = LazyLock::new(|| Selector::parse("body").unwrap());
+static SEL_HTML: LazyLock<Selector> = LazyLock::new(|| Selector::parse("html").unwrap());
+
 /// Strip Notion UUID suffix from a filename stem.
 /// e.g. "My Page abc123def456abc123def456abc123de" → "My Page"
 fn strip_notion_uuid(name: &str) -> String {
-    let re = Regex::new(r"\s+[a-f0-9]{32}$").unwrap();
-    re.replace(name, "").to_string()
+    NOTION_UUID_RE.replace(name, "").to_string()
 }
 
 /// Clean a full filename (with extension): strip UUID from the stem.
@@ -74,8 +83,7 @@ fn element_to_markdown(
         }
         "pre" => {
             // Look for a nested <code> element and extract language from class
-            let code_sel = Selector::parse("code").unwrap();
-            let (code_text, lang) = if let Some(code_el) = el.select(&code_sel).next() {
+            let (code_text, lang) = if let Some(code_el) = el.select(&*SEL_CODE).next() {
                 let text = code_el.text().collect::<String>();
                 // Notion/Prism uses class="language-xxx"
                 let lang = code_el
@@ -309,13 +317,10 @@ fn hex_val(b: u8) -> Option<u8> {
 
 /// Convert an HTML <table> to a markdown table.
 fn convert_table(el: ElementRef) -> String {
-    let tr_sel = Selector::parse("tr").unwrap();
-    let td_sel = Selector::parse("td, th").unwrap();
-
     let rows: Vec<Vec<String>> = el
-        .select(&tr_sel)
+        .select(&*SEL_TR)
         .map(|row| {
-            row.select(&td_sel)
+            row.select(&*SEL_TD_TH)
                 .map(|cell| inner_text(cell).trim().replace('\n', " ").replace('|', "\\|"))
                 .collect()
         })
@@ -349,17 +354,13 @@ fn convert_table(el: ElementRef) -> String {
 /// Check if the first table in the document looks like a Notion properties table.
 /// Returns Some(frontmatter_string) if so.
 fn extract_notion_properties(doc: &Html) -> Option<String> {
-    let table_sel = Selector::parse("table").unwrap();
-    let tr_sel = Selector::parse("tr").unwrap();
-    let td_sel = Selector::parse("td, th").unwrap();
-
-    let table = doc.select(&table_sel).next()?;
+    let table = doc.select(&*SEL_TABLE).next()?;
 
     let rows: Vec<(String, String)> = table
-        .select(&tr_sel)
+        .select(&*SEL_TR)
         .filter_map(|row| {
             let cells: Vec<String> = row
-                .select(&td_sel)
+                .select(&*SEL_TD_TH)
                 .map(|c| inner_text(c).trim().to_string())
                 .collect();
             if cells.len() == 2 && !cells[0].is_empty() {
@@ -397,13 +398,10 @@ fn html_to_markdown(html_content: &str, link_map: &HashMap<String, String>) -> S
     let frontmatter = extract_notion_properties(&doc);
 
     // Extract the <body> or fall back to <html>
-    let body_sel = Selector::parse("body").unwrap();
-    let html_sel = Selector::parse("html").unwrap();
-
     let root_el = doc
-        .select(&body_sel)
+        .select(&*SEL_BODY)
         .next()
-        .or_else(|| doc.select(&html_sel).next());
+        .or_else(|| doc.select(&*SEL_HTML).next());
 
     let markdown_body = if let Some(root) = root_el {
         // If we found a properties table, skip the first <table> in body
@@ -424,8 +422,7 @@ fn html_to_markdown(html_content: &str, link_map: &HashMap<String, String>) -> S
     );
 
     // Collapse 3+ consecutive blank lines to 2
-    let re = Regex::new(r"\n{3,}").unwrap();
-    re.replace_all(&result, "\n\n").to_string()
+    BLANK_LINES_RE.replace_all(&result, "\n\n").to_string()
 }
 
 /// Convert body children to markdown, skipping the first <table> encountered.

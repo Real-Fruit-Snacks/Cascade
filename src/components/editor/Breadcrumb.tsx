@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react';
+import { emit } from '../../lib/cascade-events';
 
 export function Breadcrumb({ path }: { path: string }) {
   const normalized = path.replace(/\\/g, '/');
@@ -11,9 +12,7 @@ export function Breadcrumb({ path }: { path: string }) {
       localStorage.setItem('cascade-expanded:' + folderPath, 'true');
     }
     // Switch sidebar to files view and trigger re-render
-    window.dispatchEvent(new CustomEvent('cascade:reveal-in-tree', {
-      detail: { path: segments.slice(0, segmentIndex + 1).join('/') },
-    }));
+    emit('cascade:reveal-in-tree', { path: segments.slice(0, segmentIndex + 1).join('/') });
   };
 
   return (

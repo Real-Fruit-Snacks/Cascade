@@ -18,6 +18,7 @@ import { usePluginStore } from '../stores/plugin-store';
 import { useToastStore } from '../stores/toast-store';
 import { commandRegistry } from '../lib/command-registry';
 import * as cmd from '../lib/tauri-commands';
+import { emit } from '../lib/cascade-events';
 
 // ── Message types ──
 
@@ -527,7 +528,7 @@ export class PluginSandbox {
         const viewType = args[0] as string;
         const views = usePluginStore.getState().customViews;
         if (!views.has(viewType)) throw new Error(`Unknown view type: ${viewType}`);
-        window.dispatchEvent(new CustomEvent('cascade:open-plugin-view', { detail: { viewType } }));
+        emit('cascade:open-plugin-view', { viewType });
         return undefined;
       }
       case 'ui.addContextMenuItem': {

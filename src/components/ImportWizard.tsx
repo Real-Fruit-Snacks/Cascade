@@ -8,6 +8,7 @@ import { useCloseAnimation } from '../hooks/use-close-animation';
 import { useVaultStore } from '../stores/vault-store';
 import { useSettingsStore } from '../stores/settings-store';
 import { useToastStore } from '../stores/toast-store';
+import { emit } from '../lib/cascade-events';
 import {
   readObsidianConfig,
   importNotionExport,
@@ -153,7 +154,7 @@ export function ImportWizard({ open: isOpen, onClose }: ImportWizardProps) {
         setStep('done');
 
         // Refresh the vault tree
-        window.dispatchEvent(new Event('cascade:vault-changed'));
+        emit('cascade:vault-changed');
 
         useToastStore.getState().addToast(
           t('toast.importedFiles', { count: result.filesImported, source: selectedSource?.label ?? source }),

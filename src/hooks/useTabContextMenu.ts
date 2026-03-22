@@ -5,6 +5,7 @@ import { usePluginStore } from '../stores/plugin-store';
 import type { MenuItem } from '../components/sidebar/ContextMenu';
 import type { TabMeta } from '../components/editor/TabBar';
 import type { TFunction } from 'i18next';
+import { emit } from '../lib/cascade-events';
 
 interface UseTabContextMenuParams {
   tabMenu: { x: number; y: number; index: number } | null;
@@ -59,7 +60,7 @@ export function useTabContextMenu({ tabMenu, tabsMeta, closeTab, t }: UseTabCont
       label: t('tabContextMenu.revealInSidebar'),
       onClick: () => {
         if (tab.path && !tab.path.startsWith('__')) {
-          window.dispatchEvent(new CustomEvent('cascade:reveal-in-tree', { detail: { path: tab.path } }));
+          emit('cascade:reveal-in-tree', { path: tab.path });
         }
       },
     });

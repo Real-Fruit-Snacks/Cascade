@@ -128,6 +128,7 @@ export const useThemeStudioStore = create<ThemeStudioState>((set, get) => ({
   },
 
   setColor: (key, value) => {
+    if (!/^#[0-9a-fA-F]{6}$/.test(value)) return; // ignore invalid colors
     const { currentColors, semanticColors } = get();
     document.documentElement.style.setProperty(`--ctp-${key}`, value);
     if (SEMANTIC_KEYS.includes(key)) {

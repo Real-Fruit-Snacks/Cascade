@@ -100,7 +100,7 @@ export function TrashPanel() {
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center p-4">
-            <span className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>Loading...</span>
+            <span className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>{t('trash.loading')}</span>
           </div>
         ) : entries.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 p-6">
