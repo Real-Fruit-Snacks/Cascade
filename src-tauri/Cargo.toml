@@ -1,6 +1,6 @@
 [package]
 name = "cascade"
-version = "0.1.7"
+version = "0.1.8"
 description = "A beautiful markdown note-taking app"
 authors = []
 edition = "2021"
