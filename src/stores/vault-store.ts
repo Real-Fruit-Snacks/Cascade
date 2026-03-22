@@ -5,6 +5,7 @@ import { getAllFilePaths } from '../lib/wiki-link-resolver';
 import { extractTags } from '../lib/tag-utils';
 import { useSettingsStore } from './settings-store';
 import { useToastStore } from './toast-store';
+import { emit } from '../lib/cascade-events';
 
 const WIKI_LINK_RE = /\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]/g;
 
@@ -102,9 +103,6 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
         cmd.openVault(path),
         useSettingsStore.getState().loadFromVault(path),
       ]);
-      // Load per-vault recent files so the welcome screen shows the right list
-      const { useRecentFilesStore } = await import('./recent-files-store');
-      useRecentFilesStore.getState().loadRecentFiles(path);
       set((s) => ({
         vaultPath: path,
         fileTree: tree,
@@ -116,14 +114,11 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
           return updated;
         })(),
       }));
-      // Defer buildTagIndex and plugin discovery to after first render
+      emit('cascade:vault-opened', { vaultPath: path });
+      // Defer buildTagIndex to after first render
       const idleCb = typeof requestIdleCallback !== 'undefined' ? requestIdleCallback : (fn: () => void) => setTimeout(fn, 0);
       idleCb(async () => {
         await get().buildTagIndex();
-        const { usePluginStore } = await import('./plugin-store');
-        if (useSettingsStore.getState().pluginsEnabled) {
-          usePluginStore.getState().discoverPlugins(path);
-        }
       });
     } catch (e) {
       set({ isLoading: false, error: String(e) });
@@ -140,9 +135,9 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
         await editorState.saveAllDirty(vaultPath);
       }
     }
-    import('./plugin-store').then(({ usePluginStore }) => {
-      usePluginStore.getState().unloadAll();
-    });
+    if (vaultPath) {
+      emit('cascade:vault-closing', { vaultPath });
+    }
     set({
       vaultPath: null,
       fileTree: [],

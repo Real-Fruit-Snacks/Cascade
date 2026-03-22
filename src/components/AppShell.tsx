@@ -38,6 +38,10 @@ import type { VariablesFeatureCallbacks } from '../hooks/use-variables-feature';
 import { useKeyboardShortcuts } from '../hooks/use-keyboard-shortcuts';
 import { useGlobalDragDrop } from '../hooks/use-global-drag-drop';
 import { useThemeSetup } from '../hooks/use-theme-setup';
+import { ThemeStudioToolbar } from './theme-studio/ThemeStudioToolbar';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('AppShell');
 
 export function AppShell() {
   const { t } = useTranslation(['common', 'dialogs']);
@@ -129,7 +133,7 @@ export function AppShell() {
     useVaultStore.getState().createFile(path).then(() => {
       useEditorStore.getState().openFile(vp, path);
     }).catch((err) => {
-      console.error('Failed to create file:', path, err);
+      log.error('Failed to create file:', path, err);
       const fileName = path.replace(/\\/g, '/').split('/').pop() ?? path;
       useToastStore.getState().addToast(t('common:failedToCreateFile', { fileName }), 'error');
     });
@@ -144,7 +148,7 @@ export function AppShell() {
     }).then(() => {
       useEditorStore.getState().openFile(vp, canvasPath);
     }).catch((err) => {
-      console.error('Failed to create canvas:', canvasPath, err);
+      log.error('Failed to create canvas:', canvasPath, err);
       const fileName = canvasPath.replace(/\\/g, '/').split('/').pop() ?? canvasPath;
       useToastStore.getState().addToast(t('common:failedToCreateFile', { fileName }), 'error');
     });
@@ -333,6 +337,7 @@ export function AppShell() {
         onClose={modal.closeSetVarModal}
         onSave={handleSetVarSave}
       />
+      <ThemeStudioToolbar />
     </div>
   );
 }

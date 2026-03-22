@@ -40,6 +40,23 @@
   --ctp-accent: var(--ctp-peach);
 }
 
+/* ── Semantic editor colors (customizable independently) ── */
+:root {
+  --ctp-h1: var(--ctp-red);
+  --ctp-h2: var(--ctp-peach);
+  --ctp-h3: var(--ctp-yellow);
+  --ctp-h4: var(--ctp-green);
+  --ctp-h5: var(--ctp-blue);
+  --ctp-h6: var(--ctp-mauve);
+  --ctp-link: var(--ctp-blue);
+  --ctp-bold: var(--ctp-peach);
+  --ctp-italic: var(--ctp-pink);
+  --ctp-code: var(--ctp-green);
+  --ctp-tag-color: var(--ctp-blue);
+  --ctp-blockquote: var(--ctp-overlay2);
+  --ctp-list-marker: var(--ctp-yellow);
+}
+
 /* Plugin README rendered markdown */
 .plugin-readme h1 { font-size: 1.25em; font-weight: 700; margin: 0.6em 0 0.3em; }
 .plugin-readme h2 { font-size: 1.1em; font-weight: 600; margin: 0.5em 0 0.25em; }

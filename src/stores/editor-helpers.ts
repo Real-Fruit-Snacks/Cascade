@@ -5,6 +5,9 @@ import * as cmd from '../lib/tauri-commands';
 import { useSettingsStore } from './settings-store';
 import { useVaultStore } from './vault-store';
 import { useToastStore } from './toast-store';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('EditorHelpers');
 
 /** Apply auto-TOC update to a tab's content before saving. Returns the (possibly updated) tab. */
 export async function applyTocUpdate(tab: Tab, editorView: EditorView | null): Promise<Tab> {
@@ -40,7 +43,7 @@ export async function performSave(
   try {
     await cmd.writeFile(vaultRoot, updated.path, updated.content);
   } catch (e) {
-    console.error('Failed to save file:', updated.path, e);
+    log.error('Failed to save file:', updated.path, e);
     const fileName = updated.path.replace(/\\/g, '/').split('/').pop() ?? updated.path;
     useToastStore.getState().addToast(`Failed to save "${fileName}"`, 'error');
     return null;

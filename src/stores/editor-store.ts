@@ -11,6 +11,9 @@ import { getTabType, FILE_SIZE_LIMIT } from './editor-types';
 import { consumeDraft, saveDrafts } from './editor-drafts';
 import { saveSession } from './editor-session';
 import { performSave, derived, findHeadingPosition, findBlockIdPosition } from './editor-helpers';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('EditorStore');
 
 let openFileSeq = 0;
 
@@ -184,7 +187,7 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
       if (!background) useRecentFilesStore.getState().addRecentFile(path, vaultRoot);
     } catch (e) {
       set({ isFileLoading: false });
-      console.error('Failed to open file:', path, e);
+      log.error('Failed to open file:', path, e);
       const fileName = path.replace(/\\/g, '/').split('/').pop() ?? path;
       useToastStore.getState().addToast(`Failed to open "${fileName}"`, 'error');
     }
@@ -607,7 +610,7 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
         const hasDraft = draft !== null && draft !== text;
         tab = { path, content: hasDraft ? draft : text, savedContent: text, isDirty: hasDraft };
       } catch (e) {
-        console.error('Failed to open file in pane:', path, e);
+        log.error('Failed to open file in pane:', path, e);
         return;
       }
     }

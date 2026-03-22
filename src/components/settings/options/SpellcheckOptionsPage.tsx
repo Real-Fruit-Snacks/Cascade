@@ -8,6 +8,9 @@ import { useSettingsStore } from '../../../stores/settings-store';
 import { useVaultStore } from '../../../stores/vault-store';
 import { readCustomDictionary, writeCustomDictionary } from '../../../lib/tauri-commands';
 import { reloadCustomDictionary } from '../../../editor/spellcheck-engine';
+import { createLogger } from '../../../lib/logger';
+
+const log = createLogger('SpellcheckOptionsPage');
 
 export function SpellcheckOptionsPage() {
   const { t: ts } = useTranslation('settings');
@@ -34,7 +37,7 @@ export function SpellcheckOptionsPage() {
     setDictWords(updated);
     writeCustomDictionary(vaultPath, updated)
       .then(() => reloadCustomDictionary())
-      .catch((err) => console.warn('Failed to update dictionary:', err));
+      .catch((err) => log.warn('Failed to update dictionary:', err));
   }, [vaultPath, dictWords]);
 
   const addWord = useCallback(() => {
@@ -46,7 +49,7 @@ export function SpellcheckOptionsPage() {
     setNewWord('');
     writeCustomDictionary(vaultPath, updated)
       .then(() => reloadCustomDictionary())
-      .catch((err) => console.warn('Failed to update dictionary:', err));
+      .catch((err) => log.warn('Failed to update dictionary:', err));
   }, [vaultPath, dictWords, newWord]);
 
   return (

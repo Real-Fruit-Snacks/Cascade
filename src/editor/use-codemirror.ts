@@ -1,20 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { Compartment, EditorState, Prec, Transaction } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightActiveLine, rectangularSelection, crosshairCursor } from '@codemirror/view';
-import { defaultKeymap, historyKeymap, history, redo, indentWithTab } from '@codemirror/commands';
-import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
-import { openSearchPanel, search, searchKeymap, highlightSelectionMatches, selectNextOccurrence } from '@codemirror/search';
-import { createSearchPanel } from './search-in-selection';
-import { foldGutter, foldKeymap, foldService } from '@codemirror/language';
-import { markdown } from '@codemirror/lang-markdown';
+import { Prec, Transaction, EditorState } from '@codemirror/state';
+import { EditorView, keymap, lineNumbers, highlightActiveLine } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
+import { markdown } from '@codemirror/lang-markdown';
 import { createCatppuccinExtensions } from './catppuccin-theme';
-import { searchTheme } from './search-theme';
 import { wikiLinks, wikiLinkClickHandler, wikiLinkTheme } from './wiki-links';
 import { wikiLinkCompletion } from './wiki-link-completion';
 import { tags, tagTheme, tagClickHandler, tagAutocompletion } from './tags';
 import { tidemarkHighlight, tidemarkTheme } from './tidemark-highlight';
-import { dropHandler } from './drop-handler';
 import { indentGuides } from './indent-guides';
 import { imagePreview } from './image-preview';
 import { mathPreview, mathPreviewTheme } from './math-preview';
@@ -25,172 +18,22 @@ import { typewriterMode, typewriterPadding, focusMode } from './typewriter-mode'
 import { customSpellcheck } from './custom-spellcheck';
 import { slashCommandExtension } from './slash-commands/slash-command-extension';
 import { initDictionary, setVaultPath as setSpellcheckVault } from './spellcheck-engine';
-import { formattingKeymap } from './formatting-commands';
-import { smartListKeymap } from './smart-lists';
 import { useEditorStore } from '../stores/editor-store';
 import { useVaultStore } from '../stores/vault-store';
 import { useSettingsStore } from '../stores/settings-store';
 import {
-  type RenderCompartments,
-  createRenderCompartments,
   extensionsForMode,
   buildHighlightSyntaxExtensions,
   buildRenderExtensions,
 } from './build-extensions';
-
-let contentUpdateTimer: ReturnType<typeof setTimeout> | null = null;
-
-interface Compartments extends RenderCompartments {
-  lineNumbersComp: Compartment;
-  vimComp: Compartment;
-  highlightActiveLineComp: Compartment;
-  readableLineLengthComp: Compartment;
-  spellcheckComp: Compartment;
-  codeFoldingComp: Compartment;
-  typewriterComp: Compartment;
-  focusModeComp: Compartment;
-  slashCommandsComp: Compartment;
-}
-
-function createCompartments(): Compartments {
-  return {
-    ...createRenderCompartments(),
-    lineNumbersComp: new Compartment(),
-    vimComp: new Compartment(),
-    highlightActiveLineComp: new Compartment(),
-    readableLineLengthComp: new Compartment(),
-    spellcheckComp: new Compartment(),
-    codeFoldingComp: new Compartment(),
-    typewriterComp: new Compartment(),
-    focusModeComp: new Compartment(),
-    slashCommandsComp: new Compartment(),
-  };
-}
-
-// Fold fenced code blocks (``` ... ```)
-// Cache keyed on doc identity to avoid repeated linear scans
-let codeBlockFoldDoc: import('@codemirror/state').Text | null = null;
-let codeBlockFoldMap: Map<number, { from: number; to: number }> | null = null;
-
-function getCodeBlockFolds(state: EditorState): Map<number, { from: number; to: number }> {
-  if (codeBlockFoldDoc === state.doc && codeBlockFoldMap) return codeBlockFoldMap;
-  const folds = new Map<number, { from: number; to: number }>();
-  let openLine: { from: number; to: number; number: number } | null = null;
-  for (let i = 1; i <= state.doc.lines; i++) {
-    const line = state.doc.line(i);
-    if (line.text.startsWith('```')) {
-      if (openLine) {
-        folds.set(openLine.from, { from: openLine.to, to: line.to });
-        openLine = null;
-      } else {
-        openLine = { from: line.from, to: line.to, number: i };
-      }
-    }
-  }
-  codeBlockFoldDoc = state.doc;
-  codeBlockFoldMap = folds;
-  return folds;
-}
-
-const markdownCodeBlockFold = foldService.of((state, from) => {
-  return getCodeBlockFolds(state).get(from) ?? null;
-});
-
-const foldGutterTheme = EditorView.theme({
-  '.cm-foldGutter .cm-gutterElement': {
-    color: 'var(--ctp-overlay0)',
-    cursor: 'pointer',
-    padding: '0 2px',
-    fontSize: '0.85em',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  '.cm-foldGutter .cm-gutterElement:hover': {
-    color: 'var(--ctp-accent)',
-  },
-  '.cm-foldPlaceholder': {
-    color: 'var(--ctp-overlay0)',
-    background: 'none',
-    border: 'none',
-    padding: '0 2px',
-    margin: '0 1px',
-    cursor: 'pointer',
-    fontSize: 'inherit',
-    opacity: '0.4',
-  },
-  '.cm-foldPlaceholder:hover': {
-    opacity: '0.8',
-    color: 'var(--ctp-accent)',
-  },
-});
-
-// Cache heading fold ranges — single O(N) pass instead of O(N) per heading
-let headingFoldDoc: import('@codemirror/state').Text | null = null;
-let headingFoldLevel = 0;
-let headingFoldMap: Map<number, { from: number; to: number }> | null = null;
-
-function getHeadingFolds(state: EditorState, foldMinLevel: number): Map<number, { from: number; to: number }> {
-  if (headingFoldDoc === state.doc && headingFoldLevel === foldMinLevel && headingFoldMap) return headingFoldMap;
-  const folds = new Map<number, { from: number; to: number }>();
-  const headings: { from: number; to: number; level: number }[] = [];
-
-  // Single pass: collect all headings
-  for (let i = 1; i <= state.doc.lines; i++) {
-    const line = state.doc.line(i);
-    const match = line.text.match(/^(#{1,6})\s/);
-    if (match) {
-      headings.push({ from: line.from, to: line.to, level: match[1].length });
-    }
-  }
-
-  // For each heading, find fold end via next same-or-higher-level heading
-  for (let idx = 0; idx < headings.length; idx++) {
-    const h = headings[idx];
-    if (h.level < foldMinLevel) continue;
-    let end = state.doc.length;
-    for (let j = idx + 1; j < headings.length; j++) {
-      if (headings[j].level <= h.level) {
-        end = headings[j].from > 0 ? headings[j].from - 1 : headings[j].from;
-        break;
-      }
-    }
-    if (end > h.to) {
-      folds.set(h.from, { from: h.to, to: end });
-    }
-  }
-
-  headingFoldDoc = state.doc;
-  headingFoldLevel = foldMinLevel;
-  headingFoldMap = folds;
-  return folds;
-}
-
-function buildCodeFoldingExtensions(
-  enabled: boolean,
-  foldHeadings: boolean,
-  foldCodeBlocks: boolean,
-  foldMinLevel: number,
-) {
-  if (!enabled) return [];
-  const services = [];
-  if (foldHeadings) {
-    services.push(
-      foldService.of((state, from) => {
-        return getHeadingFolds(state, foldMinLevel).get(from) ?? null;
-      }),
-    );
-  }
-  if (foldCodeBlocks) {
-    services.push(markdownCodeBlockFold);
-  }
-  return [...services, foldGutter({ openText: '▾', closedText: '▸' }), foldGutterTheme];
-}
+import { type Compartments, createCompartments, buildCodeFoldingExtensions, buildEditorExtensions } from './codemirror-extensions';
+import { createMousedownHandler, createUpdateListener } from './codemirror-handlers';
 
 export function useCodeMirror() {
   const viewRef = useRef<EditorView | null>(null);
   const containerRef = useRef<HTMLElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const contentUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const compsRef = useRef<Compartments | null>(null);
   if (!compsRef.current) compsRef.current = createCompartments();
   const {
@@ -261,6 +104,7 @@ export function useCodeMirror() {
   const enableProperties = useSettingsStore((s) => s.enableProperties);
   const propertiesShowTypes = useSettingsStore((s) => s.propertiesShowTypes);
   const enableSlashCommands = useSettingsStore((s) => s.enableSlashCommands);
+
   // Ref avoids re-creating the EditorView when save dependencies change
   const handleSaveRef = useRef(() => {});
   handleSaveRef.current = () => {
@@ -304,61 +148,11 @@ export function useCodeMirror() {
         // Shared rendering extensions (live preview, wiki-links, tags, math, etc.)
         // Note: cursorLineField is included in renderExts (required by frontmatterField)
         ...renderExts,
-        // Editor-specific extensions below
-        vimComp.of([]),
-        lineNumbersComp.of(settings.showLineNumbers ? lineNumbers() : []),
-        highlightActiveLineComp.of(settings.highlightActiveLine ? highlightActiveLine() : []),
-        readableLineLengthComp.of(settings.readableLineLength > 0 ? EditorView.theme({ '.cm-content': { maxWidth: `${settings.readableLineLength}px`, marginLeft: 'auto', marginRight: 'auto' } }) : []),
-        spellcheckComp.of(settings.spellcheck ? customSpellcheck : []),
-        codeFoldingComp.of(buildCodeFoldingExtensions(settings.enableCodeFolding, settings.foldHeadings, settings.foldCodeBlocks, settings.foldMinLevel)),
-        typewriterComp.of(settings.enableTypewriterMode ? [typewriterMode(settings.typewriterOffset), typewriterPadding] : []),
-        focusModeComp.of(settings.enableFocusMode && settings.focusModeDimParagraphs ? focusMode : []),
-        closeBrackets(),
-        rectangularSelection(),
-        crosshairCursor(),
-        search({ top: true, createPanel: createSearchPanel }),
-        searchTheme,
-        highlightSelectionMatches(),
-        history(),
-        keymap.of([
-          { key: 'Mod-h', run: (view) => { openSearchPanel(view); return true; } },
-          { key: 'Mod-y', run: redo },
-          { key: 'Mod-d', run: selectNextOccurrence, preventDefault: true },
-          ...closeBracketsKeymap, ...foldKeymap, ...searchKeymap, indentWithTab, ...defaultKeymap, ...historyKeymap,
+        // Editor-specific extensions
+        ...buildEditorExtensions(compsRef.current!, settings, saveKeymap, [
+          createMousedownHandler(),
+          createUpdateListener(updateContent, debounceRef, handleSaveRef, contentUpdateTimerRef),
         ]),
-        saveKeymap,
-        smartListKeymap,
-        formattingKeymap,
-        dropHandler,
-        slashCommandsComp.of(enableSlashCommands ? slashCommandExtension : []),
-        // Prevent right-click from moving cursor / triggering live preview edit mode
-        // Return true to consume for CM6 (no cursor move), but don't preventDefault
-        EditorView.domEventHandlers({
-          mousedown(event) {
-            if (event.button === 2) return true;
-            return false;
-          },
-        }),
-        EditorView.updateListener.of((update) => {
-          if (update.docChanged) {
-            if (contentUpdateTimer) clearTimeout(contentUpdateTimer);
-            contentUpdateTimer = setTimeout(() => {
-              const content = update.state.doc.toString();
-              updateContent(content);
-              contentUpdateTimer = null;
-            }, 100);
-
-            if (debounceRef.current) clearTimeout(debounceRef.current);
-            const s = useSettingsStore.getState();
-            if (s.autoSaveEnabled && s.autoSaveMode === 'timer') {
-              debounceRef.current = setTimeout(() => {
-                if (useEditorStore.getState().isDirty) {
-                  handleSaveRef.current();
-                }
-              }, s.autoSaveInterval);
-            }
-          }
-        }),
       ],
     });
 

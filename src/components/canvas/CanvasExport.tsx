@@ -3,6 +3,9 @@ import { useSettingsStore } from '../../stores/settings-store';
 import { CANVAS_COLORS } from '../../types/canvas';
 import type { CanvasNode } from '../../types/canvas';
 import { anchorPoint, sideDirection, getComputedColor } from './canvas-utils';
+import { createLogger } from '../../lib/logger';
+
+const log = createLogger('CanvasExport');
 
 function getBounds(nodes: CanvasNode[]) {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -316,6 +319,6 @@ export async function downloadExport(format: 'png' | 'svg') {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } catch (err) {
-    console.error('Export failed:', err);
+    log.error('Export failed:', err);
   }
 }

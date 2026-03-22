@@ -7,6 +7,7 @@ import { ThemeCardGrid } from '../ThemeCardGrid';
 import { CommunityThemesSection } from '../marketplace';
 import type { CategoryPageProps } from '../shared/searchable-items';
 import type { CustomTheme } from '../../../styles/catppuccin-flavors';
+import { useThemeStudioStore } from '../../../stores/theme-studio-store';
 
 interface AppearanceSettingsPageProps extends CategoryPageProps {
   customThemesList: CustomTheme[];
@@ -53,6 +54,27 @@ export function AppearanceSettingsPage({ settings, visibleIds, isSearching, cust
         </SettingRow>
       )}
       {!isSearching && <CommunityThemesSection />}
+      {!isSearching && (
+        <div className="flex items-center justify-between rounded-lg p-4 ctp-panel mt-2">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-medium ctp-subtext1">Theme Studio</span>
+            <span className="text-xs ctp-overlay0">Create a custom theme by tweaking every color with live preview</span>
+          </div>
+          <button
+            onClick={() => {
+              useThemeStudioStore.getState().open();
+            }}
+            className="text-xs px-3 py-1.5 rounded font-medium"
+            style={{
+              backgroundColor: 'var(--ctp-accent)',
+              color: 'var(--ctp-base)',
+              cursor: 'pointer',
+            }}
+          >
+            Open Theme Studio
+          </button>
+        </div>
+      )}
     </>
   );
 }

@@ -1,4 +1,7 @@
 import { readCustomDictionary, writeCustomDictionary } from '../lib/tauri-commands';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('SpellcheckEngine');
 
 /** Compact spellcheck engine with lazy-loaded dictionary */
 
@@ -64,7 +67,7 @@ export function addToCustomDictionary(word: string): void {
   customWords.add(lower);
   if (vaultPath) {
     writeCustomDictionary(vaultPath, [...customWords]).catch((err) => {
-      console.warn('Failed to persist custom dictionary:', err);
+      log.warn('Failed to persist custom dictionary:', err);
     });
   }
 }

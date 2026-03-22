@@ -261,11 +261,13 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={ts('search.placeholder')}
+                aria-label={ts('search.placeholder')}
                 className="flex-1 text-sm outline-none bg-transparent ctp-text"
               />
               {searchQuery && (
                 <button
                   onClick={() => { setSearchQuery(''); searchRef.current?.focus(); }}
+                  aria-label={ts('search.clear')}
                   className="flex items-center justify-center rounded transition-colors hover:bg-[var(--ctp-surface1)] ctp-icon"
                   style={{ width: 18, height: 18 }}
                 >
@@ -349,6 +351,7 @@ function SettingsSidebar({ category, setCategory, settings, settingsTabs, onRese
           <button
             key={id}
             onClick={() => setCategory(id)}
+            aria-current={category === id ? 'page' : undefined}
             className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors text-left"
             style={{
               backgroundColor: category === id ? 'var(--ctp-surface0)' : 'transparent',
@@ -370,6 +373,7 @@ function SettingsSidebar({ category, setCategory, settings, settingsTabs, onRese
           <button
             key={id}
             onClick={() => setCategory(id)}
+            aria-current={category === id ? 'page' : undefined}
             className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors text-left"
             style={{
               backgroundColor: category === id ? 'var(--ctp-surface0)' : 'transparent',
@@ -391,6 +395,7 @@ function SettingsSidebar({ category, setCategory, settings, settingsTabs, onRese
           <button
             key={id}
             onClick={() => setCategory(id)}
+            aria-current={category === id ? 'page' : undefined}
             className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors text-left"
             style={{
               backgroundColor: category === id ? 'var(--ctp-surface0)' : 'transparent',

@@ -1,5 +1,8 @@
 import React, { Component, type ReactNode } from 'react';
 import i18next from 'i18next';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('ErrorBoundary');
 
 interface Props {
   children: ReactNode;
@@ -20,7 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error(`[ErrorBoundary:${this.props.name || 'unknown'}]`, error, info.componentStack);
+    log.error(`[${this.props.name || 'unknown'}]`, error, info.componentStack);
   }
 
   render() {

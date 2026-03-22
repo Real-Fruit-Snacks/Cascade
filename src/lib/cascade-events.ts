@@ -31,6 +31,8 @@ export interface CascadeEventMap {
   'cascade:deep-link-open': { vaultName: string; notePath: string };
   'cascade:deep-link-new': { title: string; template?: string };
   'cascade:execute-command': { commandId: string };
+  'cascade:vault-opened': { vaultPath: string };
+  'cascade:vault-closing': { vaultPath: string };
 }
 
 type CascadeEventName = keyof CascadeEventMap;

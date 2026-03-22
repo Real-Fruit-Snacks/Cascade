@@ -13,30 +13,30 @@ export const livePreviewTheme = EditorView.theme({
   '.cm-line.cm-heading-1': {
     fontSize: '2em',
     lineHeight: '1.4',
-    color: 'var(--ctp-red)',
+    color: 'var(--ctp-h1)',
   },
   '.cm-line.cm-heading-2': {
     fontSize: '1.6em',
     lineHeight: '1.4',
-    color: 'var(--ctp-peach)',
+    color: 'var(--ctp-h2)',
   },
   '.cm-line.cm-heading-3': {
     fontSize: '1.3em',
     lineHeight: '1.35',
-    color: 'var(--ctp-yellow)',
+    color: 'var(--ctp-h3)',
   },
   '.cm-line.cm-heading-4': {
     fontSize: '1.15em',
     lineHeight: '1.35',
-    color: 'var(--ctp-green)',
+    color: 'var(--ctp-h4)',
   },
   '.cm-line.cm-heading-5': {
     fontSize: '1.05em',
-    color: 'var(--ctp-blue)',
+    color: 'var(--ctp-h5)',
   },
   '.cm-line.cm-heading-6': {
     fontSize: '1em',
-    color: 'var(--ctp-mauve)',
+    color: 'var(--ctp-h6)',
   },
 
   // Inline
@@ -57,7 +57,7 @@ export const livePreviewTheme = EditorView.theme({
     fontSize: '0.9em',
   },
   '.cm-live-link': {
-    color: 'var(--ctp-blue)',
+    color: 'var(--ctp-link)',
     textDecoration: 'underline',
     textUnderlineOffset: '2px',
     cursor: 'pointer',
@@ -145,7 +145,7 @@ export const livePreviewTheme = EditorView.theme({
   '.cm-line.cm-live-blockquote': {
     borderLeft: '3px solid var(--ctp-accent)',
     paddingLeft: '12px',
-    color: 'var(--ctp-subtext0)',
+    color: 'var(--ctp-blockquote)',
   },
   '.cm-line.cm-live-codeblock': {
     backgroundColor: 'var(--ctp-mantle)',

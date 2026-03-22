@@ -4,11 +4,17 @@ import { useFsWatcher } from './hooks/use-fs-watcher';
 import { useSettingsStore, getAppLevelSettings } from './stores/settings-store';
 import { useVaultStore } from './stores/vault-store';
 import { useEditorStore, restoreSession, saveSession } from './stores/editor-store';
+import { useRecentFilesStore } from './stores/recent-files-store';
+import { usePluginStore } from './stores/plugin-store';
 import { applyTheme, registerCustomTheme } from './styles/catppuccin-flavors';
 import type { CustomTheme } from './styles/catppuccin-flavors';
 import { listCustomThemes } from './lib/tauri-commands';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
+import { on } from './lib/cascade-events';
+import { createLogger } from './lib/logger';
 import './i18n';
+
+const log = createLogger('App');
 
 function handleDeepLink(url: string) {
   try {
@@ -33,7 +39,7 @@ function handleDeepLink(url: string) {
       window.dispatchEvent(new CustomEvent('cascade:deep-link-new', { detail: { title, template } }));
     }
   } catch (err) {
-    console.error('Failed to handle deep link:', err);
+    log.error('Failed to handle deep link:', err);
   }
 }
 
@@ -67,6 +73,23 @@ function App() {
         useVaultStore.getState().openVault(recent[0]);
       }
     }
+  }, []);
+
+  // Handle vault lifecycle events emitted by vault-store (breaks circular store deps)
+  useEffect(() => {
+    const unsubOpened = on('cascade:vault-opened', ({ vaultPath: openedPath }) => {
+      useRecentFilesStore.getState().loadRecentFiles(openedPath);
+      if (useSettingsStore.getState().pluginsEnabled) {
+        usePluginStore.getState().discoverPlugins(openedPath);
+      }
+    });
+    const unsubClosing = on('cascade:vault-closing', () => {
+      usePluginStore.getState().unloadAll();
+    });
+    return () => {
+      unsubOpened();
+      unsubClosing();
+    };
   }, []);
 
   // Load custom themes when vault opens

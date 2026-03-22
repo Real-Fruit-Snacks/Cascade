@@ -4,6 +4,9 @@ import { useSettingsStore } from '../../stores/settings-store';
 import { readFile, writeFile } from '../../lib/tauri-commands';
 import type { CanvasData } from '../../types/canvas';
 import { gridLayout, treeLayout, forceLayout } from './CanvasAutoLayout';
+import { createLogger } from '../../lib/logger';
+
+const log = createLogger('CanvasIO');
 
 export function useCanvasIO(filePath: string, vaultPath: string) {
   const loadCanvas = useCanvasStore((s) => s.loadCanvas);
@@ -68,7 +71,7 @@ export function useCanvasIO(filePath: string, vaultPath: string) {
         await writeFile(vaultPath, filePath, JSON.stringify(data, null, 2));
         markClean();
       } catch (err) {
-        console.error('[CanvasView] save failed:', err);
+        log.error('save failed:', err);
       }
     }, 1000);
 

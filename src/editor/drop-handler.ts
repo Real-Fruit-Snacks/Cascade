@@ -3,6 +3,9 @@ import { useVaultStore } from '../stores/vault-store';
 import { useSettingsStore } from '../stores/settings-store';
 import { useEditorStore } from '../stores/editor-store';
 import { saveAttachment } from '../lib/tauri-commands';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('DropHandler');
 
 const IMAGE_EXTENSIONS = /\.(png|jpg|jpeg|gif|svg|webp|bmp|ico)$/i;
 
@@ -44,7 +47,7 @@ async function handleImagePaste(view: EditorView, file: File) {
     // Refresh file tree to show the new attachment
     useVaultStore.getState().refreshTree();
   } catch (err) {
-    console.warn('Failed to save pasted image:', err);
+    log.warn('Failed to save pasted image:', err);
   }
 }
 

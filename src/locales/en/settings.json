@@ -2,7 +2,8 @@
   "title": "Settings",
   "search": {
     "placeholder": "Search settings...",
-    "noResults": "No settings found"
+    "noResults": "No settings found",
+    "clear": "Clear search"
   },
   "reset": {
     "buttonLabel": "Reset All",
@@ -1006,5 +1007,25 @@
       "listProperties": "List-type properties (like <code>tags: [a, b]</code>) are displayed as comma-separated values and can be searched with <code>contains</code>.",
       "largeVaults": "Queries scan your entire vault (or the filtered subset) each time. For very large vaults, use <code>FROM</code> to narrow the scope."
     }
+  },
+  "themeStudio": {
+    "title": "Theme Studio",
+    "description": "Create a custom theme by tweaking every color with live preview",
+    "openButton": "Open Theme Studio",
+    "categories": {
+      "all": "All",
+      "surfaces": "Surfaces",
+      "text": "Text",
+      "accents": "Accents",
+      "editor": "Editor"
+    },
+    "saveAs": "Save As",
+    "save": "Save",
+    "cancelSave": "Cancel",
+    "discard": "Discard",
+    "close": "Close",
+    "themeName": "Theme name...",
+    "savedSuccess": "Theme saved!",
+    "discardConfirm": "Discard unsaved changes?"
   }
 }

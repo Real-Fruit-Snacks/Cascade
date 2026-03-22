@@ -6,6 +6,9 @@ import { useVaultStore } from '../../../stores/vault-store';
 import { ToggleSwitch } from '../shared/ToggleSwitch';
 import { PluginMarketplace } from './PluginMarketplace';
 import { PluginDetail } from './PluginDetail';
+import { createLogger } from '../../../lib/logger';
+
+const log = createLogger('PluginsSection');
 
 export function PluginsSection() {
   const { t: tp } = useTranslation('plugins');
@@ -67,7 +70,7 @@ export function PluginsSection() {
       const { revealItemInDir } = await import('@tauri-apps/plugin-opener');
       await revealItemInDir(pluginDir);
     } catch (e) {
-      console.warn('Failed to open plugins folder:', e);
+      log.warn('Failed to open plugins folder:', e);
     }
   };
 
