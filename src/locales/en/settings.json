@@ -228,7 +228,8 @@
   "general": {
     "subheaders": {
       "startup": "Startup",
-      "language": "Language"
+      "language": "Language",
+      "updates": "Updates"
     },
     "language": {
       "label": "Language",
@@ -239,7 +240,12 @@
       "description": "What to do when the app launches",
       "reopenLast": "Reopen Last Vault",
       "showPicker": "Show Vault Picker"
-    }
+    },
+    "checkForUpdates": {
+      "label": "Check for Updates",
+      "description": "Automatically check for new versions on launch"
+    },
+    "checkNow": "Check Now"
   },
   "features": {
     "autoSave": {

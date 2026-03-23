@@ -32,7 +32,7 @@
   "create": "Create",
   "install": "Install",
   "uninstall": "Uninstall",
-  "update": "Update",
+  "updateAction": "Update",
   "refresh": "Refresh",
   "apply": "Apply",
   "browse": "Browse",
@@ -107,5 +107,11 @@
   "lineCopiedWithVariables": "Line copied with variables replaced.",
   "selectionCopiedWithVariables": "Selection copied with variables replaced.",
   "failedToCreateFile": "Failed to create \"{{fileName}}\"",
-  "setVariable": "Set {{name}} = {{value}}"
+  "setVariable": "Set {{name}} = {{value}}",
+  "update": {
+    "available": "Cascade v{{version}} is available",
+    "download": "Download",
+    "upToDate": "You're on the latest version",
+    "checkFailed": "Could not check for updates"
+  }
 }
