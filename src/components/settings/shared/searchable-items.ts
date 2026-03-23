@@ -25,6 +25,7 @@ export const SEARCHABLE_ITEMS: SearchableItem[] = [
   { id: 'defaultViewMode', category: 'editor', keywords: 'default view mode live source reading preview editor' },
   { id: 'spellcheck', category: 'features', keywords: 'spell check spelling editor toggle feature enable disable' },
   { id: 'codeBlockLineNumbers', category: 'editor', keywords: 'code block line numbers fenced preview' },
+  { id: 'pasteUrlIntoSelection', category: 'editor', keywords: 'paste url link selection hyperlink markdown' },
   { id: 'accentColor', category: 'appearance', keywords: 'accent color highlight theme appearance' },
   { id: 'sidebarPosition', category: 'appearance', keywords: 'sidebar position left right layout appearance' },
   { id: 'uiFontSize', category: 'appearance', keywords: 'ui font size interface text appearance' },

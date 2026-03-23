@@ -117,6 +117,14 @@ export function EditorSettingsPage({ settings, visibleIds, isSearching }: Catego
           />
         </SettingRow>
       )}
+      {(!visibleIds || visibleIds.has('pasteUrlIntoSelection')) && (
+        <SettingRow label={ts('editor.pasteUrlIntoSelection.label')} description={ts('editor.pasteUrlIntoSelection.description')}>
+          <ToggleSwitch
+            checked={settings.pasteUrlIntoSelection}
+            onChange={(v) => settings.update({ pasteUrlIntoSelection: v })}
+          />
+        </SettingRow>
+      )}
     </>
   );
 }

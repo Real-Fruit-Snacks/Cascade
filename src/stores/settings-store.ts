@@ -25,6 +25,7 @@ export interface Settings {
   spellcheck: boolean;
   spellcheckSkipCapitalized: boolean;
   codeBlockLineNumbers: boolean;
+  pasteUrlIntoSelection: boolean;
   // Appearance
   accentColor: AccentColor;
   sidebarPosition: 'left' | 'right';
@@ -234,6 +235,7 @@ export const DEFAULTS: Settings = {
   spellcheck: true,
   spellcheckSkipCapitalized: true,
   codeBlockLineNumbers: false,
+  pasteUrlIntoSelection: true,
   accentColor: 'mauve',
   sidebarPosition: 'left',
   uiFontSize: 14,

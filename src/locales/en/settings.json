@@ -103,6 +103,10 @@
     "codeBlockLineNumbers": {
       "label": "Code Block Line Numbers",
       "description": "Show line numbers in fenced code blocks"
+    },
+    "pasteUrlIntoSelection": {
+      "label": "Paste URL Into Selection",
+      "description": "When pasting a URL with text selected, create a markdown link instead of replacing the text"
     }
   },
   "appearance": {

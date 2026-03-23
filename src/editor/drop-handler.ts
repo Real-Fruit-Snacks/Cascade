@@ -8,6 +8,7 @@ import { createLogger } from '../lib/logger';
 const log = createLogger('DropHandler');
 
 const IMAGE_EXTENSIONS = /\.(png|jpg|jpeg|gif|svg|webp|bmp|ico)$/i;
+const URL_RE = /^https?:\/\/\S+$/i;
 
 function getAttachmentFolder(): string {
   const settings = useSettingsStore.getState();
@@ -53,6 +54,26 @@ async function handleImagePaste(view: EditorView, file: File) {
 
 export const dropHandler = EditorView.domEventHandlers({
   paste(event, view) {
+    // Paste URL into selection: wrap selected text as [text](url)
+    const sel = view.state.selection.main;
+    if (!sel.empty && useSettingsStore.getState().pasteUrlIntoSelection) {
+      const clipText = event.clipboardData?.getData('text/plain')?.trim();
+      if (clipText && URL_RE.test(clipText)) {
+        const selectedText = view.state.sliceDoc(sel.from, sel.to);
+        // Skip multi-line selections — they produce broken markdown links
+        if (selectedText.includes('\n')) return false;
+        event.preventDefault();
+        // Percent-encode unbalanced parens in the URL to avoid breaking markdown link syntax
+        const safeUrl = clipText.replace(/\)/g, '%29');
+        const mdLink = `[${selectedText}](${safeUrl})`;
+        view.dispatch({
+          changes: { from: sel.from, to: sel.to, insert: mdLink },
+          selection: { anchor: sel.from + mdLink.length },
+        });
+        return true;
+      }
+    }
+
     const items = event.clipboardData?.items;
     if (!items) return false;
     for (const item of items) {
