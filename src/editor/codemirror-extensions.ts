@@ -61,12 +61,12 @@ export function createCompartments(): Compartments {
 // Code-folding helpers
 // ---------------------------------------------------------------------------
 
-// Cache keyed on doc identity to avoid repeated linear scans
-let codeBlockFoldDoc: import('@codemirror/state').Text | null = null;
-let codeBlockFoldMap: Map<number, { from: number; to: number }> | null = null;
+// Cache keyed on doc identity to avoid repeated linear scans (WeakMap — safe across split panes)
+const codeBlockFoldCache = new WeakMap<import('@codemirror/state').Text, Map<number, { from: number; to: number }>>();
 
 function getCodeBlockFolds(state: EditorState): Map<number, { from: number; to: number }> {
-  if (codeBlockFoldDoc === state.doc && codeBlockFoldMap) return codeBlockFoldMap;
+  const cached = codeBlockFoldCache.get(state.doc);
+  if (cached) return cached;
   const folds = new Map<number, { from: number; to: number }>();
   let openLine: { from: number; to: number; number: number } | null = null;
   for (let i = 1; i <= state.doc.lines; i++) {
@@ -80,8 +80,7 @@ function getCodeBlockFolds(state: EditorState): Map<number, { from: number; to: 
       }
     }
   }
-  codeBlockFoldDoc = state.doc;
-  codeBlockFoldMap = folds;
+  codeBlockFoldCache.set(state.doc, folds);
   return folds;
 }
 
@@ -119,12 +118,15 @@ const foldGutterTheme = EditorView.theme({
 });
 
 // Cache heading fold ranges — single O(N) pass instead of O(N) per heading
-let headingFoldDoc: import('@codemirror/state').Text | null = null;
-let headingFoldLevel = 0;
-let headingFoldMap: Map<number, { from: number; to: number }> | null = null;
+// WeakMap<doc, Map<foldMinLevel, folds>> — safe across split panes and different foldMinLevel values
+const headingFoldCache = new WeakMap<import('@codemirror/state').Text, Map<number, Map<number, { from: number; to: number }>>>();
 
 function getHeadingFolds(state: EditorState, foldMinLevel: number): Map<number, { from: number; to: number }> {
-  if (headingFoldDoc === state.doc && headingFoldLevel === foldMinLevel && headingFoldMap) return headingFoldMap;
+  const byLevel = headingFoldCache.get(state.doc);
+  if (byLevel) {
+    const cached = byLevel.get(foldMinLevel);
+    if (cached) return cached;
+  }
   const folds = new Map<number, { from: number; to: number }>();
   const headings: { from: number; to: number; level: number }[] = [];
 
@@ -153,9 +155,11 @@ function getHeadingFolds(state: EditorState, foldMinLevel: number): Map<number, 
     }
   }
 
-  headingFoldDoc = state.doc;
-  headingFoldLevel = foldMinLevel;
-  headingFoldMap = folds;
+  if (byLevel) {
+    byLevel.set(foldMinLevel, folds);
+  } else {
+    headingFoldCache.set(state.doc, new Map([[foldMinLevel, folds]]));
+  }
   return folds;
 }
 

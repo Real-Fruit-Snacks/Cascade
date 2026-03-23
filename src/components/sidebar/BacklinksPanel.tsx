@@ -19,6 +19,8 @@ interface LinkResult {
   fileName: string;
   dir: string | null;
   contextLines: string[];
+  /** 1-based line numbers parallel to contextLines (only set for unlinked mentions) */
+  contextLineNumbers?: number[];
 }
 
 
@@ -321,14 +323,17 @@ export function BacklinksPanel() {
         const { filePath, text } = entry;
         const lines = text.split('\n');
         const contextLines: string[] = [];
-        for (const line of lines) {
+        const contextLineNumbers: number[] = [];
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
           if (bareRe.test(line) && !linkedRe.test(line)) {
             contextLines.push(line.trim());
+            contextLineNumbers.push(i + 1); // 1-based
           }
         }
         if (contextLines.length > 0) {
           const { fileName, dir } = parseFileParts(filePath);
-          results.push({ filePath, fileName, dir, contextLines });
+          results.push({ filePath, fileName, dir, contextLines, contextLineNumbers });
         }
       }
 
@@ -341,18 +346,18 @@ export function BacklinksPanel() {
   }, [vaultPath, activeFilePath, noteTitle, unlinkedCollapsed]);
 
   // ── Link a bare mention ──
-  const handleLinkMention = useCallback(async (filePath: string, lineText: string) => {
+  const handleLinkMention = useCallback(async (filePath: string, lineText: string, lineNumber: number) => {
     if (!vaultPath || !noteTitle) return;
     try {
       const text = await cmd.readFile(vaultPath, filePath);
       const escaped = noteTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const bareRe = new RegExp(`\\b(${escaped})\\b`, 'i');
-      const newText = text.split('\n').map((line) => {
-        if (line.trim() === lineText) {
-          return line.replace(bareRe, '[[' + noteTitle + ']]');
-        }
-        return line;
-      }).join('\n');
+      const lines = text.split('\n');
+      const idx = lineNumber - 1;
+      if (idx >= 0 && idx < lines.length) {
+        lines[idx] = lines[idx].replace(bareRe, '[[' + noteTitle + ']]');
+      }
+      const newText = lines.join('\n');
       if (newText !== text) {
         await cmd.writeFile(vaultPath, filePath, newText);
         // Refresh unlinked results
@@ -360,7 +365,10 @@ export function BacklinksPanel() {
           const updated = prev.map((r) => {
             if (r.filePath !== filePath) return r;
             const remaining = r.contextLines.filter((l) => l !== lineText);
-            return remaining.length > 0 ? { ...r, contextLines: remaining } : null;
+            const remainingNumbers = r.contextLineNumbers?.filter((_, i) => r.contextLines[i] !== lineText);
+            return remaining.length > 0
+              ? { ...r, contextLines: remaining, contextLineNumbers: remainingNumbers }
+              : null;
           }).filter((r): r is LinkResult => r !== null);
           return updated;
         });
@@ -594,7 +602,7 @@ export function BacklinksPanel() {
                           {cleanWikiLinks(line)}
                         </span>
                         <button
-                          onClick={() => handleLinkMention(r.filePath, line)}
+                          onClick={() => handleLinkMention(r.filePath, line, r.contextLineNumbers?.[i] ?? -1)}
                           className="shrink-0 rounded px-1 py-0.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[var(--ctp-surface1)]"
                           style={{ color: 'var(--ctp-yellow)' }}
                           title={t('backlinks.link')}

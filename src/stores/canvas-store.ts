@@ -319,7 +319,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
 
   toJSON: () => {
     const { nodes, edges } = get();
-    return { nodes, edges };
+    return { nodes: [...nodes], edges: [...edges] };
   },
 
   markClean: () => {

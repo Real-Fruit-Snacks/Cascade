@@ -9,7 +9,6 @@ import { useRecentFilesStore } from './recent-files-store';
 import type { Tab, Pane, SplitDirection, EditorState, EditorActions, EditorDerived } from './editor-types';
 import { getTabType, FILE_SIZE_LIMIT } from './editor-types';
 import { consumeDraft, saveDrafts } from './editor-drafts';
-import { saveSession } from './editor-session';
 import { performSave, derived, findHeadingPosition, findBlockIdPosition } from './editor-helpers';
 import { createLogger } from '../lib/logger';
 import { emit } from '../lib/cascade-events';
@@ -391,57 +390,70 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
     const updated = await performSave(tab, get().editorViewRef.current, vaultRoot);
     if (!updated) return;
 
-    const newTabs = tabs.map((t, i) => (i === activeTabIndex ? updated : t));
-    const dirtyPaths = new Set(get().dirtyPaths);
+    // Re-read current state after the async save to avoid overwriting edits made during the save
+    const current = get();
+    const newTabs = current.tabs.map((t, i) =>
+      i === current.activeTabIndex ? { ...t, content: updated.content, isDirty: false } : t
+    );
+    const dirtyPaths = new Set(current.dirtyPaths);
     dirtyPaths.delete(tab.path);
-    set({ tabs: newTabs, justSaved: true, dirtyPaths, ...derived(newTabs, activeTabIndex) });
+    set({ tabs: newTabs, justSaved: true, dirtyPaths, ...derived(newTabs, current.activeTabIndex) });
     setTimeout(() => set({ justSaved: false }), 1500);
   },
 
   saveAllDirty: async (vaultRoot: string) => {
+    // Snapshot only what's needed to identify which tabs to save
     const { tabs, panes, activeTabIndex } = get();
-    const newTabs = [...tabs];
-    const dirtyPaths = new Set(get().dirtyPaths);
-    let changed = false;
+
+    // Track saved content by path: path -> saved content string
+    const savedContent = new Map<string, string>();
+    const savedPaths = new Set<string>();
 
     // Save all dirty main tabs
-    for (let i = 0; i < newTabs.length; i++) {
-      const tab = newTabs[i];
+    for (let i = 0; i < tabs.length; i++) {
+      const tab = tabs[i];
       if (!tab.isDirty) continue;
       if (tab.type && tab.type !== 'markdown') continue;
-      // For the active tab, use the editor view; for others, pass null
       const view = i === activeTabIndex ? get().editorViewRef.current : null;
       const updated = await performSave(tab, view, vaultRoot);
       if (updated) {
-        newTabs[i] = updated;
-        dirtyPaths.delete(tab.path);
-        changed = true;
+        savedContent.set(tab.path, updated.content);
+        savedPaths.add(tab.path);
       }
     }
 
     // Save all dirty pane tabs
-    const newPanes = [...panes];
-    for (let p = 0; p < newPanes.length; p++) {
-      const pane = newPanes[p];
-      const paneTabs = [...pane.tabs];
-      for (let i = 0; i < paneTabs.length; i++) {
-        const tab = paneTabs[i];
+    for (let p = 0; p < panes.length; p++) {
+      const pane = panes[p];
+      for (let i = 0; i < pane.tabs.length; i++) {
+        const tab = pane.tabs[i];
         if (!tab.isDirty) continue;
         if (tab.type && tab.type !== 'markdown') continue;
         const view = i === pane.activeTabIndex ? pane.editorViewRef.current : null;
         const updated = await performSave(tab, view, vaultRoot);
         if (updated) {
-          paneTabs[i] = updated;
-          dirtyPaths.delete(tab.path);
-          changed = true;
+          savedContent.set(tab.path, updated.content);
+          savedPaths.add(tab.path);
         }
       }
-      if (changed) newPanes[p] = { ...pane, tabs: paneTabs };
     }
 
-    if (changed) {
-      set({ tabs: newTabs, panes: newPanes, dirtyPaths, ...derived(newTabs, activeTabIndex) });
-    }
+    if (savedPaths.size === 0) return;
+
+    // Re-read current state after all async saves to avoid overwriting edits made during saves
+    const current = get();
+    const newTabs = current.tabs.map((t) =>
+      savedContent.has(t.path) ? { ...t, content: savedContent.get(t.path)!, isDirty: false } : t
+    );
+    const newPanes = current.panes.map((pane) => ({
+      ...pane,
+      tabs: pane.tabs.map((t) =>
+        savedContent.has(t.path) ? { ...t, content: savedContent.get(t.path)!, isDirty: false } : t
+      ),
+    }));
+    const dirtyPaths = new Set(current.dirtyPaths);
+    savedPaths.forEach((p) => dirtyPaths.delete(p));
+    set({ tabs: newTabs, panes: newPanes, dirtyPaths, ...derived(newTabs, current.activeTabIndex) });
   },
 
   handleExternalChange: async (vaultRoot: string, relPath: string) => {
@@ -770,19 +782,25 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
 }));
 
 // Auto-save drafts every 5 seconds
-setInterval(() => saveDrafts(useEditorStore), 5000);
+let draftInterval: ReturnType<typeof setInterval> | null = null;
 
-// Save drafts, dirty files, and session on page unload
+function startDraftInterval() {
+  if (draftInterval) clearInterval(draftInterval);
+  draftInterval = setInterval(() => saveDrafts(useEditorStore), 5000);
+}
+
+export function stopDraftInterval() {
+  if (draftInterval) {
+    clearInterval(draftInterval);
+    draftInterval = null;
+  }
+}
+
+startDraftInterval();
+
+// Save drafts on page unload (async saves are abandoned on unload; drafts use localStorage)
 window.addEventListener('beforeunload', () => {
   saveDrafts(useEditorStore);
-  const vaultRoot = useVaultStore.getState().vaultPath;
-  if (vaultRoot) {
-    // Fire-and-forget: flush all dirty tabs to disk
-    if (useEditorStore.getState().hasDirtyTabs()) {
-      useEditorStore.getState().saveAllDirty(vaultRoot);
-    }
-    saveSession(vaultRoot, useEditorStore);
-  }
 });
 
 // Re-export types and functions for backward compatibility

@@ -270,6 +270,7 @@ const MAX_TRANSCLUSION_DEPTH = 3;
 
 export class TransclusionWidget extends WidgetType {
   private _dom: HTMLElement | null = null;
+  private _destroyed = false;
 
   constructor(
     readonly filePath: string,
@@ -315,7 +316,7 @@ export class TransclusionWidget extends WidgetType {
     const vaultPath = useVaultStore.getState().vaultPath;
     if (vaultPath) {
       readFile(vaultPath, this.filePath).then((content) => {
-        if (!this._dom) return;
+        if (this._destroyed || !this._dom) return;
 
         let text: string;
         if (this.heading) {
@@ -330,7 +331,7 @@ export class TransclusionWidget extends WidgetType {
 
         this._dom.innerHTML = renderMarkdownPreview(text);
       }).catch(() => {
-        if (!this._dom) return;
+        if (this._destroyed || !this._dom) return;
         this._dom.textContent = `[Could not read: ${this.linkText}]`;
         this._dom.classList.add('cm-transclusion-error');
       });
@@ -340,6 +341,7 @@ export class TransclusionWidget extends WidgetType {
   }
 
   destroy() {
+    this._destroyed = true;
     this._dom = null;
   }
 

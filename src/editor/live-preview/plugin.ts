@@ -64,8 +64,6 @@ export const livePreview = ViewPlugin.fromClass(
 
 // ── Markdown link click handler ─────────────────────────────
 
-const LINK_RE = /\[([^\]]*)\]\(([^)]+)\)/g;
-
 export const markdownLinkClickHandler = EditorView.domEventHandlers({
   click(event, view) {
     // Require Ctrl/Cmd+Click to follow links; plain click places cursor for editing
@@ -76,7 +74,8 @@ export const markdownLinkClickHandler = EditorView.domEventHandlers({
     if (pos === null) return false;
 
     const line = view.state.doc.lineAt(pos);
-    LINK_RE.lastIndex = 0;
+    // Fresh regex each call — avoids shared mutable lastIndex across re-entrant calls
+    const LINK_RE = /\[([^\]]*)\]\(([^)]+)\)/g;
 
     let match: RegExpExecArray | null;
     while ((match = LINK_RE.exec(line.text)) !== null) {

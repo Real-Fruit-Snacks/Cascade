@@ -301,11 +301,11 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
 
     // Build a regex that matches inline #oldTag with word boundary (case-insensitive)
     const escaped = oldTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const inlineRe = new RegExp(`((?:^|(?<=\\s))#)${escaped}(?=[\\s,.;:!?)\\]}]|$)`, 'gi');
+    const inlineRe = new RegExp(`((?:^|\\s)#)${escaped}((?=\\s|$|[^\\w\\/\\-]))`, 'gim');
 
     // Build a regex for YAML frontmatter list items (e.g. "  - oldTag" or in inline arrays)
     const fmItemRe = new RegExp(`^(\\s*-\\s+)${escaped}\\s*$`, 'gim');
-    const fmInlineRe = new RegExp(`(?<=[[,]\\s*)${escaped}(?=\\s*[,\\]])`, 'gi');
+    const fmInlineRe = new RegExp(`([[,]\\s*)${escaped}(\\s*[,\\]])`, 'gi');
 
     let count = 0;
     let failed = 0;
@@ -319,12 +319,12 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
         if (fmMatch) {
           let fm = fmMatch[2];
           fm = fm.replace(fmItemRe, `$1${newTag}`);
-          fm = fm.replace(fmInlineRe, newTag);
+          fm = fm.replace(fmInlineRe, `$1${newTag}$2`);
           replaced = fmMatch[1] + fm + fmMatch[3] + replaced.slice(fmMatch[0].length);
         }
 
         // Replace inline #tags in body
-        replaced = replaced.replace(inlineRe, `$1${newTag}`);
+        replaced = replaced.replace(inlineRe, `$1${newTag}$2`);
 
         if (replaced !== text) {
           await cmd.writeFile(vaultPath, filePath, replaced);

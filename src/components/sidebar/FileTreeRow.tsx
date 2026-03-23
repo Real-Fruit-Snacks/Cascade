@@ -87,7 +87,7 @@ export function FileTreeRow({
         const normalizedSource = sourcePath.replace(/\\/g, '/');
         const normalizedTarget = entry.path.replace(/\\/g, '/');
         if (normalizedTarget === normalizedSource || normalizedTarget.startsWith(normalizedSource + '/')) return;
-        const wasActive = useEditorStore.getState().activeFilePath === sourcePath;
+        const wasActive = useEditorStore.getState().activeFilePath?.replace(/\\/g, '/') === normalizedSource;
         const newPath = await moveFile(sourcePath, entry.path);
         if (newPath && wasActive && vaultPath) {
           const store = useEditorStore.getState();

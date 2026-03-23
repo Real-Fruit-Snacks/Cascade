@@ -85,11 +85,12 @@ export function FileConflictDialog() {
         const newTabs = store.tabs.map((t, i) => (i === tabIndex ? updated : t));
         useEditorStore.setState({ tabs: newTabs });
       }
-      // Switch to the tab and save
-      const newTabIndex = useEditorStore.getState().tabs.findIndex((t) => t.path === conflict.path);
+      // Switch to the tab and save using fresh store reference after setState
+      const freshStore = useEditorStore.getState();
+      const newTabIndex = freshStore.tabs.findIndex((t) => t.path === conflict.path);
       if (newTabIndex !== -1) {
-        store.switchTab(newTabIndex);
-        await store.saveFile(vaultPath);
+        freshStore.switchTab(newTabIndex);
+        await freshStore.saveFile(vaultPath);
       }
     }
     setConflict(null);
@@ -102,7 +103,7 @@ export function FileConflictDialog() {
         backgroundColor: 'rgba(0, 0, 0, 0.6)',
         animation: isClosing ? 'modal-overlay-out 0.12s ease-in forwards' : 'modal-overlay-in 0.15s ease-out',
       }}
-      onClick={() => setConflict(null)}
+      onClick={(e) => { if (e.target === e.currentTarget) setConflict(null); }}
     >
       <div
         ref={dialogRef}

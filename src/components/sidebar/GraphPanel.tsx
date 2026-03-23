@@ -269,7 +269,7 @@ export function GraphPanel() {
 
       for (const srcPath of sources) {
         const srcNode = nodeByPath.get(srcPath);
-        if (!srcNode || srcNode.id === targetNode.id) continue;
+        if (!srcNode || srcNode.filePath === targetNode.filePath) continue;
         links.push({ source: srcNode.id, target: targetNode.id });
       }
     }

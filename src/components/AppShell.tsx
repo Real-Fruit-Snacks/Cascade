@@ -107,8 +107,13 @@ export function AppShell() {
         const notes = await fetchReleaseNotes(currentVersion);
         if (notes) {
           setWhatsNew({ version: currentVersion, notes });
+          // markVersionSeen will be called when dialog closes
+          return;
         }
+        // notes fetch failed — don't mark as seen, try again next launch
+        return;
       }
+      // Not a new version (or first launch) — mark as seen
       markVersionSeen(currentVersion);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -362,7 +367,10 @@ export function AppShell() {
       <AboutDialog open={modal.aboutOpen} onClose={modal.closeAbout} />
       <WhatsNewDialog
         open={whatsNew !== null}
-        onClose={() => setWhatsNew(null)}
+        onClose={() => {
+          if (whatsNew) markVersionSeen(whatsNew.version);
+          setWhatsNew(null);
+        }}
         version={whatsNew?.version ?? ''}
         releaseNotes={whatsNew?.notes ?? ''}
       />

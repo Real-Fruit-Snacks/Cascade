@@ -132,7 +132,7 @@ export function VaultExplorer() {
     const normalized = activeFilePath.replace(/\\/g, '/');
     const parts = normalized.split('/');
     const ancestors: string[] = [];
-    for (let i = 1; i < parts.length - 1; i++) {
+    for (let i = 0; i < parts.length - 1; i++) {
       ancestors.push(parts.slice(0, i + 1).join('/'));
     }
     updateExpanded((prev) => {
@@ -243,6 +243,9 @@ export function VaultExplorer() {
         setRevealPath(null);
       }, 1500);
     }
+    return () => {
+      if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+    };
   }, [revealPath, flatEntries]);
 
   // Scroll to focused item

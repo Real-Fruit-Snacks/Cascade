@@ -232,7 +232,6 @@
   "general": {
     "subheaders": {
       "startup": "Startup",
-      "language": "Language",
       "updates": "Updates"
     },
     "language": {
@@ -733,10 +732,6 @@
   "spellcheckOptions": {
     "title": "Spellcheck Options",
     "description": "Cascade uses a built-in dictionary to check spelling. Right-click misspelled words for suggestions or to add them to your custom dictionary.",
-    "enableSpellcheck": {
-      "label": "Enable Spellcheck",
-      "description": "Underline misspelled words in the editor"
-    },
     "skipCapitalized": {
       "label": "Skip Capitalized Words",
       "description": "Don't flag capitalized words (proper nouns, acronyms)"

@@ -56,13 +56,13 @@ export const useSyncStore = create<SyncState>((set, get) => ({
         );
       }
 
-      set({
+      set((s) => ({
         syncStatus: result.push_status === 'auth_error' ? 'error' : result.push_status === 'offline' ? 'offline' : 'idle',
         lastError: result.push_status === 'auth_error' ? 'PAT lacks push permissions — regenerate with "repo" scope' : null,
         lastSyncTime: Date.now(),
         conflictFiles: result.conflicts,
-        unpushedCommits: result.push_status === 'offline' ? get().unpushedCommits + (result.committed_files.length > 0 ? 1 : 0) : 0,
-      });
+        unpushedCommits: result.push_status === 'offline' ? s.unpushedCommits + (result.committed_files.length > 0 ? 1 : 0) : 0,
+      }));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       await log('ERROR', `Sync failed: ${msg}`);

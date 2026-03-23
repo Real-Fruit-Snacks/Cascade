@@ -54,12 +54,14 @@ export function triggerSpellcheckRebuild(view: EditorView): void {
 const spellcheckPlugin = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
+    destroyed = false;
     private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
     constructor(view: EditorView) {
       this.decorations = Decoration.none;
       // Kick off dictionary load, then rebuild decorations
       initDictionary().then(() => {
+        if (this.destroyed) return;
         this.decorations = this.buildDecorations(view);
         // Use requestMeasure to trigger a re-read of decorations without empty dispatch
         view.requestMeasure();
@@ -83,6 +85,7 @@ const spellcheckPlugin = ViewPlugin.fromClass(
           // Debounce on doc changes
           if (this.debounceTimer) clearTimeout(this.debounceTimer);
           this.debounceTimer = setTimeout(() => {
+            if (this.destroyed) return;
             this.decorations = this.buildDecorations(update.view);
             update.view.requestMeasure();
           }, 300);
@@ -92,6 +95,7 @@ const spellcheckPlugin = ViewPlugin.fromClass(
           // Viewport change — debounce to avoid per-frame rebuilds during fast scroll
           if (this.debounceTimer) clearTimeout(this.debounceTimer);
           this.debounceTimer = setTimeout(() => {
+            if (this.destroyed) return;
             this.decorations = this.buildDecorations(update.view);
             update.view.requestMeasure();
           }, 150);
@@ -135,6 +139,7 @@ const spellcheckPlugin = ViewPlugin.fromClass(
     }
 
     destroy() {
+      this.destroyed = true;
       if (this.debounceTimer) clearTimeout(this.debounceTimer);
     }
   },
