@@ -227,7 +227,6 @@ export const FileTreeItem = memo(function FileTreeItem({
         <FolderColorPicker
           entryPath={entry.path}
           folderColor={ownColor}
-          enableFolderColors={enableFolderColors}
           pos={colorPickerPos}
           onClose={() => setColorPicker(false)}
           onColorChange={onColorChange}

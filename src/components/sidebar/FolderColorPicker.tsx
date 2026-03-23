@@ -6,7 +6,6 @@ import { useSettingsStore } from '../../stores/settings-store';
 interface FolderColorPickerProps {
   entryPath: string;
   folderColor: string | null;
-  enableFolderColors: boolean;
   pos: { x: number; y: number };
   onClose: () => void;
   onColorChange?: () => void;
@@ -14,7 +13,7 @@ interface FolderColorPickerProps {
 }
 
 export function FolderColorPicker({
-  entryPath, folderColor, enableFolderColors, pos,
+  entryPath, folderColor, pos,
   onClose, onColorChange, setMenu,
 }: FolderColorPickerProps) {
   const { t } = useTranslation('sidebar');
@@ -49,8 +48,9 @@ export function FolderColorPicker({
               title={name}
               onClick={() => {
                 setFolderColor(entryPath, cssVar);
-                if (!enableFolderColors) {
-                  useSettingsStore.getState().update({ enableFolderColors: true });
+                const settings = useSettingsStore.getState();
+                if (!settings.enableFolderColors || !settings.folderColorFiles) {
+                  settings.update({ enableFolderColors: true, folderColorFiles: true });
                 }
                 onClose();
                 setMenu(null);
