@@ -129,6 +129,7 @@ export function FileTreeRow({
             value={renameValue}
             onChange={(e) => { setRenameValue(e.target.value); setRenameError(null); }}
             onKeyDown={(e) => {
+              e.stopPropagation();
               if (e.key === 'Enter') commitRename();
               if (e.key === 'Escape') { setRenaming(false); setRenameError(null); }
             }}
