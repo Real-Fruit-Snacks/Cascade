@@ -1,6 +1,6 @@
 import type { FileEntry } from '../../types/index';
 import type { FileSortOrder } from '../../stores/settings-store';
-import { FOLDER_COLOR_KEY } from './file-tree-types';
+import { getFolderColors } from './file-tree-types';
 
 const EXPANDED_STORAGE_KEY = 'cascade-expanded-paths';
 
@@ -16,16 +16,13 @@ export function saveExpandedPaths(paths: Set<string>) {
   localStorage.setItem(EXPANDED_STORAGE_KEY, JSON.stringify([...paths]));
 }
 
-export function getFolderColorsMap(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem(FOLDER_COLOR_KEY) || '{}');
-  } catch { return {}; }
-}
+export const getFolderColorsMap = getFolderColors;
 
 export interface FlatFileEntry {
   entry: FileEntry;
   depth: number;
   inheritedColor: string | null;
+  ownColor: string | null;
 }
 
 /** Flatten visible tree entries with depth and inherited color for virtualized rendering. */
@@ -41,16 +38,17 @@ export function flattenVisibleEntries(
   result: FlatFileEntry[] = [],
 ): FlatFileEntry[] {
   for (const entry of entries) {
-    result.push({ entry, depth, inheritedColor });
+    const directColor = entry.isDir ? (folderColors[entry.path] || null) : null;
+    result.push({ entry, depth, inheritedColor, ownColor: directColor });
     if (entry.isDir && entry.children) {
       if (forceExpand || expandedPaths.has(entry.path)) {
-        const ownColor = enableFolderColors
-          ? (folderColors[entry.path] || (folderColorSubfolders ? inheritedColor : null))
+        const effectiveColor = enableFolderColors
+          ? (directColor || (folderColorSubfolders ? inheritedColor : null))
           : null;
         flattenVisibleEntries(
           entry.children, forceExpand, expandedPaths,
           folderColors, enableFolderColors, folderColorSubfolders,
-          depth + 1, ownColor, result,
+          depth + 1, effectiveColor, result,
         );
       }
     }

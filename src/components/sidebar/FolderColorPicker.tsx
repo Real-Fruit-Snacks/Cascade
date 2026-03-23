@@ -10,13 +10,12 @@ interface FolderColorPickerProps {
   pos: { x: number; y: number };
   onClose: () => void;
   onColorChange?: () => void;
-  setFolderColorState: (color: string | null) => void;
   setMenu: (v: null) => void;
 }
 
 export function FolderColorPicker({
   entryPath, folderColor, enableFolderColors, pos,
-  onClose, onColorChange, setFolderColorState, setMenu,
+  onClose, onColorChange, setMenu,
 }: FolderColorPickerProps) {
   const { t } = useTranslation('sidebar');
 
@@ -50,7 +49,6 @@ export function FolderColorPicker({
               title={name}
               onClick={() => {
                 setFolderColor(entryPath, cssVar);
-                setFolderColorState(cssVar);
                 if (!enableFolderColors) {
                   useSettingsStore.getState().update({ enableFolderColors: true });
                 }
@@ -67,7 +65,6 @@ export function FolderColorPicker({
             style={{ color: 'var(--ctp-subtext0)' }}
             onClick={() => {
               setFolderColor(entryPath, null);
-              setFolderColorState(null);
               onClose();
               setMenu(null);
               onColorChange?.();

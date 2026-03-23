@@ -107,12 +107,7 @@ export function VaultExplorer() {
   const [pendingFileName, setPendingFileName] = useState<string | null>(null);
   const [pendingCreateType, setPendingCreateType] = useState<'file' | 'folder'>('file');
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(loadExpandedPaths);
-  const [colorVersion, setColorVersion] = useState(0);
   const [folderColorsMap, setFolderColorsMap] = useState<Record<string, string>>(getFolderColorsMap);
-
-  useEffect(() => {
-    setFolderColorsMap(getFolderColorsMap());
-  }, [colorVersion]);
   const updateExpanded = useCallback((updater: (prev: Set<string>) => Set<string>) => {
     setExpandedPaths((prev) => {
       const next = updater(prev);
@@ -194,7 +189,7 @@ export function VaultExplorer() {
   }, []);
 
   const handleColorChange = useCallback(() => {
-    setColorVersion((v) => v + 1);
+    setFolderColorsMap(getFolderColorsMap());
   }, []);
 
   const sortedTree = useMemo(
@@ -569,6 +564,7 @@ export function VaultExplorer() {
                     onToggleExpand={handleToggleExpand}
                     templateFiles={templateFiles}
                     folderTemplates={folderTemplates}
+                    ownColor={flat.ownColor}
                     inheritedColor={flat.inheritedColor}
                     onColorChange={handleColorChange}
                     treeSettings={treeSettings}

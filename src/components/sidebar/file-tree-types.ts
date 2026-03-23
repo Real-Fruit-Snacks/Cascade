@@ -80,6 +80,16 @@ export function resolveStyleTargets(
   }
 }
 
+/** Resolve a CSS var() string (e.g. 'var(--ctp-blue)') to its computed color value. */
+export function resolveColor(color: string): string {
+  if (color.startsWith('var(')) {
+    const prop = color.slice(4, -1).trim();
+    const resolved = getComputedStyle(document.documentElement).getPropertyValue(prop).trim();
+    return resolved || color;
+  }
+  return color;
+}
+
 export function getParentDir(path: string): string {
   const normalized = path.replace(/\\/g, '/');
   const i = normalized.lastIndexOf('/');

@@ -2,15 +2,7 @@ import { type RefObject } from 'react';
 import { File, Folder, FolderOpen, ChevronRight, LayoutGrid } from 'lucide-react';
 import type { FileEntry } from '../../types/index';
 import { useEditorStore } from '../../stores/editor-store';
-
-interface StyleTargets {
-  icon?: boolean;
-  name?: boolean;
-  bg?: boolean;
-  chevron?: boolean;
-  dot?: boolean;
-  accentBar?: boolean;
-}
+import { resolveColor, type StyleTargets } from './file-tree-types';
 
 interface FileTreeRowProps {
   entry: FileEntry;
@@ -55,6 +47,7 @@ export function FileTreeRow({
   moveFile, openFile, onToggleExpand,
   onClick, onContextMenu, setDragOver, setRenameValue, setRenameError, setRenaming, commitRename,
 }: FileTreeRowProps) {
+  const resolved = color ? resolveColor(color) : null;
   return (
     <div
       ref={rowRef}
@@ -64,9 +57,9 @@ export function FileTreeRow({
       className={`flex items-center gap-1.5 py-0.5 ${entry.isDir ? 'cursor-grab' : 'cursor-pointer'} text-sm rounded-sm hover:bg-[var(--ctp-surface0)] transition-colors min-w-0`}
       style={{
         paddingLeft: isActive ? paddingLeft - 2 : targets?.accentBar ? paddingLeft - 1 : paddingLeft,
-        backgroundColor: dragOver && entry.isDir ? 'rgba(137, 180, 250, 0.25)' : isActive ? 'var(--ctp-surface0)' : targets?.bg && color ? `color-mix(in srgb, ${color} ${Math.round(folderColorOpacity * 100)}%, transparent)` : undefined,
+        backgroundColor: dragOver && entry.isDir ? 'rgba(137, 180, 250, 0.25)' : isActive ? 'var(--ctp-surface0)' : targets?.bg && resolved ? `color-mix(in srgb, ${resolved} ${Math.round(folderColorOpacity * 100)}%, transparent)` : undefined,
         color: 'var(--ctp-text)',
-        borderLeft: dragOver && entry.isDir ? '2px solid var(--ctp-accent)' : isActive ? '2px solid var(--ctp-accent)' : targets?.accentBar && color ? `3px solid ${color}` : undefined,
+        borderLeft: dragOver && entry.isDir ? '2px solid var(--ctp-accent)' : isActive ? '2px solid var(--ctp-accent)' : targets?.accentBar && resolved ? `3px solid ${resolved}` : undefined,
         transition: 'background-color 150ms ease, border-left 150ms ease, outline 150ms ease',
         outline: isFocused ? '1px solid var(--ctp-accent)' : '1px solid transparent',
         outlineOffset: '-1px',
@@ -110,11 +103,11 @@ export function FileTreeRow({
           <ChevronRight
             size={14}
             className="shrink-0 transition-transform"
-            style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', color: targets?.chevron && color ? color : 'var(--ctp-overlay1)' }}
+            style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', color: targets?.chevron && resolved ? resolved : 'var(--ctp-overlay1)' }}
           />
           {showFolderIcons && (isExpanded
-            ? <FolderOpen size={14} className="shrink-0" style={{ color: targets?.icon && color ? color : 'var(--ctp-blue)' }} />
-            : <Folder size={14} className="shrink-0" style={{ color: targets?.icon && color ? color : 'var(--ctp-blue)' }} />
+            ? <FolderOpen size={14} className="shrink-0" style={{ color: targets?.icon && resolved ? resolved : 'var(--ctp-blue)' }} />
+            : <Folder size={14} className="shrink-0" style={{ color: targets?.icon && resolved ? resolved : 'var(--ctp-blue)' }} />
           )}
         </>
       ) : (
@@ -122,8 +115,8 @@ export function FileTreeRow({
           <span className="shrink-0" style={{ width: 14 }} />
           {showFileIcons && (
             entry.name.endsWith('.canvas')
-              ? <LayoutGrid size={14} className="shrink-0" style={{ color: targets?.icon && color ? color : 'var(--ctp-blue)' }} />
-              : <File size={14} className="shrink-0" style={{ color: targets?.icon && color ? color : 'var(--ctp-overlay1)' }} />
+              ? <LayoutGrid size={14} className="shrink-0" style={{ color: targets?.icon && resolved ? resolved : 'var(--ctp-blue)' }} />
+              : <File size={14} className="shrink-0" style={{ color: targets?.icon && resolved ? resolved : 'var(--ctp-overlay1)' }} />
           )}
         </>
       )}
@@ -155,12 +148,12 @@ export function FileTreeRow({
       ) : (
         <>
           {targets?.dot && (
-            <span className="shrink-0 rounded-full" style={{ width: 6, height: 6, backgroundColor: color || undefined }} />
+            <span className="shrink-0 rounded-full" style={{ width: 6, height: 6, backgroundColor: resolved || undefined }} />
           )}
           <span
             className="truncate min-w-0"
             style={{
-              color: targets?.name && color ? color : undefined,
+              color: targets?.name && resolved ? resolved : undefined,
               fontWeight: entry.isDir && folderColorBold && effectiveColor ? 600 : undefined,
             }}
           >

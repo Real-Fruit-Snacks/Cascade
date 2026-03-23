@@ -5,7 +5,7 @@ import type { FileEntry } from '../../types/index';
 import { useEditorStore } from '../../stores/editor-store';
 import { useVaultStore } from '../../stores/vault-store';
 import { ContextMenu } from './ContextMenu';
-import { getFolderColors, resolveStyleTargets, getParentDir, type TreeSettings } from './file-tree-types';
+import { resolveStyleTargets, getParentDir, type TreeSettings } from './file-tree-types';
 import { buildContextMenuItems } from './file-tree-context-menu';
 import { FolderColorPicker } from './FolderColorPicker';
 import { FileTreeModals } from './FileTreeModals';
@@ -35,6 +35,7 @@ interface FileTreeItemProps {
   onToggleExpand: (path: string, expanded: boolean) => void;
   templateFiles?: FileEntry[];
   folderTemplates?: FileEntry[];
+  ownColor?: string | null;
   inheritedColor?: string | null;
   onColorChange?: () => void;
   treeSettings: TreeSettings;
@@ -43,7 +44,7 @@ interface FileTreeItemProps {
 export const FileTreeItem = memo(function FileTreeItem({
   entry, depth = 0, isActive, isDirty, hasOpenTab, isExpanded, isFocused,
   isBookmarked, onToggleExpand, templateFiles = [], folderTemplates = [],
-  inheritedColor = null, onColorChange, treeSettings,
+  ownColor = null, inheritedColor = null, onColorChange, treeSettings,
 }: FileTreeItemProps) {
   const { t } = useTranslation('sidebar');
 
@@ -60,9 +61,6 @@ export const FileTreeItem = memo(function FileTreeItem({
   const [renameError, setRenameError] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const [moveModalOpen, setMoveModalOpen] = useState(false);
-  const [folderColor, setFolderColorState] = useState(() =>
-    entry.isDir ? getFolderColors()[entry.path] || null : null
-  );
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const [pendingFilePath, setPendingFilePath] = useState<string | null>(null);
@@ -78,7 +76,7 @@ export const FileTreeItem = memo(function FileTreeItem({
   const rowRef = useRef<HTMLDivElement>(null);
   const isCommittingRename = useRef(false);
 
-  const effectiveColor = enableFolderColors ? (folderColor || (folderColorSubfolders ? inheritedColor : null)) : null;
+  const effectiveColor = enableFolderColors ? (ownColor || (folderColorSubfolders ? inheritedColor : null)) : null;
   const fileColor = enableFolderColors && folderColorFiles ? inheritedColor : null;
   const color = entry.isDir ? effectiveColor : fileColor;
   const style = entry.isDir ? folderColorStyle : folderColorFileStyle;
@@ -228,12 +226,11 @@ export const FileTreeItem = memo(function FileTreeItem({
       {colorPicker && (
         <FolderColorPicker
           entryPath={entry.path}
-          folderColor={folderColor}
+          folderColor={ownColor}
           enableFolderColors={enableFolderColors}
           pos={colorPickerPos}
           onClose={() => setColorPicker(false)}
           onColorChange={onColorChange}
-          setFolderColorState={setFolderColorState}
           setMenu={setMenu}
         />
       )}
