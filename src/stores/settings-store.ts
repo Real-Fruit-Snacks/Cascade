@@ -61,6 +61,7 @@ export interface Settings {
   autoSaveInterval: number;
   startupBehavior: StartupBehavior;
   language: string;
+  checkForUpdates: boolean;
   customKeybindings: Record<string, string>;
   // Features (toggleable)
   showWelcomeView: boolean;
@@ -263,6 +264,7 @@ export const DEFAULTS: Settings = {
   autoSaveInterval: 1000,
   startupBehavior: 'reopen-last',
   language: 'en',
+  checkForUpdates: true,
   customKeybindings: {},
   showWelcomeView: true,
   enableFolderColors: false,
