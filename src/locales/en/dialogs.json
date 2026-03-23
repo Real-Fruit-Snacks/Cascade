@@ -8,6 +8,10 @@
     "madeBy": "Made by",
     "madeByValue": "the Cascade team"
   },
+  "whatsNew": {
+    "title": "What's New in v{{version}}",
+    "gotIt": "Got it"
+  },
   "unsavedChanges": {
     "title": "Unsaved Changes",
     "message": "You have unsaved changes. Close anyway?",

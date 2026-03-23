@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { TitleBar } from './TitleBar';
@@ -40,8 +40,10 @@ import { useGlobalDragDrop } from '../hooks/use-global-drag-drop';
 import { useThemeSetup } from '../hooks/use-theme-setup';
 import { ThemeStudioToolbar } from './theme-studio/ThemeStudioToolbar';
 import { createLogger } from '../lib/logger';
-import { checkForUpdate } from '../lib/update-checker';
+import { getVersion } from '@tauri-apps/api/app';
+import { checkForUpdate, isNewVersion, markVersionSeen, fetchReleaseNotes } from '../lib/update-checker';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { WhatsNewDialog } from './WhatsNewDialog';
 
 const log = createLogger('AppShell');
 
@@ -54,6 +56,9 @@ export function AppShell() {
 
   const sidebarPosition = useSettingsStore((s) => s.sidebarPosition);
   const vaultPath = useVaultStore((s) => s.vaultPath);
+
+  // "What's New" dialog state
+  const [whatsNew, setWhatsNew] = useState<{ version: string; notes: string } | null>(null);
 
   const modal = useModalState();
 
@@ -92,6 +97,19 @@ export function AppShell() {
           },
         );
       }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Show "What's New" dialog on first launch after update
+  useEffect(() => {
+    getVersion().then(async (currentVersion) => {
+      if (isNewVersion(currentVersion)) {
+        const notes = await fetchReleaseNotes(currentVersion);
+        if (notes) {
+          setWhatsNew({ version: currentVersion, notes });
+        }
+      }
+      markVersionSeen(currentVersion);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -342,6 +360,12 @@ export function AppShell() {
         </Suspense>
       </ErrorBoundary>
       <AboutDialog open={modal.aboutOpen} onClose={modal.closeAbout} />
+      <WhatsNewDialog
+        open={whatsNew !== null}
+        onClose={() => setWhatsNew(null)}
+        version={whatsNew?.version ?? ''}
+        releaseNotes={whatsNew?.notes ?? ''}
+      />
       <ConfirmDialog
         open={modal.confirmDialog !== null}
         title={modal.confirmDialog?.title ?? ''}

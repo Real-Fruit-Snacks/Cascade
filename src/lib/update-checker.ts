@@ -1,7 +1,9 @@
 import { getVersion } from '@tauri-apps/api/app';
 
+const GITHUB_REPO = 'Real-Fruit-Snacks/Cascade';
 const GITHUB_RELEASE_URL =
-  'https://api.github.com/repos/Real-Fruit-Snacks/Cascade/releases/latest';
+  `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
+const LAST_SEEN_VERSION_KEY = 'cascade-last-seen-version';
 
 export interface UpdateInfo {
   version: string;
@@ -41,6 +43,32 @@ export async function checkForUpdate(): Promise<UpdateInfo | null> {
     return null;
   } catch {
     // Network error, rate limit, etc. — fail silently
+    return null;
+  }
+}
+
+/** Check if this is the first launch after an update. */
+export function isNewVersion(currentVersion: string): boolean {
+  const lastSeen = localStorage.getItem(LAST_SEEN_VERSION_KEY);
+  return lastSeen !== null && lastSeen !== currentVersion;
+}
+
+/** Mark the current version as seen. */
+export function markVersionSeen(version: string): void {
+  localStorage.setItem(LAST_SEEN_VERSION_KEY, version);
+}
+
+/** Fetch release notes for a specific version tag from GitHub. */
+export async function fetchReleaseNotes(version: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${GITHUB_REPO}/releases/tags/v${version}`,
+      { headers: { Accept: 'application/vnd.github.v3+json' } },
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.body ?? null;
+  } catch {
     return null;
   }
 }
