@@ -5,6 +5,7 @@ import { useEditorStore } from '../stores/editor-store';
 import { useVaultStore } from '../stores/vault-store';
 import { useRecentFilesStore } from '../stores/recent-files-store';
 import { useSettingsStore } from '../stores/settings-store';
+import { emit } from '../lib/cascade-events';
 import type { FileEntry } from '../types/index';
 
 function formatRelativeTime(timestamp: number, t: (key: string, opts?: Record<string, unknown>) => string): string {
@@ -236,17 +237,19 @@ export function WelcomeView() {
                 const ratio = count / maxTagCount;
                 const size = 11 + Math.round(ratio * 7);
                 return (
-                  <span
+                  <button
                     key={tag}
-                    className="rounded px-2 py-0.5"
+                    className="rounded px-2 py-0.5 transition-colors hover:bg-[var(--ctp-surface1)]"
                     style={{
                       fontSize: `${size}px`,
                       backgroundColor: 'var(--ctp-surface0)',
                       color: 'var(--ctp-overlay1)',
+                      cursor: 'pointer',
                     }}
+                    onClick={() => emit('cascade:filter-tag', tag)}
                   >
                     #{tag}
-                  </span>
+                  </button>
                 );
               })}
             </div>
