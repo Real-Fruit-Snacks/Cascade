@@ -40,6 +40,8 @@ import { useGlobalDragDrop } from '../hooks/use-global-drag-drop';
 import { useThemeSetup } from '../hooks/use-theme-setup';
 import { ThemeStudioToolbar } from './theme-studio/ThemeStudioToolbar';
 import { createLogger } from '../lib/logger';
+import { checkForUpdate } from '../lib/update-checker';
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 const log = createLogger('AppShell');
 
@@ -70,6 +72,28 @@ export function AppShell() {
     document.addEventListener('contextmenu', suppress);
     return () => document.removeEventListener('contextmenu', suppress);
   }, []);
+
+  // Check for updates on launch
+  useEffect(() => {
+    const checkUpdates = useSettingsStore.getState().checkForUpdates;
+    if (!checkUpdates) return;
+
+    checkForUpdate().then((update) => {
+      if (update) {
+        useToastStore.getState().addToast(
+          t('common:update.available', { version: update.version }),
+          'info',
+          15000,
+          {
+            label: t('common:update.download'),
+            action: () => {
+              openUrl(update.url).catch(() => window.open(update.url, '_blank', 'noopener'));
+            },
+          },
+        );
+      }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Intercept Tauri window close (Alt+F4, taskbar close, system close)
   useEffect(() => {
