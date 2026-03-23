@@ -2,10 +2,34 @@ import { useTranslation } from 'react-i18next';
 import type { StartupBehavior } from '../../../stores/settings-store';
 import { SettingRow } from '../shared/SettingRow';
 import { SubHeader } from '../shared/SubHeader';
+import { ToggleSwitch } from '../shared/ToggleSwitch';
 import type { CategoryPageProps } from '../shared/searchable-items';
+import { checkForUpdate } from '../../../lib/update-checker';
+import { useToastStore } from '../../../stores/toast-store';
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 export function GeneralSettingsPage({ settings, visibleIds, isSearching }: CategoryPageProps) {
   const { t: ts } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
+
+  const handleCheckNow = async () => {
+    const update = await checkForUpdate();
+    if (update) {
+      useToastStore.getState().addToast(
+        tc('update.available', { version: update.version }),
+        'info',
+        15000,
+        {
+          label: tc('update.download'),
+          action: () => {
+            openUrl(update.url).catch(() => window.open(update.url, '_blank', 'noopener'));
+          },
+        },
+      );
+    } else {
+      useToastStore.getState().addToast(tc('update.upToDate'), 'success');
+    }
+  };
 
   return (
     <>
@@ -31,6 +55,20 @@ export function GeneralSettingsPage({ settings, visibleIds, isSearching }: Categ
             <option value="reopen-last">{ts('general.onStartup.reopenLast')}</option>
             <option value="show-picker">{ts('general.onStartup.showPicker')}</option>
           </select>
+        </SettingRow>
+      )}
+      {!isSearching && <SubHeader label={ts('general.subheaders.updates')} />}
+      {(!visibleIds || visibleIds.has('checkForUpdates')) && (
+        <SettingRow label={ts('general.checkForUpdates.label')} description={ts('general.checkForUpdates.description')}>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCheckNow}
+              className="text-xs px-2 py-1 rounded transition-colors ctp-input hover:bg-[var(--ctp-surface1)]"
+            >
+              {ts('general.checkNow')}
+            </button>
+            <ToggleSwitch checked={settings.checkForUpdates} onChange={(v) => settings.update({ checkForUpdates: v })} />
+          </div>
         </SettingRow>
       )}
     </>

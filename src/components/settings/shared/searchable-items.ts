@@ -53,6 +53,7 @@ export const SEARCHABLE_ITEMS: SearchableItem[] = [
   { id: 'autoSaveEnabled', category: 'features', keywords: 'auto save enable disable general toggle feature' },
   { id: 'language', category: 'general', keywords: 'language display interface locale general' },
   { id: 'startupBehavior', category: 'general', keywords: 'startup behavior reopen last vault picker general' },
+  { id: 'checkForUpdates', category: 'general' as SettingsCategory, keywords: 'check for updates auto update new version' },
   { id: 'enableFolderColors', category: 'features', keywords: 'folder colors coloring toggle feature enable disable' },
   { id: 'enableWikiLinks', category: 'features', keywords: 'wiki links wikilinks toggle feature enable disable' },
   { id: 'enableLivePreview', category: 'features', keywords: 'live preview toggle feature enable disable decorations' },
