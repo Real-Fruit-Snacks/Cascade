@@ -4,6 +4,17 @@ All notable changes to Cascade will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] — 2026-03-24
+
+### UI Polish & Component System
+
+- **Button & Input components** — New unified `Button` component with four variants (primary, secondary, ghost, danger), consistent hover/active/disabled states, and press feedback. Reusable `Input` component with animated focus glow. `ToggleSwitch` extracted into a shared component with proper ARIA attributes.
+- **Empty states** — Improved empty state screens across Outline, Bookmarks, Tags, and Backlinks panels with contextual icons and helpful hints.
+- **Micro-interactions** — Focus ring glow on interactive elements, toast stagger animation when multiple appear, file-saved confirmation pulse in status bar, context menu entrance animation, and drag cursor feedback.
+- **Resize dividers** — Sidebar and split pane dividers now highlight with an accent-colored line on hover, show proper grab/grabbing cursors, and have wider hit areas for easy dragging.
+- **Keyboard shortcut hints** — New `KbdBadge` component for displaying keyboard shortcuts. Context menus now support a `shortcut` field. Command palette uses styled key badges.
+- **Typography system** — Defined a CSS type scale (`--text-2xs` through `--text-lg`). Standardized panel headers, sidebar items, settings rows, and file tree text for consistent information density.
+
 ## [0.3.0] — 2026-03-24
 
 ### Real-Time Collaboration
