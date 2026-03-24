@@ -381,6 +381,8 @@ export function VaultExplorer() {
   }, [vaultPath, createFolder, folderTemplates, enableTemplates]);
 
   const handleTreeKeyDown = useCallback((e: React.KeyboardEvent) => {
+    // Ignore events from portaled modals (React bubbles through component tree)
+    if (treeRef.current && !treeRef.current.contains(e.target as Node)) return;
     if (flatEntries.length === 0) return;
 
     const currentIdx = focusedPath ? (pathToIndex.get(focusedPath) ?? -1) : -1;
