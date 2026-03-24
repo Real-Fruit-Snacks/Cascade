@@ -18,6 +18,7 @@ interface CollabState {
   userColor: string;
   users: Map<number, CollabUser>;
   activeDocPaths: Set<string>;
+  providerState: 'disconnected' | 'connecting' | 'authenticating' | 'connected' | 'auth_failed';
 
   startAsHost: (password: string, name: string, color: string) => Promise<void>;
   setClientState: (address: string, name: string, color: string) => void;
@@ -27,6 +28,7 @@ interface CollabState {
   removeActiveDoc: (path: string) => void;
   updateUsers: (users: Map<number, CollabUser>) => void;
   updateConnectedClients: (count: number) => void;
+  updateProviderState: (state: string) => void;
 }
 
 export const useCollabStore = create<CollabState>((set) => ({
@@ -39,12 +41,13 @@ export const useCollabStore = create<CollabState>((set) => ({
   userColor: '#4f8ef7',
   users: new Map(),
   activeDocPaths: new Set(),
+  providerState: 'disconnected',
 
   startAsHost: async (password, name, color) => {
     const status = await cmd.startCollab(password);
     set({
       active: status.active,
-      role: 'host',
+      role: status.role,
       connectedClients: status.connectedClients,
       serverPort: status.serverPort,
       hostAddress: status.hostAddress,
@@ -86,6 +89,7 @@ export const useCollabStore = create<CollabState>((set) => ({
       userColor: '#4f8ef7',
       users: new Map(),
       activeDocPaths: new Set(),
+      providerState: 'disconnected',
     });
   },
 
@@ -113,5 +117,9 @@ export const useCollabStore = create<CollabState>((set) => ({
 
   updateConnectedClients: (count) => {
     set({ connectedClients: count });
+  },
+
+  updateProviderState: (state) => {
+    set({ providerState: state as CollabState['providerState'] });
   },
 }));

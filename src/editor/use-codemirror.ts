@@ -409,6 +409,13 @@ export function useCodeMirror() {
     provider.registerDoc(activeFilePath, ydoc);
     useCollabStore.getState().addActiveDoc(activeFilePath);
 
+    // Update awareness with active file
+    provider.setLocalState({
+      name: useCollabStore.getState().userName,
+      color: useCollabStore.getState().userColor,
+      activeFile: activeFilePath,
+    });
+
     const docCount = docManager.activePaths().size;
     if (docCount === 21) {
       useToastStore.getState().addToast(
@@ -424,6 +431,12 @@ export function useCodeMirror() {
       provider.unregisterDoc(activeFilePath);
       docManager.removeRef(activeFilePath);
       useCollabStore.getState().removeActiveDoc(activeFilePath);
+      // Clear active file from awareness
+      provider.setLocalState({
+        name: useCollabStore.getState().userName,
+        color: useCollabStore.getState().userColor,
+        activeFile: null,
+      });
     };
   }, [collabActive, activeFilePath]);
 

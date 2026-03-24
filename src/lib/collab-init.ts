@@ -1,6 +1,6 @@
 import { CollabProvider, ProviderState } from './collab-provider';
 import { CollabDocManager } from './collab-doc-manager';
-import { useCollabStore } from '../stores/collab-store';
+import { useCollabStore, type CollabUser } from '../stores/collab-store';
 import { useSettingsStore } from '../stores/settings-store';
 import { useToastStore } from '../stores/toast-store';
 import * as cmd from './tauri-commands';
@@ -90,6 +90,7 @@ function createProvider(url: string, password: string, name: string, color: stri
   p.setLocalState({ name, color });
 
   p.onStateChange = (state) => {
+    useCollabStore.getState().updateProviderState(state);
     if (state === ProviderState.AuthFailed) {
       useToastStore.getState().addToast('Collaboration authentication failed. Check your password.', 'error');
       stopCollabSession().catch(console.error);
@@ -114,6 +115,23 @@ function createProvider(url: string, password: string, name: string, color: stri
   };
 
   p.connect();
+
+  // Subscribe to awareness changes to update users list
+  p.awareness.on('change', () => {
+    const states = p.awareness.getStates();
+    const users = new Map<number, CollabUser>();
+    states.forEach((state: Record<string, unknown>, clientId: number) => {
+      if (state.user && clientId !== p.awareness.clientID) {
+        const u = state.user as Record<string, unknown>;
+        users.set(clientId, {
+          name: typeof u.name === 'string' ? u.name : 'Unknown',
+          color: typeof u.color === 'string' ? u.color : '#89b4fa',
+          activeFile: typeof u.activeFile === 'string' ? u.activeFile : null,
+        });
+      }
+    });
+    useCollabStore.getState().updateUsers(users);
+  });
 }
 
 function handleProviderDisconnect(): void {

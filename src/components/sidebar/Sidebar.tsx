@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
-import { ArrowLeftRight, Command, FolderOpen, Hash, List, LogOut, Search, Settings, Share2, Star, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, Command, FolderOpen, Hash, List, LogOut, Search, Settings, Share2, Star, Trash2, Users } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { VariablesIcon } from '../icons/VariablesIcon';
 import { ContextMenu, type MenuItem } from './ContextMenu';
@@ -11,13 +11,15 @@ import { BacklinksPanel } from './BacklinksPanel';
 import { OutlinePanel } from './OutlinePanel';
 import { BookmarksPanel } from './BookmarksPanel';
 import { TrashPanel } from './TrashPanel';
+import { CollabUsersPanel } from './CollabUsersPanel';
 import { Tooltip } from '../Tooltip';
 import { useEditorStore } from '../../stores/editor-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { usePluginStore } from '../../stores/plugin-store';
+import { useCollabStore } from '../../stores/collab-store';
 import { emit } from '../../lib/cascade-events';
 
-type SidebarView = 'files' | 'tags' | 'backlinks' | 'outline' | 'bookmarks' | 'trash';
+type SidebarView = 'files' | 'tags' | 'backlinks' | 'outline' | 'bookmarks' | 'trash' | 'collab';
 
 const STORAGE_KEY = 'cascade-sidebar-width';
 const VIEW_KEY = 'cascade-sidebar-view';
@@ -36,7 +38,7 @@ function getSavedWidth(): number {
 
 function getSavedView(): SidebarView {
   const saved = localStorage.getItem(VIEW_KEY);
-  if (saved === 'files' || saved === 'tags' || saved === 'backlinks' || saved === 'outline' || saved === 'bookmarks' || saved === 'trash') return saved;
+  if (saved === 'files' || saved === 'tags' || saved === 'backlinks' || saved === 'outline' || saved === 'bookmarks' || saved === 'trash' || saved === 'collab') return saved;
   return 'files';
 }
 
@@ -59,6 +61,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
 
   const sidebarPanels = usePluginStore((s) => s.sidebarPanels);
   const ribbonIcons = usePluginStore((s) => s.ribbonIcons);
+  const collabActive = useCollabStore((s) => s.active);
 
   const [varsMenu, setVarsMenu] = useState<{ x: number; y: number } | null>(null);
   const varsButtonRef = useRef<HTMLButtonElement>(null);
@@ -95,6 +98,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
     { id: 'outline', icon: List, label: t('views.outline') },
     { id: 'bookmarks', icon: Star, label: t('views.bookmarks') },
     { id: 'trash', icon: Trash2, label: t('views.trash') },
+    { id: 'collab', icon: Users, label: t('views.collab') },
   ];
 
   const [width, setWidth] = useState(getSavedWidth);
@@ -176,6 +180,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
     if (id === 'backlinks') return enableBacklinks;
     if (id === 'outline') return enableOutline;
     if (id === 'bookmarks') return enableBookmarks;
+    if (id === 'collab') return collabActive;
     if (id === 'trash') return true;
     return true; // 'files' always visible
   });
@@ -385,6 +390,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
           {activeView === 'outline' && enableOutline && <OutlinePanel />}
           {activeView === 'bookmarks' && enableBookmarks && <BookmarksPanel />}
           {activeView === 'trash' && <TrashPanel />}
+          {activeView === 'collab' && collabActive && <CollabUsersPanel />}
         </div>
         {sidebarPanels.size > 0 && Array.from(sidebarPanels.entries()).map(([id, panel]) => (
           <div key={id} className="border-t" style={{ borderColor: 'var(--ctp-surface0)' }}>

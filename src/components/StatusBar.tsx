@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Users } from 'lucide-react';
 import { useEditorStore } from '../stores/editor-store';
 import { useSettingsStore } from '../stores/settings-store';
 import { usePluginStore } from '../stores/plugin-store';
 import { useToastStore } from '../stores/toast-store';
+import { useCollabStore } from '../stores/collab-store';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 // B2: Lazily loaded only when vim mode is enabled
 let _getCM: typeof import('@replit/codemirror-vim').getCM | null = null;
@@ -181,6 +183,11 @@ export function StatusBar() {
   const wordCountGoalNotify = useSettingsStore((s) => s.wordCountGoalNotify);
   const activeFilePath = useEditorStore((s) => s.activeFilePath);
 
+  const collabActive = useCollabStore((s) => s.active);
+  const collabRole = useCollabStore((s) => s.role);
+  const connectedClients = useCollabStore((s) => s.connectedClients);
+  const providerState = useCollabStore((s) => s.providerState);
+
   const goalNotifiedRef = useRef(false);
 
   const selectionRaw = useSelectionStats();
@@ -281,6 +288,35 @@ export function StatusBar() {
           <Divider />
           <span style={{ color: 'var(--ctp-accent)' }}>
             {t('selection', { words: selection.words, chars: selection.chars })}
+          </span>
+        </>
+      )}
+
+      {collabActive && (
+        <>
+          <Divider />
+          <span
+            className="flex items-center gap-1"
+            style={{
+              color: providerState === 'connected' ? 'var(--ctp-green)'
+                : (providerState === 'connecting' || providerState === 'authenticating') ? 'var(--ctp-yellow)'
+                : 'var(--ctp-red)',
+            }}
+            title={
+              providerState === 'connected'
+                ? (collabRole === 'host' ? `Hosting — ${connectedClients} connected` : 'Connected')
+                : providerState === 'connecting' ? 'Reconnecting...'
+                : providerState === 'authenticating' ? 'Authenticating...'
+                : 'Disconnected'
+            }
+          >
+            <Users
+              size={11}
+              className={providerState === 'connecting' || providerState === 'authenticating' ? 'animate-pulse' : ''}
+            />
+            {collabRole === 'host' && connectedClients > 0 && providerState === 'connected' && (
+              <span>{connectedClients}</span>
+            )}
           </span>
         </>
       )}
