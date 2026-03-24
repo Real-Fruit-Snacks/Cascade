@@ -124,6 +124,18 @@ export function writeVaultSettings(vaultRoot: string, settings: string): Promise
   return invoke<void>('write_vault_settings', { vaultRoot, settings });
 }
 
+export function readSettingsFile(vaultRoot: string, relativePath: string): Promise<string> {
+  return invoke<string>('read_settings_file', { vaultRoot, relativePath });
+}
+
+export function writeSettingsFile(vaultRoot: string, relativePath: string, settings: string): Promise<void> {
+  return invoke<void>('write_settings_file', { vaultRoot, relativePath, settings });
+}
+
+export function listSettingsProfiles(vaultRoot: string): Promise<string[]> {
+  return invoke<string[]>('list_settings_profiles', { vaultRoot });
+}
+
 export interface VaultIndex {
   tagIndex: Record<string, string[]>;
   backlinkIndex: Record<string, string[]>;
@@ -323,4 +335,37 @@ export function deleteSyncPat(vaultPath: string, remoteUrl: string): Promise<voi
 
 export function openSyncLogFolder(vaultPath: string): Promise<string> {
   return invoke<string>('open_sync_log_folder', { vaultPath });
+}
+
+// --- Collaboration ---
+
+export interface CollabStatus {
+  active: boolean;
+  role: 'host' | 'client' | null;
+  connectedClients: number;
+  serverPort: number | null;
+  hostAddress: string | null;
+}
+
+export interface PresenceInfo {
+  host: string;
+  port: number;
+  startedAt: number;
+  heartbeat: number;
+}
+
+export function startCollab(password: string): Promise<CollabStatus> {
+  return invoke<CollabStatus>('start_collab', { password });
+}
+
+export function stopCollab(): Promise<void> {
+  return invoke<void>('stop_collab');
+}
+
+export function readCollabPresence(): Promise<PresenceInfo | null> {
+  return invoke<PresenceInfo | null>('read_collab_presence');
+}
+
+export function getCollabStatus(): Promise<CollabStatus> {
+  return invoke<CollabStatus>('get_collab_status');
 }

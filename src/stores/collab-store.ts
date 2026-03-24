@@ -1,0 +1,117 @@
+import { create } from 'zustand';
+import * as cmd from '../lib/tauri-commands';
+import { normalizePath } from '../lib/collab-messages';
+
+export interface CollabUser {
+  name: string;
+  color: string;
+  activeFile: string | null;
+}
+
+interface CollabState {
+  active: boolean;
+  role: 'host' | 'client' | null;
+  connectedClients: number;
+  serverPort: number | null;
+  hostAddress: string | null;
+  userName: string;
+  userColor: string;
+  users: Map<number, CollabUser>;
+  activeDocPaths: Set<string>;
+
+  startAsHost: (password: string, name: string, color: string) => Promise<void>;
+  setClientState: (address: string, name: string, color: string) => void;
+  promoteToHost: (password: string) => Promise<void>;
+  disconnect: () => Promise<void>;
+  addActiveDoc: (path: string) => void;
+  removeActiveDoc: (path: string) => void;
+  updateUsers: (users: Map<number, CollabUser>) => void;
+  updateConnectedClients: (count: number) => void;
+}
+
+export const useCollabStore = create<CollabState>((set) => ({
+  active: false,
+  role: null,
+  connectedClients: 0,
+  serverPort: null,
+  hostAddress: null,
+  userName: '',
+  userColor: '#4f8ef7',
+  users: new Map(),
+  activeDocPaths: new Set(),
+
+  startAsHost: async (password, name, color) => {
+    const status = await cmd.startCollab(password);
+    set({
+      active: status.active,
+      role: 'host',
+      connectedClients: status.connectedClients,
+      serverPort: status.serverPort,
+      hostAddress: status.hostAddress,
+      userName: name,
+      userColor: color,
+    });
+  },
+
+  setClientState: (address, name, color) => {
+    set({
+      active: true,
+      role: 'client',
+      hostAddress: address,
+      userName: name,
+      userColor: color,
+    });
+  },
+
+  promoteToHost: async (password) => {
+    const status = await cmd.startCollab(password);
+    set({
+      active: status.active,
+      role: 'host',
+      connectedClients: status.connectedClients,
+      serverPort: status.serverPort,
+      hostAddress: status.hostAddress,
+    });
+  },
+
+  disconnect: async () => {
+    await cmd.stopCollab();
+    set({
+      active: false,
+      role: null,
+      connectedClients: 0,
+      serverPort: null,
+      hostAddress: null,
+      userName: '',
+      userColor: '#4f8ef7',
+      users: new Map(),
+      activeDocPaths: new Set(),
+    });
+  },
+
+  addActiveDoc: (path) => {
+    const normalized = normalizePath(path);
+    set((state) => {
+      const next = new Set(state.activeDocPaths);
+      next.add(normalized);
+      return { activeDocPaths: next };
+    });
+  },
+
+  removeActiveDoc: (path) => {
+    const normalized = normalizePath(path);
+    set((state) => {
+      const next = new Set(state.activeDocPaths);
+      next.delete(normalized);
+      return { activeDocPaths: next };
+    });
+  },
+
+  updateUsers: (users) => {
+    set({ users });
+  },
+
+  updateConnectedClients: (count) => {
+    set({ connectedClients: count });
+  },
+}));
