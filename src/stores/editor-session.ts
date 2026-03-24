@@ -54,9 +54,12 @@ export async function restoreSession(vaultRoot: string, store: typeof useEditorS
 
     const state = store.getState();
     await Promise.all(
-      session.tabs.map((tabData) => state.openFile(vaultRoot, tabData.path, true, true)),
+      session.tabs.map((tabData) =>
+        state.openFile(vaultRoot, tabData.path, true, true).catch(() => { /* file may no longer exist */ }),
+      ),
     );
-    const idx = Math.min(session.activeTabIndex, session.tabs.length - 1);
+    const restoredTabCount = store.getState().tabs.length;
+    const idx = Math.min(session.activeTabIndex, restoredTabCount - 1);
     if (idx >= 0) {
       state.switchTab(idx);
     }
@@ -67,7 +70,7 @@ export async function restoreSession(vaultRoot: string, store: typeof useEditorS
       for (let pi = 1; pi < restoredPanes.length; pi++) {
         const paneData = restoredPanes[pi];
         for (const tabData of paneData.tabs) {
-          await state.openFileInPane(pi, vaultRoot, tabData.path, true);
+          await state.openFileInPane(pi, vaultRoot, tabData.path, true).catch(() => { /* file may no longer exist */ });
         }
         if (paneData.activeTabIndex >= 0) {
           state.switchPaneTab(pi, paneData.activeTabIndex);

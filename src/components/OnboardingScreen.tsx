@@ -96,14 +96,8 @@ export function OnboardingScreen() {
       className="flex flex-col items-center justify-center flex-1 w-full"
       style={{ backgroundColor: 'var(--ctp-base)' }}
     >
-      {/* Logo + App name */}
+      {/* App name */}
       <div className="flex flex-col items-center gap-4 mb-10">
-        <img
-          src="/app-icon.png"
-          alt="Cascade"
-          style={{ width: 180, height: 180 }}
-          draggable={false}
-        />
         <div className="flex flex-col items-center gap-1">
           <h1
             className="text-4xl font-bold tracking-tight"
