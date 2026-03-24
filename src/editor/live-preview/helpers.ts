@@ -250,41 +250,44 @@ export const HEADING_STYLES: Record<number, string> = {
   6: 'font-size:1em;color:var(--ctp-mauve);font-weight:bold;margin:0.3em 0 0.2em',
 };
 
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+const isSafeUrl = (url: string): boolean =>
+  !/^(javascript|data|vbscript):/i.test(url.trim().toLowerCase());
+
+/** Render inline markdown (bold, italic, code, links, etc.) to HTML. */
+export function renderInlineMarkdown(text: string): string {
+  let r = escapeHtml(text);
+  // Images — reject unsafe protocols
+  r = r.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) =>
+    isSafeUrl(url)
+      ? `<img src="${url}" alt="${alt}" style="max-width:100%;border-radius:4px;margin:4px 0">`
+      : escapeHtml(alt || url)
+  );
+  // Strikethrough
+  r = r.replace(/~~(.+?)~~/g, '<del style="text-decoration:line-through;color:var(--ctp-overlay1)">$1</del>');
+  // Bold
+  r = r.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  r = r.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  // Italic
+  r = r.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  r = r.replace(/_(.+?)_/g, '<em>$1</em>');
+  // Inline code
+  r = r.replace(/`([^`]+)`/g, '<code style="background:var(--ctp-surface0);border-radius:3px;padding:1px 4px;font-size:0.9em">$1</code>');
+  // Markdown links
+  r = r.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a style="color:var(--ctp-blue);text-decoration:underline;text-underline-offset:2px">$1</a>');
+  // Wiki links
+  r = r.replace(/\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/g, (_, target, alias) =>
+    `<span style="color:var(--ctp-accent);text-decoration:underline;text-underline-offset:2px;cursor:pointer">${alias || target}</span>`);
+  // Tags
+  r = r.replace(/(^|\s)#([a-zA-Z][\w/-]*)/g, '$1<span style="color:var(--ctp-accent);font-size:0.9em">#$2</span>');
+  return r;
+}
+
 /** Render markdown to HTML matching the editor's live preview styles. */
 export function renderMarkdownPreview(md: string): string {
-  const escapeHtml = (s: string) =>
-    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-  const isSafeUrl = (url: string): boolean =>
-    !/^(javascript|data|vbscript):/i.test(url.trim().toLowerCase());
-
-  const inline = (text: string): string => {
-    let r = escapeHtml(text);
-    // Images — reject unsafe protocols
-    r = r.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) =>
-      isSafeUrl(url)
-        ? `<img src="${url}" alt="${alt}" style="max-width:100%;border-radius:4px;margin:4px 0">`
-        : escapeHtml(alt || url)
-    );
-    // Strikethrough
-    r = r.replace(/~~(.+?)~~/g, '<del style="text-decoration:line-through;color:var(--ctp-overlay1)">$1</del>');
-    // Bold
-    r = r.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    r = r.replace(/__(.+?)__/g, '<strong>$1</strong>');
-    // Italic
-    r = r.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    r = r.replace(/_(.+?)_/g, '<em>$1</em>');
-    // Inline code
-    r = r.replace(/`([^`]+)`/g, '<code style="background:var(--ctp-surface0);border-radius:3px;padding:1px 4px;font-size:0.9em">$1</code>');
-    // Markdown links
-    r = r.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a style="color:var(--ctp-blue);text-decoration:underline;text-underline-offset:2px">$1</a>');
-    // Wiki links
-    r = r.replace(/\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/g, (_, target, alias) =>
-      `<span style="color:var(--ctp-accent);text-decoration:underline;text-underline-offset:2px;cursor:pointer">${alias || target}</span>`);
-    // Tags
-    r = r.replace(/(^|\s)#([a-zA-Z][\w/-]*)/g, '$1<span style="color:var(--ctp-accent);font-size:0.9em">#$2</span>');
-    return r;
-  };
+  const inline = renderInlineMarkdown;
 
   // Strip YAML frontmatter
   let content = md;

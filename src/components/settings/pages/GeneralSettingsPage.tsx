@@ -7,6 +7,7 @@ import type { CategoryPageProps } from '../shared/searchable-items';
 import { checkForUpdate } from '../../../lib/update-checker';
 import { useToastStore } from '../../../stores/toast-store';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { ProfileSettingsSection } from './ProfileSettingsSection';
 
 export function GeneralSettingsPage({ settings, visibleIds, isSearching }: CategoryPageProps) {
   const { t: ts } = useTranslation('settings');
@@ -70,6 +71,9 @@ export function GeneralSettingsPage({ settings, visibleIds, isSearching }: Categ
             <ToggleSwitch checked={settings.checkForUpdates} onChange={(v) => settings.update({ checkForUpdates: v })} />
           </div>
         </SettingRow>
+      )}
+      {(!isSearching || (visibleIds && visibleIds.has('settingsProfile'))) && (
+        <ProfileSettingsSection />
       )}
     </>
   );

@@ -8,11 +8,13 @@ import {
   extractHeadingSection,
   extractBlockSection,
   renderMarkdownPreview,
+  renderInlineMarkdown,
 } from './helpers';
 
 // ── Widgets ────────────────────────────────────────────────
 
 export class HrWidget extends WidgetType {
+  get estimatedHeight() { return 17; }
   toDOM() {
     const hr = document.createElement('hr');
     hr.className = 'cm-hr-widget';
@@ -81,7 +83,7 @@ export class TableWidget extends WidgetType {
     const headerRow = document.createElement('tr');
     this.headers.forEach((h, i) => {
       const th = document.createElement('th');
-      th.textContent = h.trim();
+      th.innerHTML = renderInlineMarkdown(h.trim());
       if (this.alignments[i]) th.style.textAlign = this.alignments[i]!;
       headerRow.appendChild(th);
     });
@@ -93,7 +95,7 @@ export class TableWidget extends WidgetType {
       const tr = document.createElement('tr');
       row.forEach((cell, i) => {
         const td = document.createElement('td');
-        td.textContent = cell.trim();
+        td.innerHTML = renderInlineMarkdown(cell.trim());
         if (this.alignments[i]) td.style.textAlign = this.alignments[i]!;
         tr.appendChild(td);
       });
@@ -104,6 +106,7 @@ export class TableWidget extends WidgetType {
 
     return wrapper;
   }
+  get estimatedHeight() { return 30 + this.rows.length * 30; }
   ignoreEvent() { return false; }
 }
 
@@ -120,6 +123,7 @@ export class ImageWidget extends WidgetType {
   ) {
     super();
   }
+  get estimatedHeight() { return 200; }
   eq(other: ImageWidget) {
     return this.src === other.src && this.alt === other.alt && this.rawUrl === other.rawUrl && this.from === other.from && this.to === other.to;
   }
@@ -243,6 +247,7 @@ export class CalloutHeaderWidget extends WidgetType {
   ) {
     super();
   }
+  get estimatedHeight() { return 28; }
   eq(other: CalloutHeaderWidget) {
     return this.icon === other.icon && this.title === other.title && this.colorClass === other.colorClass;
   }
@@ -271,6 +276,8 @@ const MAX_TRANSCLUSION_DEPTH = 3;
 export class TransclusionWidget extends WidgetType {
   private _dom: HTMLElement | null = null;
   private _destroyed = false;
+
+  get estimatedHeight() { return 80; }
 
   constructor(
     readonly filePath: string,

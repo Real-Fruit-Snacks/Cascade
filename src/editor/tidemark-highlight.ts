@@ -45,15 +45,14 @@ function buildDecorations(view: EditorView): DecorationSet {
   const fmSearchLimit = Math.min(view.state.doc.length, 10000);
   const fmText = view.state.sliceDoc(0, fmSearchLimit);
   const fm = extractFrontmatter(fmText);
-  if (!fm) return Decoration.none;
-
-  const frontmatter = parseFrontmatter(fm.raw);
+  const frontmatter = fm ? parseFrontmatter(fm.raw) : {};
+  const bodyStart = fm ? fm.bodyStart : 0;
   const opts = getVariableOptions();
   const deco: Range<Decoration>[] = [];
 
   for (const { from, to } of view.visibleRanges) {
-    // Only decorate body (after frontmatter)
-    const effectiveFrom = Math.max(from, fm.bodyStart);
+    // Only decorate body (after frontmatter if present)
+    const effectiveFrom = Math.max(from, bodyStart);
     if (effectiveFrom >= to) continue;
 
     const text = view.state.sliceDoc(effectiveFrom, to);

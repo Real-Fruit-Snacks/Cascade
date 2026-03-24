@@ -6,6 +6,7 @@ import {
 } from '@codemirror/view';
 import { type ChangeSet, type EditorState, type Range, StateField } from '@codemirror/state';
 import { useToastStore } from '../stores/toast-store';
+import { renderInlineMarkdown } from './live-preview/helpers';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -145,13 +146,13 @@ function collectCurrentData(
   colCount: number,
 ): { currentHeaders: string[]; currentRows: string[][] } {
   const headerCells = container.querySelectorAll<HTMLElement>('[data-row="header"]');
-  const currentHeaders = Array.from(headerCells).map((c) => c.textContent ?? '');
+  const currentHeaders = Array.from(headerCells).map((c) => c.dataset.raw ?? c.textContent ?? '');
   const currentRows: string[][] = Array.from({ length: rowCount }, (_, ri) =>
     Array.from({ length: colCount }, (_, ci) => {
       const el = container.querySelector<HTMLElement>(
         `[data-row="${CSS.escape(String(ri))}"][data-col="${CSS.escape(String(ci))}"]`,
       );
-      return el?.textContent ?? '';
+      return el?.dataset.raw ?? el?.textContent ?? '';
     }),
   );
   return { currentHeaders, currentRows };
@@ -345,6 +346,7 @@ class InteractiveTableWidget extends WidgetType {
 
   toDOM(view: EditorView): HTMLElement {
     const { headers, rows, alignments, from, to } = this;
+    const isEditable = view.state.facet(EditorView.editable);
 
     const container = document.createElement('div');
     container.className = 'cm-table-editor';
@@ -381,12 +383,13 @@ class InteractiveTableWidget extends WidgetType {
     headers.forEach((h, colIdx) => {
       const th = document.createElement('th');
       th.className = 'cm-table-editor-cell cm-table-editor-header-cell';
-      th.contentEditable = 'true';
-      th.textContent = h;
+      th.contentEditable = isEditable ? 'true' : 'false';
+      th.innerHTML = renderInlineMarkdown(h);
       th.dataset.row = 'header';
       th.dataset.col = String(colIdx);
+      th.dataset.raw = h;
       if (alignments[colIdx]) th.style.textAlign = alignments[colIdx]!;
-      attachCellHandlers(th, view, container, headers, rows, alignments, from, to);
+      if (isEditable) attachCellHandlers(th, view, container, headers, rows, alignments, from, to);
       headerTr.appendChild(th);
     });
     thead.appendChild(headerTr);
@@ -399,12 +402,13 @@ class InteractiveTableWidget extends WidgetType {
       row.forEach((cell, colIdx) => {
         const td = document.createElement('td');
         td.className = 'cm-table-editor-cell';
-        td.contentEditable = 'true';
-        td.textContent = cell;
+        td.contentEditable = isEditable ? 'true' : 'false';
+        td.innerHTML = renderInlineMarkdown(cell);
         td.dataset.row = String(rowIdx);
         td.dataset.col = String(colIdx);
+        td.dataset.raw = cell;
         if (alignments[colIdx]) td.style.textAlign = alignments[colIdx]!;
-        attachCellHandlers(td, view, container, headers, rows, alignments, from, to);
+        if (isEditable) attachCellHandlers(td, view, container, headers, rows, alignments, from, to);
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -480,11 +484,18 @@ function attachCellHandlers(
       c.classList.remove('cm-table-editor-cell-active'),
     );
     cell.classList.add('cm-table-editor-cell-active');
+    // Switch to raw markdown for editing
+    const raw = cell.dataset.raw ?? cell.textContent ?? '';
+    cell.textContent = raw;
     updateLastActive(cell, container);
   });
 
   cell.addEventListener('blur', () => {
     cell.classList.remove('cm-table-editor-cell-active');
+    // Store raw content and render inline markdown for display
+    const raw = cell.textContent ?? '';
+    cell.dataset.raw = raw;
+    cell.innerHTML = renderInlineMarkdown(raw);
     if (!state.suppressBlurSync) syncToEditor();
   });
 
@@ -708,7 +719,7 @@ export const tableEditor = [tableEditorField];
 export const tableEditorTheme = EditorView.theme({
   '.cm-table-editor': {
     display: 'block',
-    margin: '4px 0',
+    padding: '4px 0',
     border: '1px solid var(--ctp-surface1)',
     borderRadius: '6px',
     overflow: 'hidden',
