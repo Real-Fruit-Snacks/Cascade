@@ -161,18 +161,19 @@ export function OutlinePanel() {
 
   if (!activeFilePath) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-2" style={{ color: 'var(--ctp-overlay0)' }}>
-        <List size={32} strokeWidth={1} />
-        <p className="text-xs">{t('emptyStates.noFileOpen')}</p>
+      <div className="flex flex-col items-center justify-center h-full gap-2 py-8 px-4 text-center">
+        <List size={32} strokeWidth={1} style={{ color: 'var(--ctp-surface2)' }} />
+        <p className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>{t('emptyStates.noFileOpen')}</p>
       </div>
     );
   }
 
   if (headings.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-2" style={{ color: 'var(--ctp-overlay0)' }}>
-        <List size={32} strokeWidth={1} />
-        <p className="text-xs">{t('emptyStates.noHeadings')}</p>
+      <div className="flex flex-col items-center justify-center h-full gap-2 py-8 px-4 text-center">
+        <List size={32} strokeWidth={1} style={{ color: 'var(--ctp-surface2)' }} />
+        <p className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>{t('emptyStates.noHeadings')}</p>
+        <p className="text-[0.65rem]" style={{ color: 'var(--ctp-surface2)' }}>Use # Heading to add structure</p>
       </div>
     );
   }

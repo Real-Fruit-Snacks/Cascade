@@ -413,12 +413,9 @@ export function BacklinksPanel() {
           <ArrowLeftRight size={12} />
           {t('panels.backlinks')}
         </div>
-        <div
-          className="flex flex-col items-center justify-center flex-1 gap-2 px-4"
-          style={{ color: 'var(--ctp-overlay0)' }}
-        >
-          <ArrowLeftRight size={24} strokeWidth={1} />
-          <p className="text-xs text-center">{t('emptyStates.openNoteToSeeLinks')}</p>
+        <div className="flex flex-col items-center justify-center flex-1 gap-2 py-8 px-4 text-center">
+          <ArrowLeftRight size={32} strokeWidth={1} style={{ color: 'var(--ctp-surface2)' }} />
+          <p className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>{t('emptyStates.openNoteToSeeLinks')}</p>
         </div>
       </div>
     );
@@ -488,8 +485,8 @@ export function BacklinksPanel() {
         {!outCollapsed && (
           <div className="px-1 pb-1">
             {filteredOutgoing.length === 0 ? (
-              <div className="px-2 py-2 text-[11px]" style={{ color: 'var(--ctp-overlay0)' }}>
-                {t('emptyStates.noOutgoingLinks')}
+              <div className="flex flex-col items-center gap-1 py-3 px-2 text-center">
+                <p className="text-[11px]" style={{ color: 'var(--ctp-overlay0)' }}>{t('emptyStates.noOutgoingLinks')}</p>
               </div>
             ) : backlinksGroupByFolder ? (
               <GroupedResults
@@ -526,8 +523,8 @@ export function BacklinksPanel() {
         {!inCollapsed && (
           <div className="px-1 pb-1">
             {filteredIncoming.length === 0 ? (
-              <div className="px-2 py-2 text-[11px]" style={{ color: 'var(--ctp-overlay0)' }}>
-                {t('emptyStates.noIncomingLinks')}
+              <div className="flex flex-col items-center gap-1 py-3 px-2 text-center">
+                <p className="text-[11px]" style={{ color: 'var(--ctp-overlay0)' }}>{t('emptyStates.noIncomingLinks')}</p>
               </div>
             ) : backlinksGroupByFolder ? (
               <GroupedResults
@@ -564,8 +561,8 @@ export function BacklinksPanel() {
         {!unlinkedCollapsed && (
           <div className="px-1 pb-1">
             {filteredUnlinked.length === 0 ? (
-              <div className="px-2 py-2 text-[11px]" style={{ color: 'var(--ctp-overlay0)' }}>
-                {t('emptyStates.noUnlinkedMentions')}
+              <div className="flex flex-col items-center gap-1 py-3 px-2 text-center">
+                <p className="text-[11px]" style={{ color: 'var(--ctp-overlay0)' }}>{t('emptyStates.noUnlinkedMentions')}</p>
               </div>
             ) : backlinksGroupByFolder ? (
               <GroupedResults

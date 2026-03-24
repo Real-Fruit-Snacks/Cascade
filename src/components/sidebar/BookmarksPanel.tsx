@@ -74,14 +74,15 @@ export function BookmarksPanel() {
 
       <div className="flex-1 overflow-y-auto py-1" style={{ overscrollBehavior: 'contain' }}>
         {bookmarks.length === 0 ? (
-          <div className="px-3 py-4 text-xs text-center" style={{ color: 'var(--ctp-overlay0)' }}>
-            {t('emptyStates.noBookmarks')}
-            <br />
-            {t('emptyStates.noBookmarksHint')}
+          <div className="flex flex-col items-center justify-center gap-2 py-8 px-4 text-center">
+            <Star size={32} strokeWidth={1} style={{ color: 'var(--ctp-surface2)' }} />
+            <p className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>{t('emptyStates.noBookmarks')}</p>
+            <p className="text-[0.65rem]" style={{ color: 'var(--ctp-surface2)' }}>{t('emptyStates.noBookmarksHint')}</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="px-3 py-4 text-xs text-center" style={{ color: 'var(--ctp-overlay0)' }}>
-            {t('emptyStates.noMatchingBookmarks')}
+          <div className="flex flex-col items-center justify-center gap-2 py-8 px-4 text-center">
+            <Search size={32} strokeWidth={1} style={{ color: 'var(--ctp-surface2)' }} />
+            <p className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>{t('emptyStates.noMatchingBookmarks')}</p>
           </div>
         ) : (
           filtered.map(({ path, name }) => (

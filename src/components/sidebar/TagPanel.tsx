@@ -165,12 +165,12 @@ export function TagPanel() {
           <SkeletonLine width="85%" />
         </div>
       ) : sortedTags.length === 0 ? (
-        <div
-          className="flex flex-col items-center justify-center flex-1 gap-2 px-4"
-          style={{ color: 'var(--ctp-overlay0)' }}
-        >
-          <Hash size={24} strokeWidth={1} />
-          <p className="text-xs text-center">{t('emptyStates.noTags')}</p>
+        <div className="flex flex-col items-center justify-center flex-1 gap-2 py-8 px-4 text-center">
+          <Hash size={32} strokeWidth={1} style={{ color: 'var(--ctp-surface2)' }} />
+          <p className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>{t('emptyStates.noTags')}</p>
+          <p className="text-[0.65rem]" style={{ color: 'var(--ctp-surface2)' }}>
+            {search ? 'Try a different search term' : 'Add #tags anywhere in your notes'}
+          </p>
         </div>
       ) : (
         <>
