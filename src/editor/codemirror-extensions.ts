@@ -251,6 +251,30 @@ export function buildEditorExtensions(
     smartListKeymap,
     formattingKeymap,
     dropHandler,
+    // Click below last line → place cursor at end (insert newline if needed for block widgets)
+    EditorView.domEventHandlers({
+      mousedown(event, view) {
+        const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+        if (pos === null) {
+          // Click is in padding below content — move cursor to end of doc
+          event.preventDefault();
+          const end = view.state.doc.length;
+          const lastLine = view.state.doc.lineAt(end);
+          // If the last line has content (e.g., part of a table), add a newline
+          if (lastLine.text.trim().length > 0) {
+            view.dispatch({
+              changes: { from: end, insert: '\n' },
+              selection: { anchor: end + 1 },
+            });
+          } else {
+            view.dispatch({ selection: { anchor: end } });
+          }
+          view.focus();
+          return true;
+        }
+        return false;
+      },
+    }),
     comps.slashCommandsComp.of(settings.enableSlashCommands ? slashCommandExtension : []),
     comps.collabComp.of([]),
     ...extraExts,

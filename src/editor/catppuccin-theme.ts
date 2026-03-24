@@ -17,6 +17,7 @@ export function createCatppuccinTheme(dark: boolean): Extension {
       lineHeight: '1.6',
       paddingLeft: '40px',
       paddingRight: '40px',
+      paddingBottom: '30vh',
     },
     '.cm-cursor, .cm-dropCursor': {
       borderLeftColor: 'var(--ctp-text)',
