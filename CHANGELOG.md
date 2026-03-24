@@ -4,6 +4,40 @@ All notable changes to Cascade will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] — 2026-03-24
+
+### Real-Time Collaboration
+
+Share your vault with others on your local network. Multiple users can edit the same files simultaneously with live cursors, presence indicators, and automatic conflict resolution.
+
+- **Live editing** — See each other's changes in real-time with colored cursors and selections
+- **Zero-config discovery** — Automatically detects collaborators via a shared presence file in the vault
+- **Password-protected** — Vault password required to join (never saved to disk)
+- **Collaborators panel** — New sidebar panel showing connected users and what they're editing
+- **File tree presence** — Colored dots in the file tree indicate which files have active collaborators
+- **Connection status** — Status bar indicator shows hosting status, connected count, and connection health
+- **Auto-promotion** — If the host disconnects, another user automatically takes over
+- **Collab-aware saving** — Only the host writes to disk, preventing file conflicts on the shared folder
+
+#### How to Get Started
+1. Open a vault from a shared folder location
+2. Go to **Settings → Collaboration**
+3. Set your display name, pick a cursor color, and enter a vault password
+4. Click **Start Hosting**
+5. Other users open the same vault, enable collaboration, and they'll connect automatically
+
+### Improvements
+
+- **Table inline markdown** — Bold, italic, links, and other inline formatting now renders inside table cells in live preview
+- **Settings profiles** — Create named settings profiles for per-user preferences when sharing a vault
+- **Tidemark highlight** — Variable highlights now work in files without frontmatter
+
+### Bug Fixes
+
+- **Fixed click positioning in live preview** — Clicking in the editor now accurately places the cursor where you click. Previously, CSS margins on widget elements caused CodeMirror's height calculations to drift, resulting in clicks landing on the wrong line.
+- **Deferred decoration rebuild on click** — Live preview syntax reveal is now deferred by one frame on mouse clicks, preventing the cursor from appearing to jump horizontally.
+- **Widget height estimates** — Added `estimatedHeight` to all live preview widgets for more accurate scroll and click positioning before DOM measurement.
+
 ## [0.1.0] - 2026-03-09
 
 ### Added
