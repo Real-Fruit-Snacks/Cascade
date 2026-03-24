@@ -10,6 +10,7 @@ import { tags, tagTheme, tagClickHandler, tagAutocompletion } from './tags';
 import { tidemarkHighlight, tidemarkTheme } from './tidemark-highlight';
 import { indentGuides } from './indent-guides';
 import { imagePreview } from './image-preview';
+import { tableEditor, tableEditorTheme } from './table-editor';
 import { mathPreview, mathPreviewTheme } from './math-preview';
 import { calloutPreview, calloutPreviewTheme } from './callout-preview';
 import { mermaidPreview, mermaidPreviewTheme } from './mermaid-preview';
@@ -47,7 +48,7 @@ export function useCodeMirror() {
     wikiLinksComp, tagsComp, tidemarkComp, codeFoldingComp, typewriterComp,
     indentGuidesComp, imagePreviewComp, mathPreviewComp, calloutPreviewComp,
     mermaidPreviewComp, queryPreviewComp, focusModeComp, highlightSyntaxComp,
-    markdownComp, slashCommandsComp, collabComp,
+    markdownComp, slashCommandsComp, collabComp, tableEditorComp,
   } = compsRef.current;
 
   const updateContent = useEditorStore((s) => s.updateContent);
@@ -213,11 +214,26 @@ export function useCodeMirror() {
     if (!view) return;
 
     const exts = extensionsForMode(viewMode, enableLivePreview);
+    const isSource = viewMode === 'source';
     view.dispatch({
       effects: [
         livePreviewComp.reconfigure(exts.livePreview),
         highlightSyntaxComp.reconfigure(buildHighlightSyntaxExtensions(enableLivePreview, enableHighlightSyntax, highlightColor, viewMode)),
         readOnlyComp.reconfigure(exts.readOnly),
+        // Disable all preview decorations in source mode — show raw markdown only
+        wikiLinksComp.reconfigure(enableWikiLinks
+          ? isSource ? [wikiLinkCompletion] : [wikiLinks, wikiLinkClickHandler, wikiLinkTheme, wikiLinkCompletion]
+          : []),
+        tagsComp.reconfigure(enableTags
+          ? isSource ? [tagAutocompletion] : [tags, tagTheme, tagClickHandler, tagAutocompletion]
+          : []),
+        tidemarkComp.reconfigure(enableVariables && variablesHighlight && !isSource ? [tidemarkHighlight, tidemarkTheme] : []),
+        imagePreviewComp.reconfigure(enableImagePreview && !isSource ? imagePreview(imagePreviewMaxHeight) : []),
+        mathPreviewComp.reconfigure(enableMathPreview && !isSource ? [mathPreview, mathPreviewTheme] : []),
+        calloutPreviewComp.reconfigure(enableCalloutPreview && !isSource ? [calloutPreview, calloutPreviewTheme] : []),
+        mermaidPreviewComp.reconfigure(enableMermaidPreview && !isSource ? [mermaidPreview, mermaidPreviewTheme] : []),
+        queryPreviewComp.reconfigure(enableQueryPreview && !isSource ? [queryPreview, queryPreviewTheme] : []),
+        tableEditorComp.reconfigure(!isSource ? [...tableEditor, tableEditorTheme] : []),
       ],
     });
   }, [viewMode, enableLivePreview, enableHighlightSyntax, highlightColor]);
@@ -339,40 +355,40 @@ export function useCodeMirror() {
     view.dispatch({ effects: indentGuidesComp.reconfigure(enableIndentGuides ? indentGuides(indentGuideColor, indentGuideStyle) : []) });
   }, [enableIndentGuides, indentGuideColor, indentGuideStyle]);
 
-  // Image preview
+  // Image preview (disabled in source mode)
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
-    view.dispatch({ effects: imagePreviewComp.reconfigure(enableImagePreview ? imagePreview(imagePreviewMaxHeight) : []) });
-  }, [enableImagePreview, imagePreviewMaxHeight]);
+    view.dispatch({ effects: imagePreviewComp.reconfigure(enableImagePreview && viewMode !== 'source' ? imagePreview(imagePreviewMaxHeight) : []) });
+  }, [enableImagePreview, imagePreviewMaxHeight, viewMode]);
 
-  // Math preview
+  // Math preview (disabled in source mode)
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
-    view.dispatch({ effects: mathPreviewComp.reconfigure(enableMathPreview ? [mathPreview, mathPreviewTheme] : []) });
-  }, [enableMathPreview]);
+    view.dispatch({ effects: mathPreviewComp.reconfigure(enableMathPreview && viewMode !== 'source' ? [mathPreview, mathPreviewTheme] : []) });
+  }, [enableMathPreview, viewMode]);
 
-  // Callout preview
+  // Callout preview (disabled in source mode)
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
-    view.dispatch({ effects: calloutPreviewComp.reconfigure(enableCalloutPreview ? [calloutPreview, calloutPreviewTheme] : []) });
-  }, [enableCalloutPreview]);
+    view.dispatch({ effects: calloutPreviewComp.reconfigure(enableCalloutPreview && viewMode !== 'source' ? [calloutPreview, calloutPreviewTheme] : []) });
+  }, [enableCalloutPreview, viewMode]);
 
-  // Mermaid preview
+  // Mermaid preview (disabled in source mode)
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
-    view.dispatch({ effects: mermaidPreviewComp.reconfigure(enableMermaidPreview ? [mermaidPreview, mermaidPreviewTheme] : []) });
-  }, [enableMermaidPreview]);
+    view.dispatch({ effects: mermaidPreviewComp.reconfigure(enableMermaidPreview && viewMode !== 'source' ? [mermaidPreview, mermaidPreviewTheme] : []) });
+  }, [enableMermaidPreview, viewMode]);
 
-  // Query preview
+  // Query preview (disabled in source mode)
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
-    view.dispatch({ effects: queryPreviewComp.reconfigure(enableQueryPreview ? [queryPreview, queryPreviewTheme] : []) });
-  }, [enableQueryPreview]);
+    view.dispatch({ effects: queryPreviewComp.reconfigure(enableQueryPreview && viewMode !== 'source' ? [queryPreview, queryPreviewTheme] : []) });
+  }, [enableQueryPreview, viewMode]);
 
   // Slash commands
   useEffect(() => {

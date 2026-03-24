@@ -165,16 +165,22 @@ export function buildRenderExtensions(
     })),
     comps.lineWrappingComp.of(EditorView.lineWrapping),
     comps.tabSizeComp.of(EditorState.tabSize.of(settings.tabSize)),
-    comps.wikiLinksComp.of(settings.enableWikiLinks ? [wikiLinks, wikiLinkClickHandler, wikiLinkTheme, wikiLinkCompletion] : []),
-    comps.tagsComp.of(settings.enableTags ? [tags, tagTheme, tagClickHandler, tagAutocompletion] : []),
-    comps.tidemarkComp.of(settings.enableVariables && settings.variablesHighlight ? [tidemarkHighlight, tidemarkTheme] : []),
+    // In source mode, disable ALL preview decorations — show raw markdown only.
+    // Wiki-links and tags keep autocompletion but disable decorations/click handlers.
+    comps.wikiLinksComp.of(settings.enableWikiLinks
+      ? mode === 'source' ? [wikiLinkCompletion] : [wikiLinks, wikiLinkClickHandler, wikiLinkTheme, wikiLinkCompletion]
+      : []),
+    comps.tagsComp.of(settings.enableTags
+      ? mode === 'source' ? [tagAutocompletion] : [tags, tagTheme, tagClickHandler, tagAutocompletion]
+      : []),
+    comps.tidemarkComp.of(settings.enableVariables && settings.variablesHighlight && mode !== 'source' ? [tidemarkHighlight, tidemarkTheme] : []),
     comps.indentGuidesComp.of(settings.enableIndentGuides ? indentGuides(settings.indentGuideColor, settings.indentGuideStyle) : []),
-    comps.imagePreviewComp.of(settings.enableImagePreview ? imagePreview(settings.imagePreviewMaxHeight) : []),
-    comps.mathPreviewComp.of(settings.enableMathPreview ? [mathPreview, mathPreviewTheme] : []),
-    comps.calloutPreviewComp.of(settings.enableCalloutPreview ? [calloutPreview, calloutPreviewTheme] : []),
-    comps.mermaidPreviewComp.of(settings.enableMermaidPreview ? [mermaidPreview, mermaidPreviewTheme] : []),
-    comps.queryPreviewComp.of(settings.enableQueryPreview ? [queryPreview, queryPreviewTheme] : []),
-    comps.tableEditorComp.of([...tableEditor, tableEditorTheme]),
+    comps.imagePreviewComp.of(settings.enableImagePreview && mode !== 'source' ? imagePreview(settings.imagePreviewMaxHeight) : []),
+    comps.mathPreviewComp.of(settings.enableMathPreview && mode !== 'source' ? [mathPreview, mathPreviewTheme] : []),
+    comps.calloutPreviewComp.of(settings.enableCalloutPreview && mode !== 'source' ? [calloutPreview, calloutPreviewTheme] : []),
+    comps.mermaidPreviewComp.of(settings.enableMermaidPreview && mode !== 'source' ? [mermaidPreview, mermaidPreviewTheme] : []),
+    comps.queryPreviewComp.of(settings.enableQueryPreview && mode !== 'source' ? [queryPreview, queryPreviewTheme] : []),
+    comps.tableEditorComp.of(mode !== 'source' ? [...tableEditor, tableEditorTheme] : []),
     bracketMatching(),
     propertiesTheme,
     ...imageControls(),
