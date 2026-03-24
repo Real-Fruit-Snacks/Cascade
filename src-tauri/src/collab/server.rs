@@ -188,7 +188,8 @@ impl RelayServer {
                                 }
                             }
                             Err(broadcast::error::RecvError::Lagged(n)) => {
-                                eprintln!("[collab] Client {} lagged by {} messages", addr, n);
+                                eprintln!("collab: client {addr} lagged {n} msgs, forcing reconnect for resync");
+                                break; // Disconnect — client will reconnect and resync via Yjs protocol
                             }
                             Err(broadcast::error::RecvError::Closed) => break,
                         }
