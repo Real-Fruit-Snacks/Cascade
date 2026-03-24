@@ -134,14 +134,18 @@ pub async fn stop_collab(
         }
     }
 
-    // Delete presence file
-    {
+    // Delete presence file only if we are the host
+    let should_delete_presence = {
+        let config = config_state.0.lock().unwrap();
+        config.role == Some(super::CollabRole::Host)
+    };
+    if should_delete_presence {
         let guard = vault_root
             .0
             .lock()
             .map_err(|_| "Failed to lock vault root".to_string())?;
-        if let Some(path) = guard.as_ref() {
-            presence::delete_presence(path);
+        if let Some(vp) = guard.as_ref() {
+            presence::delete_presence(vp);
         }
     }
 
@@ -179,13 +183,15 @@ pub async fn get_collab_status(
         guard.clone()
     };
 
-    let (active, connected_clients) = {
+    let connected_clients = {
         let state = server_state.0.lock().await;
         match state.as_ref() {
-            Some(relay) => (true, relay.client_count().await),
-            None => (false, 0),
+            Some(relay) => relay.client_count().await,
+            None => 0,
         }
     };
+
+    let active = cfg.role.is_some();
 
     Ok(CollabStatus {
         active,
