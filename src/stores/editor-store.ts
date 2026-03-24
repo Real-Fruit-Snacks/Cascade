@@ -12,6 +12,8 @@ import { consumeDraft, saveDrafts } from './editor-drafts';
 import { performSave, derived, findHeadingPosition, findBlockIdPosition } from './editor-helpers';
 import { createLogger } from '../lib/logger';
 import { emit } from '../lib/cascade-events';
+import { useCollabStore } from './collab-store';
+import { normalizePath } from '../lib/collab-messages';
 
 const log = createLogger('EditorStore');
 
@@ -457,6 +459,10 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
   },
 
   handleExternalChange: async (vaultRoot: string, relPath: string) => {
+    // Skip external-change handling for collab-active docs
+    const collabState = useCollabStore.getState();
+    if (collabState.active && collabState.activeDocPaths.has(normalizePath(relPath))) return;
+
     // Check if file is open before async read
     if (get().tabs.findIndex((t) => t.path === relPath) === -1) return;
 
@@ -750,6 +756,20 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
     const { panes } = get();
     if (paneIndex < 0 || paneIndex >= panes.length) return;
     panes[paneIndex].editorViewRef.current = view;
+  },
+
+  handleCollabRename: (oldPath: string, newPath: string) => {
+    const { tabs, activeTabIndex } = get();
+    const newTabs = tabs.map((t) => t.path === oldPath ? { ...t, path: newPath } : t);
+    set({ tabs: newTabs, ...derived(newTabs, activeTabIndex) });
+  },
+
+  handleCollabDelete: (path: string) => {
+    const { tabs, activeTabIndex } = get();
+    const idx = tabs.findIndex((t) => t.path === path);
+    if (idx === -1) return;
+    const newTabs = tabs.map((t, i) => i === idx ? { ...t, isDirty: true } : t);
+    set({ tabs: newTabs, ...derived(newTabs, activeTabIndex) });
   },
 
   moveTabToPane: (tabIndex: number, fromPane: number, toPane: number) => {

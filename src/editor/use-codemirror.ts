@@ -28,6 +28,9 @@ import {
 } from './build-extensions';
 import { type Compartments, createCompartments, buildCodeFoldingExtensions, buildEditorExtensions } from './codemirror-extensions';
 import { createMousedownHandler, createUpdateListener } from './codemirror-handlers';
+import { useCollabStore } from '../stores/collab-store';
+import { getGlobalProvider, getGlobalDocManager } from '../lib/collab-init';
+import { buildCollabExtension } from './collab-extension';
 
 export function useCodeMirror() {
   const viewRef = useRef<EditorView | null>(null);
@@ -43,7 +46,7 @@ export function useCodeMirror() {
     wikiLinksComp, tagsComp, tidemarkComp, codeFoldingComp, typewriterComp,
     indentGuidesComp, imagePreviewComp, mathPreviewComp, calloutPreviewComp,
     mermaidPreviewComp, queryPreviewComp, focusModeComp, highlightSyntaxComp,
-    markdownComp, slashCommandsComp,
+    markdownComp, slashCommandsComp, collabComp,
   } = compsRef.current;
 
   const updateContent = useEditorStore((s) => s.updateContent);
@@ -376,6 +379,43 @@ export function useCodeMirror() {
     if (!view) return;
     view.dispatch({ effects: slashCommandsComp.reconfigure(enableSlashCommands ? slashCommandExtension : []) });
   }, [enableSlashCommands]);
+
+  // Collaboration: bind/unbind yCollab extension when active file or collab state changes
+  const collabActive = useCollabStore((s) => s.active);
+  const activeFilePath = useEditorStore((s) => s.activeFilePath);
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+
+    if (!collabActive || !activeFilePath) {
+      view.dispatch({ effects: collabComp.reconfigure([]) });
+      return;
+    }
+
+    const docManager = getGlobalDocManager();
+    const provider = getGlobalProvider();
+    if (!provider) {
+      view.dispatch({ effects: collabComp.reconfigure([]) });
+      return;
+    }
+
+    const tab = useEditorStore.getState().tabs.find((t) => t.path === activeFilePath);
+    const initialContent = tab?.content ?? '';
+    const ydoc = docManager.getOrCreate(activeFilePath, initialContent);
+    const ytext = ydoc.getText('content');
+
+    provider.registerDoc(activeFilePath, ydoc);
+    useCollabStore.getState().addActiveDoc(activeFilePath);
+
+    view.dispatch({ effects: collabComp.reconfigure(buildCollabExtension(ytext, provider.awareness)) });
+
+    return () => {
+      view.dispatch({ effects: collabComp.reconfigure([]) });
+      provider.unregisterDoc(activeFilePath);
+      docManager.removeRef(activeFilePath);
+      useCollabStore.getState().removeActiveDoc(activeFilePath);
+    };
+  }, [collabActive, activeFilePath]);
 
   // Live preview: reconfigure when any sub-toggle or related setting changes
   useEffect(() => {

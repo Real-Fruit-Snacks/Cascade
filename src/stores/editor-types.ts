@@ -81,6 +81,8 @@ export interface EditorActions {
   savePaneFile: (paneIndex: number, vaultRoot: string) => Promise<void>;
   setPaneEditorView: (paneIndex: number, view: EditorView | null) => void;
   moveTabToPane: (tabIndex: number, fromPane: number, toPane: number) => void;
+  handleCollabRename: (oldPath: string, newPath: string) => void;
+  handleCollabDelete: (path: string) => void;
 }
 
 export interface EditorDerived {
