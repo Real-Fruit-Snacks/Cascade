@@ -16,7 +16,7 @@ const TOAST_COLORS: Record<ToastType, string> = {
   success: 'var(--ctp-green)',
 };
 
-function ToastItem({ toast }: { toast: Toast }) {
+function ToastItem({ toast, index }: { toast: Toast; index: number }) {
   const dismissToast = useToastStore((s) => s.dismissToast);
   const removeToast = useToastStore((s) => s.removeToast);
   const pauseToast = useToastStore((s) => s.pauseToast);
@@ -40,7 +40,7 @@ function ToastItem({ toast }: { toast: Toast }) {
         maxWidth: 380,
         animation: toast.dismissing
           ? 'toast-slide-out 0.2s ease-in forwards'
-          : 'toast-slide-in 0.2s ease-out',
+          : `toast-slide-in 0.2s ease-out ${index * 40}ms both`,
       }}
     >
       <span style={{ color: TOAST_COLORS[toast.type], flexShrink: 0, marginTop: 1 }}>
@@ -130,8 +130,8 @@ export function ToastContainer() {
           alignItems: 'flex-end',
         }}
       >
-        {toasts.map((toast) => (
-          <ToastItem key={toast.id} toast={toast} />
+        {toasts.map((toast, index) => (
+          <ToastItem key={toast.id} toast={toast} index={index} />
         ))}
       </div>
     </>

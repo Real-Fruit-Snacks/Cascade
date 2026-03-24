@@ -79,6 +79,10 @@ export function FileTreeRow({
         e.dataTransfer.effectAllowed = 'copyMove';
         e.dataTransfer.setData('text/plain', entry.path);
         e.dataTransfer.setData('cascade/file-path', entry.path);
+        document.body.classList.add('is-dragging-file');
+      }}
+      onDragEnd={() => {
+        document.body.classList.remove('is-dragging-file');
       }}
       onDragOver={entry.isDir ? (e) => {
         if (!e.dataTransfer.types.includes('text/plain') && !e.dataTransfer.types.includes('cascade/file-path')) return;

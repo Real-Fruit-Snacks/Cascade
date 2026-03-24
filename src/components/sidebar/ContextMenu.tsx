@@ -79,7 +79,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
     <div
       ref={ref}
       role="menu"
-      className="fixed z-[100] py-1 rounded-lg overflow-hidden"
+      className="fixed z-[100] py-1 rounded-lg overflow-hidden animate-menu-in"
       style={{
         left: x,
         top: y,

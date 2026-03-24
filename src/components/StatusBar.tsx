@@ -343,7 +343,9 @@ export function StatusBar() {
       {justSaved && (
         <>
           {pluginStatusBarItems.size > 0 && <Divider />}
-          <span style={{ color: 'var(--ctp-green)' }}>{t('saved')}</span>
+          <span className="animate-save-indicator" style={{ color: 'var(--ctp-green)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+            {t('saved')}
+          </span>
         </>
       )}
       {isDirty && !justSaved && (

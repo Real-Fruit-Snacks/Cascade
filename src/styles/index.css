@@ -124,6 +124,13 @@
     outline: 2px solid var(--ctp-accent);
     outline-offset: 2px;
     border-radius: 6px;
+    transition: outline-offset 0.15s ease;
+  }
+
+  /* Suppress CodeMirror's own focus ring — it draws its own cursor */
+  .cm-editor *:focus-visible {
+    outline: none;
+    transition: none;
   }
 
   input, textarea {
@@ -304,6 +311,34 @@
 /* Ensure live preview decorations render properly in small cards */
 .canvas-card-editor .cm-line {
   padding-left: 0;
+}
+
+/* Save indicator: fade in, hold, fade out */
+@keyframes save-indicator {
+  0%   { opacity: 0; transform: translateY(1px); }
+  15%  { opacity: 1; transform: translateY(0); }
+  75%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-1px); }
+}
+
+.animate-save-indicator {
+  animation: save-indicator 1.5s ease forwards;
+}
+
+/* Context menu entrance */
+@keyframes menu-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-menu-in {
+  animation: menu-in 0.12s ease-out;
+  transform-origin: top left;
+}
+
+/* Drag grabbing cursor — applied to body during active drag */
+body.is-dragging-file * {
+  cursor: grabbing !important;
 }
 
 /* Respect reduced motion preferences */
