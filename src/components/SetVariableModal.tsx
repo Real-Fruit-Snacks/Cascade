@@ -46,6 +46,7 @@ export function SetVariableModal({ open, variableName, currentValue, onClose, on
         inputRef.current?.focus();
         inputRef.current?.select();
       });
+      setTimeout(() => { if (document.activeElement !== inputRef.current) { inputRef.current?.focus(); inputRef.current?.select(); } }, 50);
     }
   }, [open, currentValue]);
 

@@ -52,7 +52,11 @@
   "onboarding": {
     "tagline": "A beautiful markdown editor",
     "openVault": "Open Vault",
-    "createNewVault": "Create New Vault",
+    "openVaultDesc": "Open an existing folder as a vault",
+    "createNewVault": "Create New",
+    "createVaultDesc": "Start fresh with a new vault",
+    "importVault": "Import",
+    "importVaultDesc": "Import from Obsidian or other apps",
     "recentVaults": "Recent Vaults",
     "shortcutOpenVault": "Open vault",
     "shortcutNewFile": "New file",

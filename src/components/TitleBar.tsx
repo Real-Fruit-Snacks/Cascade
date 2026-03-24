@@ -46,12 +46,6 @@ export function TitleBar() {
   };
   const handleClose = () => appWindow.close();
 
-  const handleDrag = (e: React.MouseEvent) => {
-    // Only drag on left-click and not on buttons
-    if (e.button !== 0 || (e.target as HTMLElement).closest('button')) return;
-    appWindow.startDragging();
-  };
-
   return (
     <div
       data-tauri-drag-region
@@ -61,7 +55,6 @@ export function TitleBar() {
         backgroundColor: 'var(--ctp-crust)',
         borderBottom: '1px solid var(--ctp-surface0)',
       }}
-      onMouseDown={handleDrag}
       onDoubleClick={handleMaximize}
     >
       {/* App icon + title — left side */}
@@ -78,8 +71,12 @@ export function TitleBar() {
         />
         <span
           data-tauri-drag-region
-          className="text-xs font-medium tracking-wide truncate"
-          style={{ color: 'var(--ctp-overlay1)' }}
+          className="text-xs font-semibold tracking-wide truncate"
+          style={{
+            background: 'linear-gradient(135deg, var(--ctp-mauve), var(--ctp-blue))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
         >
           {displayTitle}
         </span>

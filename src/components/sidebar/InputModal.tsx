@@ -46,6 +46,7 @@ export function InputModal({
       setValue(defaultValue);
       setError(null);
       requestAnimationFrame(() => inputRef.current?.focus());
+      setTimeout(() => { if (document.activeElement !== inputRef.current) inputRef.current?.focus(); }, 50);
     }
   }, [open, defaultValue]);
 

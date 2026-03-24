@@ -57,6 +57,7 @@ interface VaultActions {
   renameFile: (oldPath: string, newPath: string) => Promise<void>;
   moveFile: (srcPath: string, destDir: string) => Promise<string | null>;
   getFolders: () => string[];
+  removeRecentVault: (path: string) => void;
   closeVault: () => Promise<void>;
 }
 
@@ -465,5 +466,13 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
     };
     walk(fileTree);
     return folders;
+  },
+
+  removeRecentVault: (path: string) => {
+    set((s) => {
+      const updated = s.recentVaults.filter((v) => v !== path);
+      localStorage.setItem(RECENT_VAULTS_KEY, JSON.stringify(updated));
+      return { recentVaults: updated };
+    });
   },
 }));

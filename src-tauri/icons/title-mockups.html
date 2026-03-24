@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  :root {
+    --ctp-base: #1e1e2e; --ctp-mantle: #181825; --ctp-crust: #11111b;
+    --ctp-surface0: #313244; --ctp-surface1: #45475a;
+    --ctp-overlay0: #6c7086; --ctp-overlay1: #7f849c;
+    --ctp-text: #cdd6f4; --ctp-subtext0: #a6adc8;
+    --ctp-mauve: #cba6f7; --ctp-lavender: #b4befe; --ctp-blue: #89b4fa;
+    --ctp-sapphire: #74c7ec; --ctp-sky: #89dceb; --ctp-teal: #94e2d5;
+    --ctp-green: #a6e3a1; --ctp-pink: #f5c2e7; --ctp-red: #f38ba8;
+    --ctp-peach: #fab387; --ctp-yellow: #f9e2af; --ctp-flamingo: #f2cdcd;
+    --ctp-rosewater: #f5e0dc;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #11111b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; flex-wrap: wrap; gap: 20px; padding: 24px; justify-content: center; }
+  .option { width: 300px; height: 140px; background: var(--ctp-crust); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--ctp-surface0); }
+  .label { text-align: center; font-size: 10px; color: var(--ctp-mauve); margin-top: 6px; font-weight: 600; }
+  .sublabel { text-align: center; font-size: 9px; color: var(--ctp-overlay0); margin-bottom: 8px; }
+  .tag { font-size: 11px; color: var(--ctp-overlay0); margin-top: 4px; }
+  .wrapper { text-align: center; }
+
+  .t1 { font-size: 36px; font-weight: 800; letter-spacing: -1px; background: linear-gradient(135deg, var(--ctp-mauve), var(--ctp-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .t2 { font-size: 36px; font-weight: 800; letter-spacing: -1px; background: linear-gradient(135deg, var(--ctp-mauve), var(--ctp-pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .t3 { font-size: 36px; font-weight: 800; letter-spacing: -1px; background: linear-gradient(90deg, var(--ctp-blue), var(--ctp-mauve), var(--ctp-pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .t4 { font-size: 36px; font-weight: 800; letter-spacing: -1px; background: linear-gradient(135deg, var(--ctp-lavender), var(--ctp-mauve)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 40px rgba(203,166,247,0.3); }
+  .t5 { font-size: 42px; font-weight: 900; letter-spacing: -2px; background: linear-gradient(180deg, var(--ctp-text) 30%, var(--ctp-mauve) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .t6 { font-size: 36px; font-weight: 800; letter-spacing: -1px; background: linear-gradient(135deg, var(--ctp-sky), var(--ctp-blue), var(--ctp-mauve)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .t7 { font-size: 36px; font-weight: 300; letter-spacing: 6px; text-transform: uppercase; background: linear-gradient(135deg, var(--ctp-mauve), var(--ctp-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .t8 { font-size: 40px; font-weight: 800; letter-spacing: -1.5px; color: var(--ctp-text); text-shadow: 0 0 60px rgba(203,166,247,0.4), 0 0 120px rgba(137,180,250,0.2); }
+  .t9 { font-size: 36px; font-weight: 800; letter-spacing: -1px; background: linear-gradient(135deg, var(--ctp-peach), var(--ctp-mauve), var(--ctp-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .t10 { font-size: 36px; font-weight: 800; letter-spacing: -1px; background: linear-gradient(135deg, var(--ctp-green), var(--ctp-teal), var(--ctp-blue), var(--ctp-mauve)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .t11 { font-size: 36px; font-weight: 800; letter-spacing: -1px; background: linear-gradient(135deg, var(--ctp-rosewater), var(--ctp-flamingo), var(--ctp-mauve)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .t12 { font-size: 36px; font-weight: 800; letter-spacing: -1px; position: relative; color: var(--ctp-mauve); }
+  .t12::after { content: 'Cascade'; position: absolute; left: 0; top: 0; background: linear-gradient(135deg, var(--ctp-mauve), var(--ctp-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: blur(0); }
+</style>
+</head>
+<body>
+
+<div class="wrapper"><div class="label">A — Mauve to Blue</div><div class="sublabel">Classic diagonal gradient</div><div class="option"><span class="t1">Cascade</span><span class="tag">A beautiful markdown editor</span></div></div>
+
+<div class="wrapper"><div class="label">B — Mauve to Pink</div><div class="sublabel">Warm accent gradient</div><div class="option"><span class="t2">Cascade</span><span class="tag">A beautiful markdown editor</span></div></div>
+
+<div class="wrapper"><div class="label">C — Blue-Mauve-Pink</div><div class="sublabel">Three-color horizontal</div><div class="option"><span class="t3">Cascade</span><span class="tag">A beautiful markdown editor</span></div></div>
+
+<div class="wrapper"><div class="label">D — Lavender-Mauve + Glow</div><div class="sublabel">Subtle glow behind text</div><div class="option"><span class="t4">Cascade</span><span class="tag">A beautiful markdown editor</span></div></div>
+
+<div class="wrapper"><div class="label">E — White to Mauve</div><div class="sublabel">Large, fading to accent</div><div class="option"><span class="t5">Cascade</span><span class="tag">A beautiful markdown editor</span></div></div>
+
+<div class="wrapper"><div class="label">F — Sky-Blue-Mauve</div><div class="sublabel">Cool tones cascade</div><div class="option"><span class="t6">Cascade</span><span class="tag">A beautiful markdown editor</span></div></div>
+
+<div class="wrapper"><div class="label">G — Thin Uppercase</div><div class="sublabel">Elegant spaced letters</div><div class="option"><span class="t7">Cascade</span><span class="tag">A beautiful markdown editor</span></div></div>
+
+<div class="wrapper"><div class="label">H — White + Mauve Glow</div><div class="sublabel">Clean white with color aura</div><div class="option"><span class="t8">Cascade</span><span class="tag">A beautiful markdown editor</span></div></div>
+
+<div class="wrapper"><div class="label">I — Peach-Mauve-Blue</div><div class="sublabel">Warm to cool spectrum</div><div class="option"><span class="t9">Cascade</span><span class="tag">A beautiful markdown editor</span></div></div>
+
+<div class="wrapper"><div class="label">J — Rainbow Catppuccin</div><div class="sublabel">Full palette sweep</div><div class="option"><span class="t10">Cascade</span><span class="tag">A beautiful markdown editor</span></div></div>
+
+<div class="wrapper"><div class="label">K — Rosewater-Flamingo-Mauve</div><div class="sublabel">Soft warm gradient</div><div class="option"><span class="t11">Cascade</span><span class="tag">A beautiful markdown editor</span></div></div>
+
+<div class="wrapper"><div class="label">L — Solid Mauve + Shadow</div><div class="sublabel">Bold monochrome accent</div><div class="option"><span class="t12">Cascade</span><span class="tag">A beautiful markdown editor</span></div></div>
+
+</body>
+</html>

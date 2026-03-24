@@ -1,17 +1,79 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Folder, FolderOpen, Loader2 } from 'lucide-react';
+import { Folder, FolderOpen, FolderPlus, Download, Loader2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useVaultStore } from '../stores/vault-store';
 import i18n from '../i18n';
 import { flavors } from '../styles/catppuccin-flavors';
 
-const mod = navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl';
+function ActionCard({
+  icon,
+  iconBg,
+  iconColor,
+  hoverColor,
+  title,
+  description,
+  onClick,
+  disabled,
+}: {
+  icon: React.ReactNode;
+  iconBg: string;
+  iconColor: string;
+  hoverColor: string;
+  title: string;
+  description: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="flex flex-col items-center gap-3 rounded-xl px-6 py-5 disabled:opacity-50 disabled:cursor-not-allowed"
+      style={{
+        width: 160,
+        backgroundColor: hovered ? 'var(--ctp-base)' : 'var(--ctp-mantle)',
+        border: `1px solid ${hovered ? hoverColor : 'var(--ctp-surface0)'}`,
+        transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
+        boxShadow: hovered ? `0 4px 20px ${hoverColor}20` : 'none',
+        transition: 'all 0.2s ease',
+      }}
+    >
+      <div
+        className="flex items-center justify-center rounded-lg"
+        style={{
+          width: 40,
+          height: 40,
+          backgroundColor: iconBg,
+          transform: hovered ? 'scale(1.1)' : 'scale(1)',
+          transition: 'transform 0.2s ease',
+        }}
+      >
+        {icon}
+      </div>
+      <div className="flex flex-col items-center gap-1">
+        <span
+          className="text-xs font-semibold"
+          style={{ color: hovered ? iconColor : 'var(--ctp-text)', transition: 'color 0.2s ease' }}
+        >
+          {title}
+        </span>
+        <span className="text-[10px] leading-tight text-center" style={{ color: 'var(--ctp-overlay0)' }}>
+          {description}
+        </span>
+      </div>
+    </button>
+  );
+}
 
 export function OnboardingScreen() {
   const { t } = useTranslation('common');
   const recentVaults = useVaultStore((s) => s.recentVaults);
   const openVault = useVaultStore((s) => s.openVault);
+  const removeRecentVault = useVaultStore((s) => s.removeRecentVault);
   const isLoading = useVaultStore((s) => s.isLoading);
   const containerRef = useRef<HTMLDivElement>(null);
   const [loadingPath, setLoadingPath] = useState<string | null>(null);
@@ -71,17 +133,11 @@ export function OnboardingScreen() {
                 className="animate-spin"
                 style={{ color: 'var(--ctp-mauve)' }}
               />
-              <span
-                className="text-sm font-medium"
-                style={{ color: 'var(--ctp-text)' }}
-              >
+              <span className="text-sm font-medium" style={{ color: 'var(--ctp-text)' }}>
                 {t('onboarding.openingVault', { name: vaultName })}
               </span>
             </div>
-            <span
-              className="text-xs"
-              style={{ color: 'var(--ctp-overlay0)' }}
-            >
+            <span className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>
               {loadingPath}
             </span>
           </div>
@@ -94,102 +150,141 @@ export function OnboardingScreen() {
     <div
       ref={containerRef}
       className="flex flex-col items-center justify-center flex-1 w-full"
-      style={{ backgroundColor: 'var(--ctp-base)' }}
+      style={{ backgroundColor: 'var(--ctp-crust)' }}
     >
-      {/* App name */}
-      <div className="flex flex-col items-center gap-4 mb-10">
-        <div className="flex flex-col items-center gap-1">
-          <h1
-            className="text-4xl font-bold tracking-tight"
-            style={{ color: 'var(--ctp-text)' }}
-          >
-            Cascade
-          </h1>
-          <p className="text-sm" style={{ color: 'var(--ctp-subtext0)' }}>
-            {t('onboarding.tagline')}
-          </p>
-        </div>
-      </div>
+      {/* Title */}
+      <h1
+        className="text-8xl font-extrabold mb-2"
+        style={{
+          letterSpacing: '-1px',
+          background: 'linear-gradient(135deg, var(--ctp-mauve), var(--ctp-blue))',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+        }}
+      >
+        Cascade
+      </h1>
+      <p className="text-xs mb-8" style={{ color: 'var(--ctp-overlay0)' }}>
+        {t('onboarding.tagline')}
+      </p>
 
-      {/* Action buttons */}
-      <div className="flex flex-col items-center gap-3 w-full" style={{ maxWidth: 280 }}>
-        <button
+      {/* Action cards */}
+      <div className="flex gap-3 mb-8">
+        <ActionCard
+          icon={<FolderOpen size={20} style={{ color: 'var(--ctp-mauve)' }} />}
+          iconBg="rgba(203, 166, 247, 0.12)"
+          iconColor="var(--ctp-mauve)"
+          hoverColor="var(--ctp-mauve)"
+          title={t('onboarding.openVault')}
+          description={t('onboarding.openVaultDesc')}
           onClick={handleOpenVault}
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-medium transition-colors hover:bg-[var(--ctp-lavender)] disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            backgroundColor: 'var(--ctp-mauve)',
-            color: 'var(--ctp-base)',
-          }}
-        >
-          <FolderOpen size={16} />
-          {t('onboarding.openVault')}
-        </button>
-        <button
+        />
+        <ActionCard
+          icon={<FolderPlus size={20} style={{ color: 'var(--ctp-green)' }} />}
+          iconBg="rgba(166, 227, 161, 0.12)"
+          iconColor="var(--ctp-green)"
+          hoverColor="var(--ctp-green)"
+          title={t('onboarding.createNewVault')}
+          description={t('onboarding.createVaultDesc')}
           onClick={handleCreateVault}
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm transition-colors hover:bg-[var(--ctp-surface1)] disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            backgroundColor: 'var(--ctp-surface0)',
-            color: 'var(--ctp-text)',
-            border: '1px solid var(--ctp-surface1)',
-          }}
-        >
-          <Folder size={16} />
-          {t('onboarding.createNewVault')}
-        </button>
+        />
+        <ActionCard
+          icon={<Download size={20} style={{ color: 'var(--ctp-blue)' }} />}
+          iconBg="rgba(137, 180, 250, 0.12)"
+          iconColor="var(--ctp-blue)"
+          hoverColor="var(--ctp-blue)"
+          title={t('onboarding.importVault')}
+          description={t('onboarding.importVaultDesc')}
+          onClick={handleOpenVault}
+          disabled={isLoading}
+        />
       </div>
 
       {/* Recent vaults */}
       {recentVaults.length > 0 && (
-        <div className="mt-10 w-full" style={{ maxWidth: 360 }}>
+        <div className="w-full" style={{ maxWidth: 500 }}>
           <p
-            className="text-xs font-medium mb-2 px-1"
+            className="text-[10px] font-medium uppercase tracking-widest mb-2 px-1"
             style={{ color: 'var(--ctp-overlay1)' }}
           >
             {t('onboarding.recentVaults')}
           </p>
-          <div
-            className="rounded-lg overflow-hidden"
-            style={{ border: '1px solid var(--ctp-surface0)' }}
-          >
-            {recentVaults.slice(0, 5).map((vaultPath, i) => {
+          <div className="flex flex-col gap-1">
+            {recentVaults.slice(0, 5).map((vaultPath) => {
               const name = vaultPath.replace(/\\/g, '/').split('/').pop() ?? vaultPath;
-              const isLast = i === Math.min(recentVaults.length, 5) - 1;
               return (
-                <button
+                <RecentVaultRow
                   key={vaultPath}
+                  name={name}
+                  path={vaultPath}
                   onClick={() => handleOpenRecent(vaultPath)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[var(--ctp-surface0)]"
-                  style={{
-                    backgroundColor: 'var(--ctp-mantle)',
-                    borderBottom: isLast ? undefined : '1px solid var(--ctp-surface0)',
-                    color: 'var(--ctp-text)',
-                  }}
-                >
-                  <Folder size={14} style={{ color: 'var(--ctp-mauve)', flexShrink: 0 }} />
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-sm truncate">{name}</span>
-                    <span
-                      className="text-xs truncate"
-                      style={{ color: 'var(--ctp-overlay0)' }}
-                    >
-                      {vaultPath}
-                    </span>
-                  </div>
-                </button>
+                  onRemove={() => removeRecentVault(vaultPath)}
+                />
               );
             })}
           </div>
         </div>
       )}
 
-      {/* Keyboard shortcuts reference */}
-      <div
-        className="flex items-center gap-6 mt-12 text-xs ctp-overlay0"
+    </div>
+  );
+}
+
+function RecentVaultRow({ name, path, onClick, onRemove }: { name: string; path: string; onClick: () => void; onRemove: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="flex items-center gap-3 px-3 py-2.5 rounded-lg"
+      style={{
+        backgroundColor: hovered ? 'var(--ctp-surface0)' : 'var(--ctp-base)',
+        transition: 'background-color 0.15s ease',
+        cursor: 'pointer',
+      }}
+      onClick={onClick}
+    >
+      <Folder
+        size={14}
+        style={{
+          color: hovered ? 'var(--ctp-mauve)' : 'var(--ctp-overlay1)',
+          flexShrink: 0,
+          transition: 'color 0.15s ease',
+        }}
+      />
+      <span
+        className="text-xs font-medium truncate"
+        style={{
+          color: hovered ? 'var(--ctp-text)' : 'var(--ctp-subtext0)',
+          transition: 'color 0.15s ease',
+        }}
       >
-        <span><kbd style={{ fontFamily: 'monospace' }}>{`${mod}+O`}</kbd> {t('onboarding.shortcutOpenVault')}</span>
-      </div>
+        {name}
+      </span>
+      <span className="flex-1" />
+      <span
+        className="text-[10px] truncate max-w-[200px]"
+        style={{ color: 'var(--ctp-overlay0)' }}
+      >
+        {path}
+      </span>
+      <button
+        onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        className="flex items-center justify-center rounded shrink-0"
+        style={{
+          width: 20,
+          height: 20,
+          color: 'var(--ctp-overlay0)',
+          opacity: hovered ? 1 : 0,
+          transition: 'opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--ctp-surface1)'; e.currentTarget.style.color = 'var(--ctp-red)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--ctp-overlay0)'; }}
+      >
+        <X size={12} />
+      </button>
     </div>
   );
 }

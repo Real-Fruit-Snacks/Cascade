@@ -41,6 +41,7 @@ export function ListVariablesModal({ open, variables, onClose, onSave }: ListVar
       setFilter('');
       setEditingName(null);
       requestAnimationFrame(() => filterRef.current?.focus());
+      setTimeout(() => { if (document.activeElement !== filterRef.current) filterRef.current?.focus(); }, 50);
     }
   }, [open]);
 

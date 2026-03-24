@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  :root {
+    --ctp-base: #1e1e2e; --ctp-mantle: #181825; --ctp-crust: #11111b;
+    --ctp-surface0: #313244; --ctp-surface1: #45475a; --ctp-surface2: #585b70;
+    --ctp-overlay0: #6c7086; --ctp-overlay1: #7f849c;
+    --ctp-text: #cdd6f4; --ctp-subtext0: #a6adc8; --ctp-subtext1: #bac2de;
+    --ctp-mauve: #cba6f7; --ctp-lavender: #b4befe; --ctp-blue: #89b4fa;
+    --ctp-green: #a6e3a1; --ctp-peach: #fab387; --ctp-red: #f38ba8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #11111b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--ctp-text); display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; justify-content: center; }
+  .mockup { width: 480px; height: 360px; border-radius: 12px; overflow: hidden; border: 1px solid var(--ctp-surface1); position: relative; }
+  .label { text-align: center; font-size: 11px; color: var(--ctp-mauve); margin-top: 8px; margin-bottom: 4px; font-weight: 600; }
+  .sublabel { text-align: center; font-size: 10px; color: var(--ctp-overlay0); margin-bottom: 12px; }
+  .wrapper { text-align: center; }
+
+  /* Concept A: Current with improvements */
+  .a { background: var(--ctp-base); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .a h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: var(--ctp-text); }
+  .a .tag { font-size: 11px; color: var(--ctp-subtext0); margin-top: 4px; }
+  .a .btns { display: flex; flex-direction: column; gap: 8px; width: 220px; margin-top: 24px; }
+  .a .btn-primary { background: var(--ctp-mauve); color: var(--ctp-base); border: none; padding: 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .a .btn-secondary { background: var(--ctp-surface0); color: var(--ctp-text); border: 1px solid var(--ctp-surface1); padding: 8px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+  .a .recent { margin-top: 20px; width: 260px; text-align: left; }
+  .a .recent-title { font-size: 10px; color: var(--ctp-overlay1); margin-bottom: 6px; }
+  .a .recent-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; font-size: 11px; color: var(--ctp-subtext0); border-radius: 6px; cursor: pointer; }
+  .a .recent-item:hover { background: var(--ctp-surface0); }
+  .a .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ctp-mauve); flex-shrink: 0; }
+
+  /* Concept B: Split layout */
+  .b { background: var(--ctp-base); display: flex; }
+  .b .left { width: 180px; background: var(--ctp-mantle); display: flex; flex-direction: column; padding: 24px 16px; border-right: 1px solid var(--ctp-surface0); }
+  .b .left h2 { font-size: 16px; font-weight: 700; color: var(--ctp-text); margin-bottom: 4px; }
+  .b .left .tag { font-size: 9px; color: var(--ctp-overlay0); margin-bottom: 20px; }
+  .b .left .nav-item { display: flex; align-items: center; gap: 6px; padding: 6px 8px; font-size: 11px; color: var(--ctp-subtext0); border-radius: 6px; margin-bottom: 2px; cursor: pointer; }
+  .b .left .nav-item.active { background: var(--ctp-surface0); color: var(--ctp-mauve); }
+  .b .left .nav-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ctp-mauve); }
+  .b .right { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+  .b .right .btns { display: flex; gap: 10px; margin-bottom: 20px; }
+  .b .btn-primary { background: var(--ctp-mauve); color: var(--ctp-base); border: none; padding: 10px 20px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .b .btn-ghost { background: none; color: var(--ctp-subtext0); border: 1px solid var(--ctp-surface1); padding: 10px 20px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+  .b .hint { font-size: 10px; color: var(--ctp-overlay0); }
+
+  /* Concept C: Card-based */
+  .c { background: var(--ctp-crust); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+  .c h1 { font-size: 22px; font-weight: 700; color: var(--ctp-text); margin-bottom: 2px; }
+  .c .tag { font-size: 10px; color: var(--ctp-overlay0); margin-bottom: 20px; }
+  .c .cards { display: flex; gap: 12px; }
+  .c .card { width: 130px; background: var(--ctp-base); border: 1px solid var(--ctp-surface0); border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; transition: border-color 0.15s; }
+  .c .card:hover { border-color: var(--ctp-mauve); }
+  .c .card-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 18px; }
+  .c .card-icon.open { background: rgba(203,166,247,0.15); color: var(--ctp-mauve); }
+  .c .card-icon.create { background: rgba(166,227,161,0.15); color: var(--ctp-green); }
+  .c .card-icon.import { background: rgba(137,180,250,0.15); color: var(--ctp-blue); }
+  .c .card h3 { font-size: 11px; font-weight: 600; color: var(--ctp-text); margin-bottom: 3px; }
+  .c .card p { font-size: 9px; color: var(--ctp-overlay0); line-height: 1.3; }
+  .c .recent { margin-top: 16px; width: 100%; max-width: 380px; }
+  .c .recent-title { font-size: 9px; color: var(--ctp-overlay1); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .c .recent-row { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--ctp-base); border-radius: 8px; margin-bottom: 4px; cursor: pointer; }
+  .c .recent-row:hover { background: var(--ctp-surface0); }
+  .c .recent-name { font-size: 11px; color: var(--ctp-text); }
+  .c .recent-path { font-size: 9px; color: var(--ctp-overlay0); }
+
+  /* Concept D: Minimal gradient */
+  .d { background: linear-gradient(135deg, #181825 0%, #1e1e2e 50%, #181825 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .d .glow { width: 200px; height: 200px; background: radial-gradient(circle, rgba(203,166,247,0.08) 0%, transparent 70%); position: absolute; top: 30px; left: 50%; transform: translateX(-50%); border-radius: 50%; }
+  .d h1 { font-size: 32px; font-weight: 800; letter-spacing: -1px; background: linear-gradient(135deg, var(--ctp-mauve), var(--ctp-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; position: relative; }
+  .d .tag { font-size: 11px; color: var(--ctp-overlay0); margin-bottom: 28px; position: relative; }
+  .d .btn-row { display: flex; gap: 10px; position: relative; }
+  .d .btn-glow { background: linear-gradient(135deg, var(--ctp-mauve), var(--ctp-blue)); color: var(--ctp-crust); border: none; padding: 10px 24px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .d .btn-outline { background: none; color: var(--ctp-subtext0); border: 1px solid var(--ctp-surface1); padding: 10px 24px; border-radius: 10px; font-size: 12px; cursor: pointer; }
+  .d .recent { margin-top: 24px; position: relative; }
+  .d .recent-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; background: var(--ctp-surface0); border-radius: 20px; font-size: 10px; color: var(--ctp-subtext0); margin: 3px; cursor: pointer; border: 1px solid transparent; }
+  .d .recent-chip:hover { border-color: var(--ctp-surface2); }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="label">A — Clean Center</div>
+  <div class="sublabel">Current layout, polished</div>
+  <div class="mockup a">
+    <h1>Cascade</h1>
+    <div class="tag">A beautiful way to think</div>
+    <div class="btns">
+      <button class="btn-primary">Open Vault</button>
+      <button class="btn-secondary">Create New Vault</button>
+    </div>
+    <div class="recent">
+      <div class="recent-title">Recent</div>
+      <div class="recent-item"><span class="dot"></span> My Notes</div>
+      <div class="recent-item"><span class="dot"></span> Work Projects</div>
+    </div>
+  </div>
+</div>
+
+<div class="wrapper">
+  <div class="label">B — Split Panel</div>
+  <div class="sublabel">Sidebar with recent vaults</div>
+  <div class="mockup b">
+    <div class="left">
+      <h2>Cascade</h2>
+      <div class="tag">v0.2.6</div>
+      <div class="nav-item active"><span class="nav-dot"></span> My Notes</div>
+      <div class="nav-item"><span class="nav-dot" style="background:var(--ctp-blue)"></span> Work Projects</div>
+      <div class="nav-item"><span class="nav-dot" style="background:var(--ctp-green)"></span> Journal</div>
+      <div style="flex:1"></div>
+      <div class="nav-item" style="color:var(--ctp-overlay0)">+ New vault</div>
+    </div>
+    <div class="right">
+      <div class="btns">
+        <button class="btn-primary">Open Vault</button>
+        <button class="btn-ghost">Browse...</button>
+      </div>
+      <div class="hint">Select a vault or browse for a folder</div>
+    </div>
+  </div>
+</div>
+
+<div class="wrapper">
+  <div class="label">C — Card Actions</div>
+  <div class="sublabel">Action cards + recent list</div>
+  <div class="mockup c">
+    <h1>Cascade</h1>
+    <div class="tag">A beautiful way to think</div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon open">&#128194;</div>
+        <h3>Open Vault</h3>
+        <p>Open an existing folder as a vault</p>
+      </div>
+      <div class="card">
+        <div class="card-icon create">&#10010;</div>
+        <h3>Create New</h3>
+        <p>Start fresh with a new vault</p>
+      </div>
+      <div class="card">
+        <div class="card-icon import">&#8615;</div>
+        <h3>Import</h3>
+        <p>Import from Obsidian or other apps</p>
+      </div>
+    </div>
+    <div class="recent">
+      <div class="recent-title">Recent Vaults</div>
+      <div class="recent-row"><span style="color:var(--ctp-mauve)">&#128194;</span><span class="recent-name">My Notes</span><span style="flex:1"></span><span class="recent-path">~/Documents/notes</span></div>
+      <div class="recent-row"><span style="color:var(--ctp-blue)">&#128194;</span><span class="recent-name">Work Projects</span><span style="flex:1"></span><span class="recent-path">~/work/projects</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrapper">
+  <div class="label">D — Gradient Minimal</div>
+  <div class="sublabel">Gradient title, glow, pill recents</div>
+  <div class="mockup d">
+    <div class="glow"></div>
+    <h1>Cascade</h1>
+    <div class="tag">A beautiful way to think</div>
+    <div class="btn-row">
+      <button class="btn-glow">Open Vault</button>
+      <button class="btn-outline">Create New</button>
+    </div>
+    <div class="recent">
+      <span class="recent-chip">&#128194; My Notes</span>
+      <span class="recent-chip">&#128194; Work Projects</span>
+      <span class="recent-chip">&#128194; Journal</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
