@@ -8,6 +8,7 @@ import { checkForUpdate } from '../../../lib/update-checker';
 import { useToastStore } from '../../../stores/toast-store';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { ProfileSettingsSection } from './ProfileSettingsSection';
+import { Button } from '../../ui';
 
 export function GeneralSettingsPage({ settings, visibleIds, isSearching }: CategoryPageProps) {
   const { t: ts } = useTranslation('settings');
@@ -62,12 +63,9 @@ export function GeneralSettingsPage({ settings, visibleIds, isSearching }: Categ
       {(!visibleIds || visibleIds.has('checkForUpdates')) && (
         <SettingRow label={ts('general.checkForUpdates.label')} description={ts('general.checkForUpdates.description')}>
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleCheckNow}
-              className="text-xs px-2 py-1 rounded transition-colors ctp-input hover:bg-[var(--ctp-surface1)]"
-            >
+            <Button variant="secondary" size="sm" onClick={handleCheckNow}>
               {ts('general.checkNow')}
-            </button>
+            </Button>
             <ToggleSwitch checked={settings.checkForUpdates} onChange={(v) => settings.update({ checkForUpdates: v })} />
           </div>
         </SettingRow>

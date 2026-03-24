@@ -6,6 +6,7 @@ import { ToggleSwitch } from '../shared/ToggleSwitch';
 import type { CategoryPageProps } from '../shared/searchable-items';
 import { useCollabStore } from '../../../stores/collab-store';
 import { startCollabSession, stopCollabSession } from '../../../lib/collab-init';
+import { Button, Input } from '../../ui';
 
 const COLLAB_COLORS = [
   '#f38ba8', '#fab387', '#f9e2af', '#a6e3a1',
@@ -70,12 +71,11 @@ export function CollaborationSettingsPage({ settings, visibleIds, isSearching }:
               label={ts('collaboration.name.label')}
               description={ts('collaboration.name.description')}
             >
-              <input
+              <Input
                 type="text"
                 value={settings.collabName}
                 onChange={(e) => settings.update({ collabName: e.target.value })}
                 placeholder={ts('collaboration.name.placeholder')}
-                className="text-xs px-2 py-1 rounded outline-none ctp-input"
                 style={{ width: 160 }}
               />
             </SettingRow>
@@ -114,12 +114,11 @@ export function CollaborationSettingsPage({ settings, visibleIds, isSearching }:
               label={ts('collaboration.password.label')}
               description={ts('collaboration.password.description')}
             >
-              <input
+              <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={ts('collaboration.password.placeholder')}
-                className="text-xs px-2 py-1 rounded outline-none ctp-input"
                 style={{ width: 160 }}
               />
             </SettingRow>
@@ -130,31 +129,19 @@ export function CollaborationSettingsPage({ settings, visibleIds, isSearching }:
               label={collabRole === 'host' ? ts('collaboration.status.host') : ts('collaboration.status.client')}
               description={ts('collaboration.connectedCount', { count: connectedClients })}
             >
-              <button
-                onClick={handleDisconnect}
-                className="text-xs px-3 py-1.5 rounded transition-colors"
-                style={{
-                  backgroundColor: 'var(--ctp-red)',
-                  color: 'var(--ctp-base)',
-                }}
-              >
+              <Button variant="danger" onClick={handleDisconnect}>
                 {ts('collaboration.disconnect')}
-              </button>
+              </Button>
             </SettingRow>
           ) : (
             <SettingRow label="" description="">
-              <button
+              <Button
+                variant="primary"
                 onClick={handleStartHosting}
                 disabled={!canStart}
-                className="text-xs px-3 py-1.5 rounded transition-colors"
-                style={{
-                  backgroundColor: canStart ? 'var(--ctp-green)' : 'var(--ctp-surface1)',
-                  color: canStart ? 'var(--ctp-base)' : 'var(--ctp-overlay0)',
-                  cursor: canStart ? 'pointer' : 'not-allowed',
-                }}
               >
                 {isStarting ? '...' : ts('collaboration.startHosting')}
-              </button>
+              </Button>
             </SettingRow>
           )}
         </>

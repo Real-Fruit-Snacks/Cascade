@@ -6,6 +6,7 @@ import { useVaultStore } from '../../../stores/vault-store';
 import { useSettingsStore } from '../../../stores/settings-store';
 import { listSettingsProfiles } from '../../../lib/tauri-commands';
 import { getActiveProfile, setActiveProfile, profileNameToPath, DEFAULT_SETTINGS_PATH } from '../../../lib/settings-profiles';
+import { Button, Input } from '../../ui';
 
 export function ProfileSettingsSection() {
   const { t } = useTranslation('settings');
@@ -65,17 +66,14 @@ export function ProfileSettingsSection() {
           <span className="text-xs ctp-overlay0">{t('general.profile.profiles')}</span>
           <div className="flex flex-wrap gap-1">
             {[DEFAULT_SETTINGS_PATH, ...profiles.filter((p) => p !== DEFAULT_SETTINGS_PATH)].map((p) => (
-              <button
+              <Button
                 key={p}
+                size="sm"
+                variant={p === activeProfile ? 'primary' : 'secondary'}
                 onClick={() => handleSwitch(p)}
-                className={`text-xs px-2 py-0.5 rounded transition-colors ${
-                  p === activeProfile
-                    ? 'bg-[var(--ctp-accent)] text-[var(--ctp-base)]'
-                    : 'ctp-input hover:bg-[var(--ctp-surface1)]'
-                }`}
               >
                 {profileDisplayName(p)}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -83,7 +81,7 @@ export function ProfileSettingsSection() {
 
       {showCreate ? (
         <div className="flex items-center gap-2 mt-1">
-          <input
+          <Input
             autoFocus
             type="text"
             value={newName}
@@ -93,29 +91,20 @@ export function ProfileSettingsSection() {
               if (e.key === 'Escape') { setShowCreate(false); setNewName(''); }
             }}
             placeholder={t('general.profile.createPlaceholder')}
-            className="text-xs px-2 py-1 rounded outline-none ctp-input flex-1"
+            className="flex-1"
           />
-          <button
-            onClick={handleCreate}
-            className="text-xs px-2 py-1 rounded transition-colors ctp-input hover:bg-[var(--ctp-surface1)]"
-          >
+          <Button size="sm" variant="secondary" onClick={handleCreate}>
             {t('general.profile.create')}
-          </button>
-          <button
-            onClick={() => { setShowCreate(false); setNewName(''); }}
-            className="text-xs px-2 py-1 rounded transition-colors ctp-input hover:bg-[var(--ctp-surface1)]"
-          >
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => { setShowCreate(false); setNewName(''); }}>
             ✕
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="mt-1">
-          <button
-            onClick={() => setShowCreate(true)}
-            className="text-xs px-2 py-1 rounded transition-colors ctp-input hover:bg-[var(--ctp-surface1)]"
-          >
+          <Button size="sm" variant="secondary" onClick={() => setShowCreate(true)}>
             + {t('general.profile.create')}
-          </button>
+          </Button>
         </div>
       )}
     </>
