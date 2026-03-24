@@ -476,6 +476,7 @@ mod tests {
             vec!["note.md".to_string()],
             false,
             true,
+            false,
         ).unwrap();
         assert_eq!(result.files_changed, 1);
         assert_eq!(result.total_replacements, 2);
@@ -493,6 +494,7 @@ mod tests {
             vec!["note.md".to_string()],
             true,
             true,
+            false,
         ).unwrap();
         assert_eq!(result.total_replacements, 2);
         let content = fs::read_to_string(root.join("note.md")).unwrap();
@@ -507,6 +509,7 @@ mod tests {
             "hello".to_string(),
             "hi".to_string(),
             vec!["note.md".to_string()],
+            false,
             false,
             false,
         ).unwrap();
@@ -525,6 +528,7 @@ mod tests {
             vec!["note.md".to_string()],
             false,
             true,
+            false,
         ).unwrap();
         assert_eq!(result.files_changed, 0);
         assert_eq!(result.total_replacements, 0);
@@ -540,6 +544,7 @@ mod tests {
             vec!["note.md".to_string()],
             true,
             true,
+            false,
         );
         assert!(result.is_err());
         match result.unwrap_err() {
