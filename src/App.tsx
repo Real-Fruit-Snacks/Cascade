@@ -12,6 +12,7 @@ import { listCustomThemes } from './lib/tauri-commands';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { on, emit } from './lib/cascade-events';
 import { createLogger } from './lib/logger';
+import { initCollab } from './lib/collab-init';
 import './i18n';
 
 const log = createLogger('App');
@@ -55,6 +56,10 @@ function App() {
       }
     });
     return () => { unlisten.then(fn => fn()); };
+  }, []);
+
+  useEffect(() => {
+    initCollab().catch(console.error);
   }, []);
 
   useEffect(() => {

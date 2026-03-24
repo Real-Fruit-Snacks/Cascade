@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { ViewMode } from '../types/index';
-import { readVaultSettings, writeVaultSettings } from '../lib/tauri-commands';
+import { readSettingsFile, writeSettingsFile } from '../lib/tauri-commands';
+import { getActiveProfile, DEFAULT_SETTINGS_PATH } from '../lib/settings-profiles';
 
 export type FileSortOrder = 'name-asc' | 'name-desc' | 'modified-newest' | 'modified-oldest';
 export type StartupBehavior = 'reopen-last' | 'show-picker';
@@ -219,6 +220,10 @@ export interface Settings {
   syncInterval: number;
   /** Optional custom SSH key path — if empty, defaults are used. */
   syncSshKeyPath: string;
+  // Collaboration
+  enableCollaboration: boolean;
+  collabName: string;
+  collabColor: string;
 }
 
 export const DEFAULTS: Settings = {
@@ -387,6 +392,9 @@ export const DEFAULTS: Settings = {
   syncAutoSync: true,
   syncInterval: 5,
   syncSshKeyPath: '',
+  enableCollaboration: false,
+  collabName: '',
+  collabColor: '',
 };
 
 // Current vault path for saving settings — set by loadFromVault
@@ -436,7 +444,8 @@ function saveSettingsToVault(settings: Settings) {
   if (!currentVaultPath) return;
   const filtered = { ...settings };
   for (const key of EXCLUDED_FROM_DISK) delete (filtered as Record<string, unknown>)[key];
-  writeVaultSettings(currentVaultPath, JSON.stringify(filtered, null, 2)).catch((e) => {
+  const profilePath = getActiveProfile(currentVaultPath);
+  writeSettingsFile(currentVaultPath, profilePath, JSON.stringify(filtered, null, 2)).catch((e) => {
     import('../stores/toast-store').then(({ useToastStore }) => {
       useToastStore.getState().addToast(`Failed to save settings: ${e instanceof Error ? e.message : String(e)}`, 'error');
     });
@@ -485,7 +494,8 @@ export const useSettingsStore = create<Settings & SettingsActions>((set, get) =>
   loadFromVault: async (vaultPath: string) => {
     currentVaultPath = vaultPath;
     try {
-      const raw = await readVaultSettings(vaultPath);
+      const profilePath = getActiveProfile(vaultPath);
+      const raw = await readSettingsFile(vaultPath, profilePath);
       const parsed = JSON.parse(raw);
       // Only pick known settings keys with matching types to prevent injection
       const safe: Partial<Settings> = {};
@@ -495,6 +505,26 @@ export const useSettingsStore = create<Settings & SettingsActions>((set, get) =>
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic key assignment from validated source
           (safe as Record<string, any>)[key] = parsed[key];
         }
+      }
+      // If a non-default profile returned no keys, fall back to the default profile
+      if (profilePath !== DEFAULT_SETTINGS_PATH && Object.keys(parsed).length === 0) {
+        const { setActiveProfile } = await import('../lib/settings-profiles');
+        setActiveProfile(vaultPath, DEFAULT_SETTINGS_PATH);
+        const defaultRaw = await readSettingsFile(vaultPath, DEFAULT_SETTINGS_PATH);
+        const defaultParsed = JSON.parse(defaultRaw);
+        const defaultSafe: Partial<Settings> = {};
+        for (const key of Object.keys(DEFAULTS) as (keyof Settings)[]) {
+          if (key in defaultParsed && typeof defaultParsed[key] === typeof DEFAULTS[key]) {
+            if (Array.isArray(DEFAULTS[key]) && !Array.isArray(defaultParsed[key])) continue;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic key assignment from validated source
+            (defaultSafe as Record<string, any>)[key] = defaultParsed[key];
+          }
+        }
+        set({ ...DEFAULTS, ...defaultSafe });
+        import('../stores/toast-store').then(({ useToastStore }) => {
+          useToastStore.getState().addToast('Settings profile not found. Switched to default profile.', 'warning');
+        });
+        return;
       }
       set({ ...DEFAULTS, ...safe });
     } catch {

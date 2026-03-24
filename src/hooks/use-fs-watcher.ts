@@ -65,11 +65,9 @@ export function useFsWatcher() {
               return;
             }
 
-            // On collab client, skip external-change handling for collab-active docs
+            // On any collab participant (host or client), skip external-change handling for collab-active docs
             const collabState = useCollabStore.getState();
-            if (collabState.active && collabState.role === 'client') {
-              if (collabState.activeDocPaths.has(normalizePath(relPath))) return;
-            }
+            if (collabState.active && collabState.activeDocPaths.has(normalizePath(relPath))) return;
 
             modifiedPaths.current.add(relPath);
           }

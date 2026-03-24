@@ -9,7 +9,7 @@ interface DocEntry {
 export class CollabDocManager {
   private entries: Map<string, DocEntry> = new Map();
 
-  getOrCreate(filePath: string, initialContent: string): Y.Doc {
+  getOrCreate(filePath: string): Y.Doc {
     const key = normalizePath(filePath);
     const existing = this.entries.get(key);
     if (existing) {
@@ -18,12 +18,18 @@ export class CollabDocManager {
     }
     const doc = new Y.Doc();
     doc.gc = true;
-    const text = doc.getText('content');
-    if (initialContent.length > 0) {
-      text.insert(0, initialContent);
-    }
     this.entries.set(key, { doc, refCount: 1 });
     return doc;
+  }
+
+  /** Initialize Y.Text content only if empty (prevents doubling on sync). */
+  initializeIfEmpty(filePath: string, content: string): void {
+    const doc = this.get(filePath);
+    if (!doc) return;
+    const text = doc.getText('content');
+    if (text.length === 0 && content) {
+      doc.transact(() => { text.insert(0, content); });
+    }
   }
 
   get(filePath: string): Y.Doc | undefined {

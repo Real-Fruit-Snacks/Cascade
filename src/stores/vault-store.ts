@@ -352,6 +352,18 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
     const { vaultPath } = get();
     if (!vaultPath) return;
     await cmd.createFile(vaultPath, path);
+
+    // Notify collab peers about the new file
+    const collab = useCollabStore.getState();
+    if (collab.active) {
+      const provider = getGlobalProvider();
+      if (provider) {
+        provider.sendLifecycleEvent({
+          type: 'file-created', path: normalizePath(path), by: collab.userName,
+        });
+      }
+    }
+
     await get().refreshTree();
   },
 

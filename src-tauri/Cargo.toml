@@ -36,6 +36,12 @@ scraper = "0.21"
 git2 = "0.19"
 dirs = "5"
 chrono = "0.4"
+tokio = { version = "1", features = ["net", "sync", "macros", "time"] }
+tokio-tungstenite = "0.24"
+futures-util = "0.3"
+argon2 = "0.5"
+rand = "0.8"
+local-ip-address = "0.6"
 
 [dev-dependencies]
 tempfile = "3"
