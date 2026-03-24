@@ -22,6 +22,7 @@ export function SplitPaneContainer() {
   const splitDirection = useEditorStore((s) => s.splitDirection);
 
   const [ratio, setRatio] = useState(loadSavedRatio);
+  const [isDragging, setIsDragging] = useState(false);
   const dragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -33,9 +34,9 @@ export function SplitPaneContainer() {
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     dragging.current = true;
-    document.body.style.cursor = splitDirection === 'vertical' ? 'row-resize' : 'col-resize';
     document.body.style.userSelect = 'none';
-  }, [splitDirection]);
+    setIsDragging(true);
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -54,8 +55,8 @@ export function SplitPaneContainer() {
     const handleMouseUp = () => {
       if (dragging.current) {
         dragging.current = false;
-        document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        setIsDragging(false);
       }
     };
 
@@ -123,23 +124,7 @@ export function SplitPaneContainer() {
             }
           }
         }}
-        style={{
-          [isVertical ? 'height' : 'width']: DIVIDER_SIZE,
-          [isVertical ? 'width' : 'height']: '100%',
-          cursor: isVertical ? 'row-resize' : 'col-resize',
-          backgroundColor: 'var(--ctp-surface0)',
-          flexShrink: 0,
-          position: 'relative',
-          zIndex: 5,
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLDivElement).style.backgroundColor = 'var(--ctp-accent)';
-        }}
-        onMouseLeave={(e) => {
-          if (!dragging.current) {
-            (e.currentTarget as HTMLDivElement).style.backgroundColor = 'var(--ctp-surface0)';
-          }
-        }}
+        className={`split-divider ${isVertical ? 'split-divider--row' : 'split-divider--col'}${isDragging ? ' is-dragging' : ''}`}
       />
 
       {/* Pane 1 */}

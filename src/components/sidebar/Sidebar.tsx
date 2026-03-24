@@ -103,6 +103,7 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
 
   const [width, setWidth] = useState(getSavedWidth);
   const [view, setView] = useState<SidebarView>(getSavedView);
+  const [isDragging, setIsDragging] = useState(false);
   const widthRef = useRef(width);
   const panelRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -124,11 +125,11 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
     const onMouseUp = () => {
       if (!dragging.current) return;
       dragging.current = false;
-      document.body.style.cursor = '';
       document.body.style.userSelect = '';
       localStorage.setItem(STORAGE_KEY, String(widthRef.current));
       // Commit final width to React state only on mouseup
       setWidth(widthRef.current);
+      setIsDragging(false);
     };
 
     window.addEventListener('mousemove', onMouseMove);
@@ -192,8 +193,8 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
     dragging.current = true;
     startX.current = e.clientX;
     startWidth.current = width;
-    document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
+    setIsDragging(true);
   };
 
   return (
@@ -408,16 +409,9 @@ export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; 
       {/* Drag handle */}
       {!collapsed && (
         <div
-          className="absolute top-0 right-0 h-full transition-colors"
-          style={{
-            width: 4,
-            cursor: 'col-resize',
-            backgroundColor: 'var(--ctp-surface1)',
-            zIndex: 10,
-          }}
+          className={`sidebar-resize-handle${isDragging ? ' is-dragging' : ''}`}
           onMouseDown={handleDragStart}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--ctp-accent)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--ctp-surface1)'; }}
+          aria-hidden="true"
         />
       )}
 

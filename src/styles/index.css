@@ -341,6 +341,108 @@ body.is-dragging-file * {
   cursor: grabbing !important;
 }
 
+/* ── Resize dividers ── */
+
+/* Sidebar resize handle */
+.sidebar-resize-handle {
+  width: 6px;
+  cursor: col-resize;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.sidebar-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  margin-left: -0.5px;
+  background-color: var(--ctp-surface1);
+  transition: background-color 0.15s ease, width 0.15s ease, margin-left 0.15s ease;
+}
+
+.sidebar-resize-handle:hover::after,
+.sidebar-resize-handle.is-dragging::after {
+  background-color: var(--ctp-accent);
+  width: 2px;
+  margin-left: -1px;
+}
+
+.sidebar-resize-handle.is-dragging {
+  cursor: grabbing;
+}
+
+/* Split-pane divider — horizontal (col-resize) */
+.split-divider {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+}
+
+.split-divider--col {
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+}
+
+.split-divider--row {
+  height: 6px;
+  width: 100%;
+  cursor: row-resize;
+}
+
+.split-divider::after {
+  content: '';
+  position: absolute;
+  background-color: var(--ctp-surface0);
+  transition: background-color 0.15s ease;
+}
+
+.split-divider--col::after {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  margin-left: -0.5px;
+  transition: background-color 0.15s ease, width 0.15s ease, margin-left 0.15s ease;
+}
+
+.split-divider--row::after {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  margin-top: -0.5px;
+  transition: background-color 0.15s ease, height 0.15s ease, margin-top 0.15s ease;
+}
+
+.split-divider:hover::after,
+.split-divider.is-dragging::after {
+  background-color: var(--ctp-accent);
+}
+
+.split-divider--col:hover::after,
+.split-divider--col.is-dragging::after {
+  width: 2px;
+  margin-left: -1px;
+}
+
+.split-divider--row:hover::after,
+.split-divider--row.is-dragging::after {
+  height: 2px;
+  margin-top: -1px;
+}
+
+.split-divider.is-dragging {
+  cursor: grabbing;
+}
+
 /* Respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
