@@ -5,7 +5,8 @@ interface SubHeaderProps {
 export function SubHeader({ label }: SubHeaderProps) {
   return (
     <div
-      className="text-[0.65rem] font-semibold uppercase tracking-wider mt-2 mb-1 ctp-accent"
+      className="font-semibold uppercase mt-2 mb-1 ctp-accent"
+      style={{ fontSize: 'var(--text-2xs)', letterSpacing: '0.05em' }}
     >
       {label}
     </div>

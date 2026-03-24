@@ -5,8 +5,8 @@ export function SettingRow({ label, description, children, onReset }: { label: s
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="text-sm ctp-text">{label}</span>
-        <span className="text-xs ctp-overlay0">{description}</span>
+        <span className="ctp-text" style={{ fontSize: 'var(--text-sm)' }}>{label}</span>
+        <span className="ctp-overlay0" style={{ fontSize: 'var(--text-xs)' }}>{description}</span>
       </div>
       <div className="shrink-0 flex items-center gap-1.5">
         {children}

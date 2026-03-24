@@ -100,8 +100,8 @@ export function TagPanel() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div
-        className="flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider shrink-0"
-        style={{ color: 'var(--ctp-overlay1)', borderBottom: '1px solid var(--ctp-surface1)' }}
+        className="flex items-center gap-2 px-3 py-2 font-semibold uppercase shrink-0"
+        style={{ fontSize: 'var(--text-2xs)', letterSpacing: '0.05em', color: 'var(--ctp-overlay1)', borderBottom: '1px solid var(--ctp-surface1)' }}
       >
         <Hash size={12} />
         {t('panels.tags')}

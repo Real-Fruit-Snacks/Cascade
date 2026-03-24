@@ -62,8 +62,9 @@ export function FileTreeRow({
       role="treeitem"
       aria-selected={isActive}
       aria-expanded={entry.isDir ? isExpanded : undefined}
-      className={`flex items-center gap-1.5 py-0.5 ${entry.isDir ? 'cursor-grab' : 'cursor-pointer'} text-sm rounded-sm hover:bg-[var(--ctp-surface0)] transition-colors min-w-0`}
+      className={`flex items-center gap-1.5 py-0.5 ${entry.isDir ? 'cursor-grab' : 'cursor-pointer'} rounded-sm hover:bg-[var(--ctp-surface0)] transition-colors min-w-0`}
       style={{
+        fontSize: 'var(--text-xs)',
         paddingLeft: isActive ? paddingLeft - 2 : targets?.accentBar ? paddingLeft - 1 : paddingLeft,
         backgroundColor: dragOver && entry.isDir ? 'rgba(137, 180, 250, 0.25)' : isActive ? 'var(--ctp-surface0)' : targets?.bg && resolved ? `color-mix(in srgb, ${resolved} ${Math.round(folderColorOpacity * 100)}%, transparent)` : undefined,
         color: 'var(--ctp-text)',

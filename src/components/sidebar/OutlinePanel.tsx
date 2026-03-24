@@ -184,7 +184,7 @@ export function OutlinePanel() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center px-3 py-1">
-        <span className="text-xs uppercase tracking-wider" style={{ color: 'var(--ctp-overlay1)' }}>
+        <span className="font-semibold uppercase" style={{ fontSize: 'var(--text-2xs)', letterSpacing: '0.05em', color: 'var(--ctp-overlay1)' }}>
           {t('panels.outline')}
         </span>
       </div>

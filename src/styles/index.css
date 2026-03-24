@@ -5,6 +5,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Type scale ── */
+:root {
+  --text-2xs: 0.625rem;    /* 10px — tiny labels, badges */
+  --text-xs: 0.6875rem;    /* 11px — sidebar items, status bar */
+  --text-sm: 0.75rem;      /* 12px — settings, panel content */
+  --text-base: 0.8125rem;  /* 13px — default UI text */
+  --text-lg: 0.875rem;     /* 14px — panel headers */
+
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+
+  --leading-tight: 1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.6;
+}
+
 @layer utilities {
   .sidebar-btn-hover {
     transition: color 0.15s ease, background-color 0.15s ease;
