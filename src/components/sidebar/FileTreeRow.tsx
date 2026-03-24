@@ -2,7 +2,9 @@ import { type RefObject } from 'react';
 import { File, Folder, FolderOpen, ChevronRight, LayoutGrid } from 'lucide-react';
 import type { FileEntry } from '../../types/index';
 import { useEditorStore } from '../../stores/editor-store';
+import { useCollabStore } from '../../stores/collab-store';
 import { resolveColor, type StyleTargets } from './file-tree-types';
+import { normalizePath } from '../../lib/collab-messages';
 
 interface FileTreeRowProps {
   entry: FileEntry;
@@ -48,6 +50,12 @@ export function FileTreeRow({
   onClick, onContextMenu, setDragOver, setRenameValue, setRenameError, setRenaming, commitRename,
 }: FileTreeRowProps) {
   const resolved = color ? resolveColor(color) : null;
+  const collabUsers = useCollabStore((s) => s.users);
+  const collabActive = useCollabStore((s) => s.active);
+  const normalizedEntryPath = normalizePath(entry.path);
+  const fileCollaborators = collabActive
+    ? Array.from(collabUsers.values()).filter((u) => u.activeFile != null && normalizePath(u.activeFile) === normalizedEntryPath)
+    : [];
   return (
     <div
       ref={rowRef}
@@ -166,6 +174,18 @@ export function FileTreeRow({
           ) : hasOpenTab && !isActive ? (
             <span className="shrink-0 mr-2 rounded-full" style={{ width: 5, height: 5, backgroundColor: 'var(--ctp-accent)', opacity: 0.7 }} />
           ) : null}
+          {fileCollaborators.length > 0 && (
+            <span className="flex items-center gap-0.5 shrink-0 mr-1">
+              {fileCollaborators.slice(0, 3).map((user, i) => (
+                <span
+                  key={i}
+                  className="rounded-full"
+                  style={{ width: 5, height: 5, backgroundColor: user.color }}
+                  title={user.name}
+                />
+              ))}
+            </span>
+          )}
         </>
       )}
     </div>

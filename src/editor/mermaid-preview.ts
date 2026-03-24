@@ -138,7 +138,6 @@ export const mermaidPreviewTheme = EditorView.theme({
     display: 'flex',
     justifyContent: 'center',
     padding: '12px',
-    margin: '4px 0',
     backgroundColor: 'var(--ctp-mantle)',
     borderRadius: '6px',
     border: '1px solid var(--ctp-surface0)',

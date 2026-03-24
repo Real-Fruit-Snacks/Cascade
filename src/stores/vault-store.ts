@@ -6,6 +6,9 @@ import { extractTags } from '../lib/tag-utils';
 import { useSettingsStore } from './settings-store';
 import { useToastStore } from './toast-store';
 import { emit } from '../lib/cascade-events';
+import { useCollabStore } from './collab-store';
+import { getGlobalProvider, getGlobalDocManager } from '../lib/collab-init';
+import { normalizePath } from '../lib/collab-messages';
 
 const WIKI_LINK_RE = /\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]/g;
 
@@ -349,6 +352,18 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
     const { vaultPath } = get();
     if (!vaultPath) return;
     await cmd.createFile(vaultPath, path);
+
+    // Notify collab peers about the new file
+    const collab = useCollabStore.getState();
+    if (collab.active) {
+      const provider = getGlobalProvider();
+      if (provider) {
+        provider.sendLifecycleEvent({
+          type: 'file-created', path: normalizePath(path), by: collab.userName,
+        });
+      }
+    }
+
     await get().refreshTree();
   },
 
@@ -374,6 +389,18 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
     } else {
       await cmd.deleteFile(vaultPath, path);
     }
+
+    // Notify collab peers about the deletion
+    const collab = useCollabStore.getState();
+    if (collab.active) {
+      const provider = getGlobalProvider();
+      if (provider) {
+        provider.sendLifecycleEvent({
+          type: 'file-deleted', path: normalizePath(path), by: collab.userName,
+        });
+      }
+    }
+
     await get().refreshTree();
 
     // Show undo toast for file deletions
@@ -404,6 +431,19 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
     const { vaultPath, backlinkIndex } = get();
     if (!vaultPath) return;
     await cmd.renameFile(vaultPath, oldPath, newPath);
+
+    // Notify collab peers about the rename
+    const collab = useCollabStore.getState();
+    if (collab.active) {
+      const provider = getGlobalProvider();
+      if (provider) {
+        provider.sendLifecycleEvent({
+          type: 'file-renamed', oldPath: normalizePath(oldPath), newPath: normalizePath(newPath), by: collab.userName,
+        });
+        provider.rekeyDoc(oldPath, newPath);
+      }
+      getGlobalDocManager().rekey(oldPath, newPath);
+    }
 
     // Update wiki-links across the vault that reference the old file
     const oldName = oldPath.replace(/\\/g, '/').split('/').pop()?.replace(/\.md$/i, '') ?? '';

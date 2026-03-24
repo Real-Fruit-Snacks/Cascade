@@ -217,7 +217,6 @@ export const queryPreview = StateField.define<DecorationSet>({
 export const queryPreviewTheme = EditorView.theme({
   '.cm-query-result': {
     padding: '12px',
-    margin: '4px 0',
     borderRadius: '8px',
     backgroundColor: 'var(--ctp-base)',
     border: '1px solid var(--ctp-surface1)',

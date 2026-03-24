@@ -5,3 +5,4 @@ export { GeneralSettingsPage } from './GeneralSettingsPage';
 export { FeaturesSettingsPage } from './FeaturesSettingsPage';
 export { FolderColorsSettingsPage } from './FolderColorsSettingsPage';
 export { ShortcutsSettingsPage } from './ShortcutsSettingsPage';
+export { CollaborationSettingsPage } from './CollaborationSettingsPage';

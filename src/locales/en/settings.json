@@ -21,7 +21,8 @@
     "general": "General",
     "features": "Features",
     "plugins": "Plugins",
-    "shortcuts": "Keyboard Shortcuts"
+    "shortcuts": "Keyboard Shortcuts",
+    "collaboration": "Collaboration"
   },
   "featurePages": {
     "autosave": "Auto-Save",
@@ -248,7 +249,17 @@
       "label": "Check for Updates",
       "description": "Automatically check for new versions on launch"
     },
-    "checkNow": "Check Now"
+    "checkNow": "Check Now",
+    "profile": {
+      "label": "Settings Profile",
+      "description": "Use a personal settings file so your preferences don't affect other users",
+      "current": "Current profile",
+      "default": "Vault Default",
+      "create": "New Profile",
+      "createPlaceholder": "Profile name (e.g. your name)",
+      "resetToDefault": "Use Vault Default",
+      "profiles": "Available Profiles"
+    }
   },
   "features": {
     "autoSave": {
@@ -1032,5 +1043,33 @@
     "themeName": "Theme name...",
     "savedSuccess": "Theme saved!",
     "discardConfirm": "Discard unsaved changes?"
+  },
+  "collaboration": {
+    "label": "Collaboration",
+    "enable": {
+      "label": "Enable Collaboration",
+      "description": "Share this vault with others on your local network"
+    },
+    "name": {
+      "label": "Display Name",
+      "description": "Your name shown to other collaborators",
+      "placeholder": "Enter your name"
+    },
+    "color": {
+      "label": "Cursor Color",
+      "description": "Color of your cursor and selections"
+    },
+    "password": {
+      "label": "Vault Password",
+      "description": "Required for others to connect (not saved to disk)",
+      "placeholder": "Enter a password"
+    },
+    "status": {
+      "host": "Hosting",
+      "client": "Connected"
+    },
+    "startHosting": "Start Hosting",
+    "disconnect": "Disconnect",
+    "connectedCount": "{{count}} connected"
   }
 }

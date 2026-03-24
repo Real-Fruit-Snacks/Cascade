@@ -28,6 +28,7 @@ import {
   FeaturesSettingsPage,
   FolderColorsSettingsPage,
   ShortcutsSettingsPage,
+  CollaborationSettingsPage,
 } from './settings/pages';
 
 import {
@@ -571,7 +572,7 @@ function SettingsContent(props: SettingsContentProps) {
 
   const noResults = isSearching && ![
     'editor', 'appearance', 'files', 'folder-colors', 'general', 'features',
-    'shortcuts', 'plugins', 'sync-options',
+    'shortcuts', 'plugins', 'collaboration', 'sync-options',
     ...FEATURE_OPTION_PAGES.map((p) => p.id),
   ].some((cat) => shouldShowCategory(cat as SettingsCategory));
 
@@ -617,6 +618,13 @@ function SettingsContent(props: SettingsContentProps) {
         <>
           {isSearching && <SectionHeader label={ts('categories.features')} />}
           <FeaturesSettingsPage settings={settings} visibleIds={visibleIds('features')} isSearching={isSearching} />
+        </>
+      )}
+
+      {shouldShowCategory('collaboration') && (
+        <>
+          {isSearching && <SectionHeader label={ts('categories.collaboration')} />}
+          <CollaborationSettingsPage settings={settings} visibleIds={visibleIds('collaboration')} isSearching={isSearching} />
         </>
       )}
 

@@ -8,10 +8,9 @@ export const propertiesTheme = EditorView.theme({
     backgroundColor: 'var(--ctp-mantle)',
     border: '1px solid var(--ctp-surface1)',
     borderRadius: '10px',
-    paddingBottom: '0',
     fontSize: '0.85em',
     overflow: 'hidden',
-    marginBottom: '12px',
+    paddingBottom: '12px',
     borderBottom: '2px solid var(--ctp-surface1)',
   },
   '.cm-props-header': {

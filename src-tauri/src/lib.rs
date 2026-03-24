@@ -11,6 +11,7 @@ mod search;
 mod sync_log;
 mod types;
 mod vault;
+mod collab;
 mod watcher;
 
 use fts::FtsState;
@@ -34,6 +35,9 @@ pub fn run() {
         .manage(VaultRoot(std::sync::Mutex::new(None)))
         .manage(CachedTree(std::sync::Mutex::new(None)))
         .manage(FtsState(std::sync::Mutex::new(None)))
+        .manage(collab::CollabServerState(tokio::sync::Mutex::new(None)))
+        .manage(collab::CollabConfig(std::sync::Mutex::new(collab::CollabConfigInner::default())))
+        .manage(collab::HeartbeatHandle(tokio::sync::Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![
             vault::open_vault,
             vault::list_files,
@@ -52,6 +56,9 @@ pub fn run() {
             vault::save_attachment,
             vault::read_vault_settings,
             vault::write_vault_settings,
+            vault::read_settings_file,
+            vault::write_settings_file,
+            vault::list_settings_profiles,
             vault::list_plugins,
             vault::list_custom_themes,
             vault::save_custom_theme,
@@ -88,6 +95,10 @@ pub fn run() {
             git::has_sync_pat,
             git::delete_sync_pat,
             sync_log::write_sync_log,
+            collab::commands::start_collab,
+            collab::commands::stop_collab,
+            collab::commands::read_collab_presence,
+            collab::commands::get_collab_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

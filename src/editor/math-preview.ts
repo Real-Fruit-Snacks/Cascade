@@ -156,7 +156,6 @@ export const mathPreviewTheme = EditorView.theme({
     display: 'block',
     textAlign: 'center',
     padding: '8px 0',
-    margin: '4px 0',
   },
   '.cm-math-error': {
     color: 'var(--ctp-red)',

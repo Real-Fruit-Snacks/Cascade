@@ -113,4 +113,8 @@ export const SEARCHABLE_ITEMS: SearchableItem[] = [
   { id: 'slashCommandsOptions', category: 'slashcommands-options' as SettingsCategory, keywords: 'slash commands menu inline insert options' },
   { id: 'syncOptions', category: 'sync-options' as SettingsCategory, keywords: 'sync github git repository backup cloud push pull auto-sync interval token' },
   { id: 'syncEnabled', category: 'features', keywords: 'sync github git cloud backup toggle feature enable disable' },
+  { id: 'settingsProfile', category: 'general' as SettingsCategory, keywords: 'settings profile personal user collaboration custom' },
+  { id: 'collabEnabled', category: 'collaboration' as SettingsCategory, keywords: 'collaboration share live edit real-time multiplayer' },
+  { id: 'collabName', category: 'collaboration' as SettingsCategory, keywords: 'collaboration name display user identity' },
+  { id: 'collabColor', category: 'collaboration' as SettingsCategory, keywords: 'collaboration color cursor highlight' },
 ];

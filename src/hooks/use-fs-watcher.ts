@@ -5,6 +5,8 @@ import { useVaultStore } from '../stores/vault-store';
 import { useEditorStore } from '../stores/editor-store';
 import { useSettingsStore } from '../stores/settings-store';
 import { getAllFilePaths } from '../lib/wiki-link-resolver';
+import { useCollabStore } from '../stores/collab-store';
+import { normalizePath } from '../lib/collab-messages';
 
 export function useFsWatcher() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -56,6 +58,17 @@ export function useFsWatcher() {
           const vaultNorm = vaultPath.replace(/\\/g, '/').replace(/\/$/, '');
           if (pathNorm.startsWith(vaultNorm + '/')) {
             const relPath = pathNorm.slice(vaultNorm.length + 1);
+
+            // Detect collab presence file changes
+            if (relPath === '.cascade/collab.json' || relPath === '.cascade\\collab.json') {
+              window.dispatchEvent(new CustomEvent('cascade:collab-presence-changed'));
+              return;
+            }
+
+            // On any collab participant (host or client), skip external-change handling for collab-active docs
+            const collabState = useCollabStore.getState();
+            if (collabState.active && collabState.activeDocPaths.has(normalizePath(relPath))) return;
+
             modifiedPaths.current.add(relPath);
           }
         }

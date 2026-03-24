@@ -40,6 +40,7 @@ export interface Compartments extends RenderCompartments {
   typewriterComp: Compartment;
   focusModeComp: Compartment;
   slashCommandsComp: Compartment;
+  collabComp: Compartment;
 }
 
 export function createCompartments(): Compartments {
@@ -54,6 +55,7 @@ export function createCompartments(): Compartments {
     typewriterComp: new Compartment(),
     focusModeComp: new Compartment(),
     slashCommandsComp: new Compartment(),
+    collabComp: new Compartment(),
   };
 }
 
@@ -250,6 +252,7 @@ export function buildEditorExtensions(
     formattingKeymap,
     dropHandler,
     comps.slashCommandsComp.of(settings.enableSlashCommands ? slashCommandExtension : []),
+    comps.collabComp.of([]),
     ...extraExts,
   ];
 }
