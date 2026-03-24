@@ -6,3 +6,5 @@ export type { InputProps } from './Input';
 
 export { ToggleSwitch } from './ToggleSwitch';
 export type { ToggleSwitchProps } from './ToggleSwitch';
+
+export { KbdBadge } from './KbdBadge';

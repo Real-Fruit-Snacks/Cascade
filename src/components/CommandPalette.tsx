@@ -5,6 +5,7 @@ import { commandRegistry, type Command } from '../lib/command-registry';
 import { fuzzyMatch } from '../lib/fuzzy-match';
 import { useFocusTrap } from '../hooks/use-focus-trap';
 import { useCloseAnimation } from '../hooks/use-close-animation';
+import { KbdBadge } from './ui/KbdBadge';
 
 function highlightMatches(text: string, indices: number[]) {
   const indexSet = new Set(indices);
@@ -219,15 +220,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
               >
                 <span style={{ color: 'var(--ctp-text)' }}>{highlightMatches(cmd.label, indices)}</span>
                 {cmd.shortcut && (
-                  <span
-                    className="text-xs px-1.5 py-0.5 rounded ml-3 shrink-0"
-                    style={{
-                      color: 'var(--ctp-subtext0)',
-                      backgroundColor: 'var(--ctp-surface0)',
-                      border: '1px solid var(--ctp-surface1)',
-                    }}
-                  >
-                    {cmd.shortcut}
+                  <span className="ml-3">
+                    <KbdBadge shortcut={cmd.shortcut} />
                   </span>
                 )}
               </div>

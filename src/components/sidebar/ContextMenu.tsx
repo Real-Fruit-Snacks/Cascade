@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { KbdBadge } from '../ui/KbdBadge';
 
 export interface MenuItem {
   label: string;
@@ -7,6 +8,7 @@ export interface MenuItem {
   color?: string;
   danger?: boolean;
   separator?: boolean;
+  shortcut?: string;
   onClick: () => void;
 }
 
@@ -112,7 +114,8 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
               }}
             >
               {item.icon && <span className="w-4 flex justify-center">{item.icon}</span>}
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.shortcut && <KbdBadge shortcut={item.shortcut} />}
             </button>
           )}
         </div>
