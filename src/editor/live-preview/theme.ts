@@ -72,7 +72,7 @@ export const livePreviewTheme = EditorView.theme({
     borderCollapse: 'collapse',
     fontSize: 'inherit',
     fontFamily: 'inherit',
-    margin: '8px 0',
+    padding: '8px 0',
     border: '1px solid var(--ctp-surface2)',
     borderRadius: '6px',
     overflow: 'hidden',

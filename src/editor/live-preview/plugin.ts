@@ -1,11 +1,14 @@
 import { DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view';
-import { StateField } from '@codemirror/state';
+import { StateEffect, StateField } from '@codemirror/state';
 import { foldEffect, unfoldEffect } from '@codemirror/language';
 import { cursorLineField, getCursorLineChange, needsRebuildForLine } from '../cursor-line';
 import { useVaultStore } from '../../stores/vault-store';
 import { useEditorStore } from '../../stores/editor-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { buildDecorations, buildFrontmatterDecorations } from './build-decorations';
+
+/** Effect dispatched after a pointer click to trigger a deferred decoration rebuild. */
+const deferredRebuildEffect = StateEffect.define<null>();
 
 // ── Frontmatter StateField (block decorations require StateField, not ViewPlugin) ──
 
@@ -40,13 +43,23 @@ const LIVE_PREVIEW_PATTERN = /[#*_`[!>|~=\-\\]/;
 export const livePreview = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
+    private pendingRebuild: ReturnType<typeof setTimeout> | null = null;
     constructor(view: EditorView) {
       this.decorations = buildDecorations(view);
     }
     update(update: ViewUpdate) {
       // Check if fold state changed (fold/unfold effects)
       const foldChanged = update.transactions.some(tr => tr.effects.some(e => e.is(foldEffect) || e.is(unfoldEffect)));
+
+      // Deferred rebuild triggered by our own effect (after a pointer click)
+      if (update.transactions.some(tr => tr.effects.some(e => e.is(deferredRebuildEffect)))) {
+        this.decorations = buildDecorations(update.view);
+        return;
+      }
+
       if (update.docChanged || update.viewportChanged || foldChanged) {
+        // Immediate rebuild on content/viewport/fold changes
+        if (this.pendingRebuild) { clearTimeout(this.pendingRebuild); this.pendingRebuild = null; }
         this.decorations = buildDecorations(update.view);
       } else if (update.selectionSet) {
         const change = getCursorLineChange(update);
@@ -54,9 +67,27 @@ export const livePreview = ViewPlugin.fromClass(
           needsRebuildForLine(update.state, this.decorations, change.oldLine, LIVE_PREVIEW_PATTERN) ||
           needsRebuildForLine(update.state, this.decorations, change.newLine, LIVE_PREVIEW_PATTERN)
         )) {
-          this.decorations = buildDecorations(update.view);
+          // Check if this selection was from a mouse click
+          const isPointer = update.transactions.some(tr => tr.isUserEvent('select.pointer'));
+          if (isPointer) {
+            // Defer rebuild — let the cursor land at the correct visual position first,
+            // then reveal syntax on the next frame. This prevents the "click offset" feel
+            // caused by replace decorations shifting text immediately on click.
+            if (this.pendingRebuild) clearTimeout(this.pendingRebuild);
+            const view = update.view;
+            this.pendingRebuild = setTimeout(() => {
+              this.pendingRebuild = null;
+              view.dispatch({ effects: deferredRebuildEffect.of(null) });
+            }, 0);
+          } else {
+            // Keyboard navigation — rebuild immediately
+            this.decorations = buildDecorations(update.view);
+          }
         }
       }
+    }
+    destroy() {
+      if (this.pendingRebuild) { clearTimeout(this.pendingRebuild); this.pendingRebuild = null; }
     }
   },
   { decorations: (v) => v.decorations }
