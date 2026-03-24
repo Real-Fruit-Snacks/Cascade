@@ -3,6 +3,7 @@ import { CollabDocManager } from './collab-doc-manager';
 import { useCollabStore, type CollabUser } from '../stores/collab-store';
 import { useSettingsStore } from '../stores/settings-store';
 import { useToastStore } from '../stores/toast-store';
+import { useEditorStore } from '../stores/editor-store';
 import * as cmd from './tauri-commands';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
@@ -87,7 +88,7 @@ function createProvider(url: string, password: string, name: string, color: stri
   const p = new CollabProvider(url, password);
   provider = p;
 
-  p.setLocalState({ name, color });
+  p.setLocalState({ user: { name, color, activeFile: null } });
 
   p.onStateChange = (state) => {
     useCollabStore.getState().updateProviderState(state);
@@ -106,11 +107,13 @@ function createProvider(url: string, password: string, name: string, color: stri
       if (provider) {
         provider.rekeyDoc(event.oldPath, event.newPath);
       }
+      useEditorStore.getState().handleCollabRename(event.oldPath, event.newPath);
     } else if (event.type === 'file-deleted') {
       useToastStore.getState().addToast(
         `File deleted by ${event.by}: ${event.path}`,
         'warning',
       );
+      useEditorStore.getState().handleCollabDelete(event.path);
     }
   };
 

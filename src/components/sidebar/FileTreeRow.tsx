@@ -4,6 +4,7 @@ import type { FileEntry } from '../../types/index';
 import { useEditorStore } from '../../stores/editor-store';
 import { useCollabStore } from '../../stores/collab-store';
 import { resolveColor, type StyleTargets } from './file-tree-types';
+import { normalizePath } from '../../lib/collab-messages';
 
 interface FileTreeRowProps {
   entry: FileEntry;
@@ -51,8 +52,9 @@ export function FileTreeRow({
   const resolved = color ? resolveColor(color) : null;
   const collabUsers = useCollabStore((s) => s.users);
   const collabActive = useCollabStore((s) => s.active);
+  const normalizedEntryPath = normalizePath(entry.path);
   const fileCollaborators = collabActive
-    ? Array.from(collabUsers.values()).filter((u) => u.activeFile === entry.path)
+    ? Array.from(collabUsers.values()).filter((u) => u.activeFile != null && normalizePath(u.activeFile) === normalizedEntryPath)
     : [];
   return (
     <div

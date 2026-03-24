@@ -411,9 +411,11 @@ export function useCodeMirror() {
 
     // Update awareness with active file
     provider.setLocalState({
-      name: useCollabStore.getState().userName,
-      color: useCollabStore.getState().userColor,
-      activeFile: activeFilePath,
+      user: {
+        name: useCollabStore.getState().userName,
+        color: useCollabStore.getState().userColor,
+        activeFile: activeFilePath,
+      },
     });
 
     const docCount = docManager.activePaths().size;
@@ -433,9 +435,11 @@ export function useCodeMirror() {
       useCollabStore.getState().removeActiveDoc(activeFilePath);
       // Clear active file from awareness
       provider.setLocalState({
-        name: useCollabStore.getState().userName,
-        color: useCollabStore.getState().userColor,
-        activeFile: null,
+        user: {
+          name: useCollabStore.getState().userName,
+          color: useCollabStore.getState().userColor,
+          activeFile: null,
+        },
       });
     };
   }, [collabActive, activeFilePath]);
