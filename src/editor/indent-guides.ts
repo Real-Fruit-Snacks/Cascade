@@ -2,7 +2,7 @@ import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate } from '@
 import { RangeSetBuilder } from '@codemirror/state';
 import type { AccentColor } from '../stores/settings-store';
 import type { IndentGuideStyle } from '../stores/settings-store';
-import { ViewportBuffer } from './viewport-buffer';
+import { ViewportBuffer, getDecorationRanges } from './viewport-buffer';
 
 /** Currently active guide color CSS value */
 let guideColor = 'var(--ctp-lavender)';
@@ -27,7 +27,7 @@ function buildDecorations(view: EditorView): DecorationSet {
   const indentWidth = charWidth * tabSize;
   const gradient = makeGradient();
 
-  for (const { from, to } of view.visibleRanges) {
+  for (const { from, to } of getDecorationRanges(view)) {
     for (let pos = from; pos <= to; ) {
       const line = view.state.doc.lineAt(pos);
       const text = line.text;

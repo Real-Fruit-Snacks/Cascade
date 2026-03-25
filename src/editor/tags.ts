@@ -8,7 +8,7 @@ import {
 import { EditorState, type Range } from '@codemirror/state';
 import { type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
 import { TAG_PATTERN } from '../lib/tag-utils';
-import { ViewportBuffer } from './viewport-buffer';
+import { ViewportBuffer, getDecorationRanges } from './viewport-buffer';
 import { useSettingsStore } from '../stores/settings-store';
 import { emit } from '../lib/cascade-events';
 
@@ -18,7 +18,7 @@ function buildDecorations(view: EditorView): DecorationSet {
   const deco: Range<Decoration>[] = [];
   const nestedSupport = useSettingsStore.getState().tagsNestedSupport;
 
-  for (const { from, to } of view.visibleRanges) {
+  for (const { from, to } of getDecorationRanges(view)) {
     const text = view.state.sliceDoc(from, to);
     TAG_PATTERN.lastIndex = 0;
 

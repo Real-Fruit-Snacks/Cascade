@@ -8,7 +8,7 @@ import {
 import type { Range } from '@codemirror/state';
 import type { AccentColor } from '../stores/settings-store';
 import { getCursorLineChange, needsRebuildForLine } from './cursor-line';
-import { ViewportBuffer } from './viewport-buffer';
+import { ViewportBuffer, getDecorationRanges } from './viewport-buffer';
 
 // Matches ==text== on a single line (non-greedy, no newlines inside)
 const HIGHLIGHT_RE = /==[^\n=]+?==/g;
@@ -23,7 +23,7 @@ function buildDecorations(view: EditorView): DecorationSet {
   const cursorHead = state.selection.main.head;
   const deco: Range<Decoration>[] = [];
 
-  for (const { from, to } of view.visibleRanges) {
+  for (const { from, to } of getDecorationRanges(view)) {
     const text = state.sliceDoc(from, to);
     let m: RegExpExecArray | null;
     HIGHLIGHT_RE.lastIndex = 0;

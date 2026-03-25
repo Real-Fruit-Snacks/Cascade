@@ -1,6 +1,6 @@
 import { EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet } from '@codemirror/view';
 import { RangeSetBuilder, StateEffect } from '@codemirror/state';
-import { ViewportBuffer } from './viewport-buffer';
+import { ViewportBuffer, getDecorationRanges } from './viewport-buffer';
 import { syntaxTree } from '@codemirror/language';
 import { isCorrect, isDictionaryReady, initDictionary } from './spellcheck-engine';
 import { useSettingsStore } from '../stores/settings-store';
@@ -19,7 +19,7 @@ const SKIP_NODE_TYPES = new Set([
 function collectSkipRanges(view: EditorView): { from: number; to: number }[] {
   const tree = syntaxTree(view.state);
   const ranges: { from: number; to: number }[] = [];
-  for (const { from, to } of view.visibleRanges) {
+  for (const { from, to } of getDecorationRanges(view)) {
     tree.iterate({
       from,
       to,
@@ -115,7 +115,7 @@ const spellcheckPlugin = ViewPlugin.fromClass(
       const skipCapitalized = useSettingsStore.getState().spellcheckSkipCapitalized;
       const skipRanges = collectSkipRanges(view);
 
-      for (const { from, to } of view.visibleRanges) {
+      for (const { from, to } of getDecorationRanges(view)) {
         const text = view.state.sliceDoc(from, to);
         let match: RegExpExecArray | null;
         WORD_RE.lastIndex = 0;

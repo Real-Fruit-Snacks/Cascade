@@ -9,7 +9,7 @@ import type { EditorState, Range } from '@codemirror/state';
 import { useEditorStore } from '../stores/editor-store';
 import { useVaultStore } from '../stores/vault-store';
 import { getCursorLineChange, needsRebuildForLine } from './cursor-line';
-import { ViewportBuffer } from './viewport-buffer';
+import { ViewportBuffer, getDecorationRanges } from './viewport-buffer';
 import { useToastStore } from '../stores/toast-store';
 import { useSettingsStore } from '../stores/settings-store';
 import { resolveWikiLink, parseWikiTarget } from '../lib/wiki-link-resolver';
@@ -37,7 +37,7 @@ function buildDecorations(view: EditorView): DecorationSet {
   const deco: Range<Decoration>[] = [];
   const flatFiles = useVaultStore.getState().flatFiles;
 
-  for (const { from, to } of view.visibleRanges) {
+  for (const { from, to } of getDecorationRanges(view)) {
     const text = state.sliceDoc(from, to);
     WIKI_LINK_RE.lastIndex = 0;
 

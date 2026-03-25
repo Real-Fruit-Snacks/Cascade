@@ -30,6 +30,7 @@ import {
   CalloutHeaderWidget,
   TransclusionWidget,
 } from './widgets';
+import { getDecorationRanges } from '../viewport-buffer';
 
 export function buildDecorations(view: EditorView): DecorationSet {
   const { state } = view;
@@ -57,7 +58,7 @@ export function buildDecorations(view: EditorView): DecorationSet {
   const EMBED_RE = /!\[\[([^\]]+)\]\]/g;
   const flatFiles = useVaultStore.getState().flatFiles;
 
-  for (const { from, to } of view.visibleRanges) {
+  for (const { from, to } of getDecorationRanges(view)) {
     const text = state.sliceDoc(from, to);
     EMBED_RE.lastIndex = 0;
     let embedMatch: RegExpExecArray | null;
@@ -103,7 +104,7 @@ export function buildDecorations(view: EditorView): DecorationSet {
   }
   } // end enableEmbedPreview
 
-  for (const { from, to } of view.visibleRanges) {
+  for (const { from, to } of getDecorationRanges(view)) {
     tree.iterate({
       from,
       to,

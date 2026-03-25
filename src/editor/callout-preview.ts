@@ -8,7 +8,7 @@ import {
 } from '@codemirror/view';
 import type { Range } from '@codemirror/state';
 import { getCursorLineChange, needsRebuildForLine } from './cursor-line';
-import { ViewportBuffer } from './viewport-buffer';
+import { ViewportBuffer, getDecorationRanges } from './viewport-buffer';
 
 // ── Callout types & icons ──────────────────────────────────
 
@@ -132,7 +132,7 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
   const doc = view.state.doc;
   const cursor = view.state.selection.main;
 
-  for (const { from, to } of view.visibleRanges) {
+  for (const { from, to } of getDecorationRanges(view)) {
     let pos = from;
     while (pos <= to) {
       const line = doc.lineAt(pos);

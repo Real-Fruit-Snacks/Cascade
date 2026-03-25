@@ -21,7 +21,7 @@ import {
   type TidemarkOptions,
 } from '../lib/tidemark';
 import { useSettingsStore } from '../stores/settings-store';
-import { ViewportBuffer } from './viewport-buffer';
+import { ViewportBuffer, getDecorationRanges } from './viewport-buffer';
 
 function getVariableOptions(): TidemarkOptions {
   const s = useSettingsStore.getState();
@@ -51,7 +51,7 @@ function buildDecorations(view: EditorView): DecorationSet {
   const opts = getVariableOptions();
   const deco: Range<Decoration>[] = [];
 
-  for (const { from, to } of view.visibleRanges) {
+  for (const { from, to } of getDecorationRanges(view)) {
     // Only decorate body (after frontmatter if present)
     const effectiveFrom = Math.max(from, bodyStart);
     if (effectiveFrom >= to) continue;

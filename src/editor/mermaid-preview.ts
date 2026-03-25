@@ -8,7 +8,7 @@ import {
 } from '@codemirror/view';
 import type { Range } from '@codemirror/state';
 import { getCursorLineChange, needsRebuildForLine } from './cursor-line';
-import { ViewportBuffer } from './viewport-buffer';
+import { ViewportBuffer, getDecorationRanges } from './viewport-buffer';
 
 // Lazy-load mermaid to avoid large bundle impact
 let mermaidPromise: Promise<typeof import('mermaid')> | null = null;
@@ -79,7 +79,7 @@ function buildMermaidDecorations(view: EditorView): DecorationSet {
   const doc = view.state.doc;
   const cursor = view.state.selection.main;
 
-  for (const { from, to } of view.visibleRanges) {
+  for (const { from, to } of getDecorationRanges(view)) {
     const text = doc.sliceString(from, to);
 
     MERMAID_BLOCK_RE.lastIndex = 0;
