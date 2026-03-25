@@ -13,6 +13,7 @@ interface ConfirmState {
   resolve: ((confirmed: boolean) => void) | null;
   show: (request: ConfirmRequest) => Promise<boolean>;
   respond: (confirmed: boolean) => void;
+  dismiss: () => void;
 }
 
 export const useConfirmStore = create<ConfirmState>((set, get) => ({
@@ -29,6 +30,10 @@ export const useConfirmStore = create<ConfirmState>((set, get) => ({
     const { resolve } = get();
     resolve?.(confirmed);
     set({ request: null, resolve: null });
+  },
+
+  dismiss: () => {
+    get().respond(false);
   },
 }));
 

@@ -107,33 +107,21 @@ export function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <>
-      <style>{`
-        @keyframes toast-slide-in {
-          from { opacity: 0; transform: translateX(20px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes toast-slide-out {
-          from { opacity: 1; transform: translateX(0); }
-          to   { opacity: 0; transform: translateX(20px); }
-        }
-      `}</style>
-      <div
-        style={{
-          position: 'fixed',
-          bottom: 36,
-          right: 16,
-          zIndex: 60,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-          alignItems: 'flex-end',
-        }}
-      >
-        {toasts.map((toast, index) => (
-          <ToastItem key={toast.id} toast={toast} index={index} />
-        ))}
-      </div>
-    </>
+    <div
+      style={{
+        position: 'fixed',
+        bottom: 36,
+        right: 16,
+        zIndex: 60,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        alignItems: 'flex-end',
+      }}
+    >
+      {toasts.map((toast, index) => (
+        <ToastItem key={toast.id} toast={toast} index={index} />
+      ))}
+    </div>
   );
 }

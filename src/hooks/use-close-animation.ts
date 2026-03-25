@@ -16,7 +16,7 @@ export function useCloseAnimation(open: boolean, duration = 120) {
       }, duration);
       return () => clearTimeout(timer);
     }
-  }, [open, duration]);
+  }, [open, duration, shouldRender]);
 
   return { shouldRender, isClosing };
 }

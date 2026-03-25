@@ -91,6 +91,10 @@ pub fn restore_from_trash(
     name: String,
     vault_root_state: tauri::State<VaultRoot>,
 ) -> Result<(), CascadeError> {
+    // Reject names with path separators or traversal components
+    if name.contains('/') || name.contains('\\') || name.contains("..") || name.is_empty() {
+        return Err(CascadeError::InvalidPath("invalid trash entry name".to_string()));
+    }
     let canonical_root = get_canonical_root(&vault_root, &vault_root_state)?;
     let trash_dir = canonical_root.join(TRASH_DIR);
     let source = trash_dir.join(&name);
@@ -113,6 +117,9 @@ pub fn restore_from_trash(
             dest = canonical_root.join(format!("{} ({}){}", stem, counter, ext));
             if !dest.exists() { break; }
             counter += 1;
+            if counter > 1000 {
+                return Err(CascadeError::InvalidPath("too many name collisions during restore".to_string()));
+            }
         }
     }
     fs::rename(&source, &dest)?;
@@ -125,6 +132,10 @@ pub fn delete_from_trash(
     name: String,
     vault_root_state: tauri::State<VaultRoot>,
 ) -> Result<(), CascadeError> {
+    // Reject names with path separators or traversal components
+    if name.contains('/') || name.contains('\\') || name.contains("..") || name.is_empty() {
+        return Err(CascadeError::InvalidPath("invalid trash entry name".to_string()));
+    }
     let canonical_root = get_canonical_root(&vault_root, &vault_root_state)?;
     let trash_dir = canonical_root.join(TRASH_DIR);
     let target = trash_dir.join(&name);

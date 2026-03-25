@@ -4,6 +4,63 @@ All notable changes to Cascade will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.3] — 2026-03-25
+
+### Security
+
+- **Collab server binds to localhost** — WebSocket relay now binds to `127.0.0.1` instead of `0.0.0.0`, preventing LAN exposure. Minimum 8-character password enforced.
+- **Path traversal hardened** — Fixed traversal vulnerabilities in trash restore/delete, file history listing, and git commands. All vault operations now validate against canonical paths.
+- **Zip Slip protection** — Notion importer and plugin extraction now use `enclosed_name()` and `starts_with()` checks to prevent malicious zip entries escaping their target directory.
+- **XSS mitigations** — `escapeHtml` now escapes quotes (`"`, `'`); mermaid SVG rendered via `DOMParser` instead of raw `innerHTML`; plugin HTML wrapped with restrictive CSP meta tag.
+- **Asset protocol narrowed** — Reduced from `$HOME/**` to `$DOCUMENT/**`, `$DESKTOP/**`, `$DOWNLOAD/**` to prevent access to sensitive dotfiles (`.ssh`, `.gnupg`, etc.).
+- **CI supply chain** — All GitHub Actions pinned to commit SHAs. Added `permissions: contents: read`, `cargo clippy`, and `npm audit` to CI pipeline.
+- **Git credential safety** — Generated `.gitignore` now excludes `.env`, `*.key`, `*.pem`, `credentials.json`.
+
+### Performance
+
+- **Cursor-line-only decoration rebuilds** — Image preview and query preview decorations now only rebuild when the cursor moves to a different line, not on every keystroke. Eliminates O(N) work per cursor movement.
+- **Global mutable state eliminated** — Indent guides, slash commands, and spellcheck no longer share module-level variables across editor instances, fixing multi-pane interference.
+- **Inline styles moved to CSS** — Toast animations and focus-dim styles moved from conditional `<style>` elements to global CSS, reducing DOM churn.
+
+### Bug Fixes
+
+- **CI workflows fixed** — Changed `actions/checkout@v6` and `actions/setup-node@v6` (which don't exist) to `@v4`.
+- **Non-ASCII search** — Case-insensitive search now uses Unicode-aware `to_lowercase()` instead of `to_ascii_lowercase()`.
+- **Batch export** — No longer includes `.cascade/` internal files in exports.
+- **Table editor** — Fixed stale position closure causing content corruption when editing above tables; fixed escaped pipe handling in `parseTableRow`.
+- **YAML frontmatter** — Values like `true`, `false`, `null`, and strings with special characters are now properly quoted to prevent type coercion on round-trip.
+- **Canvas undo** — Deep-clones node/edge objects to prevent undo snapshot corruption from in-place mutation. Async layout errors are now caught instead of silently failing.
+- **Collab stability** — Added try/catch to all collab store operations, validated lifecycle event shapes, added logging to catch blocks, enforced path length limits in sync protocol.
+- **MergeConflictDialog** — Reinitializes state when `conflicts` prop changes; added proper ARIA attributes.
+- **EditorPane** — Replaced misused `useCallback` IIFE with `useMemo`; switched to cascade-events for consistency.
+- **formatAgo** — Now shows "Xd ago" for timestamps older than 24 hours instead of "720 hours ago".
+- **Template includes** — `replaceAll` for duplicate `{{include:}}` directives.
+- **Settings null guard** — Prevents `typeof null === 'object'` false positive in settings validation.
+- **Daily notes** — Properly awaits `openFile` before cursor positioning.
+- **Windows path separator** — Removed hardcoded `\\` replacement in PluginsSection that broke macOS/Linux.
+- **Collab error types** — All collab commands now use `CascadeError` instead of raw `String` for consistent error handling.
+- **Keyboard shortcuts** — Fixed Meta/Ctrl ambiguity so shortcuts can distinguish between the two modifiers when explicitly specified.
+- **Wiki-link cache** — Cleared on vault open/close to prevent stale resolution from previous vaults.
+- **Theme registry** — Added validation for community theme entries analogous to plugin validation.
+- **Confirm dialog** — Added `dismiss` method to prevent hanging callers when dialog is closed without responding.
+
+### Improvements
+
+- **Plugin HTML sandboxing** — Plugin-supplied HTML now includes a restrictive CSP meta tag limiting network access.
+- **Settings JSON validation** — `write_vault_settings` validates JSON before writing to prevent corrupt data.
+- **Sync log locking** — Added mutex to prevent TOCTOU race condition in log rotation.
+- **Dead code cleanup** — Removed unused `is_our_presence` function, deduplicated `sanitize_filename` across importers.
+- **Export italic regex** — Word-boundary-aware pattern prevents matching `_underscored_variables_`.
+- **Drop handler** — URL encoding now handles `(`, `)`, and spaces for reliable markdown links.
+- **Properties styles** — Replaced hardcoded Catppuccin Mocha RGBA values with CSS custom properties for theme compatibility.
+- **Inline markdown rendering** — Processes `***bold italic***` before `**bold**` and `*italic*` to prevent incorrect nesting; protects inline code from formatting.
+- **Accessibility** — Proper `role="dialog"`, `aria-modal`, `aria-label` on MergeConflictDialog; stable React keys replace array indices.
+- **i18n** — CollabUsersPanel strings translated; TabBar "No file open" uses translation; SettingRow uses `useTranslation` hook; SpellcheckOptionsPage uses i18next plural handling.
+- **Theme studio** — Added "All" category filter option; heading colors moved to module-level constant.
+- **ESLint** — Enabled `@typescript-eslint/no-unused-vars` with underscore exceptions.
+- **Color validation** — Theme `applyColors` validates hex format before setting CSS properties.
+- **Website** — Updated version badge to v0.3.3; clipboard copy has error handling; screenshot alt text updates on tab switch.
+
 ## [0.3.2] — 2026-03-25
 
 ### Performance

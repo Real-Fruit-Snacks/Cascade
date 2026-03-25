@@ -17,7 +17,11 @@ export function decodeLifecycleEvent(data: string): LifecycleEvent {
   if (!isLifecycleMessage(data)) {
     throw new Error('Not a lifecycle message');
   }
-  return JSON.parse(data.slice(LIFECYCLE_PREFIX.length)) as LifecycleEvent;
+  const parsed = JSON.parse(data.slice(LIFECYCLE_PREFIX.length));
+  if (!parsed || typeof parsed.type !== 'string' || typeof parsed.by !== 'string') {
+    throw new Error('Invalid lifecycle event shape');
+  }
+  return parsed as LifecycleEvent;
 }
 
 export function isLifecycleMessage(data: string): boolean {

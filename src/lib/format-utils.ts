@@ -12,5 +12,9 @@ export function formatAgo(
   const mins = Math.floor(secs / 60);
   if (mins < 60) return t('minutesAgo', { count: mins });
   const hrs = Math.floor(mins / 60);
+  if (hrs >= 24) {
+    const days = Math.floor(hrs / 24);
+    return t('daysAgo', { count: days });
+  }
   return t('hoursAgo', { count: hrs });
 }

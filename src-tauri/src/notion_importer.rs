@@ -525,6 +525,31 @@ pub fn import_notion_export(
         let clean_entry_path = clean_zip_path(zip_entry_path);
         let dest_path = vault_path.join(&clean_entry_path);
 
+        // Zip Slip guard: ensure destination stays within vault_path
+        let canonical_vault = match vault_path.canonicalize() {
+            Ok(p) => p,
+            Err(e) => {
+                errors.push(format!("Cannot canonicalize vault path: {}", e));
+                continue;
+            }
+        };
+        // Build canonical dest by normalizing without requiring the file to exist
+        let canonical_dest = {
+            // Use parent (which should already exist or be created) then append filename
+            let parent = dest_path.parent().unwrap_or(&dest_path);
+            let parent_canonical = parent.canonicalize().unwrap_or_else(|_| parent.to_path_buf());
+            if let Some(file_name) = dest_path.file_name() {
+                parent_canonical.join(file_name)
+            } else {
+                parent_canonical
+            }
+        };
+        if !canonical_dest.starts_with(&canonical_vault) {
+            errors.push(format!("Skipping path traversal attempt: {}", raw_name));
+            files_skipped += 1;
+            continue;
+        }
+
         // Create parent directories
         if let Some(parent) = dest_path.parent() {
             if let Err(e) = std::fs::create_dir_all(parent) {

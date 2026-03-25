@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FolderOpen, Copy, Info, Replace, FileOutput, Settings } from 'lucide-react';
 import { FilePropertiesDialog } from './FilePropertiesDialog';
 import { ask } from '@tauri-apps/plugin-dialog';
@@ -15,7 +15,7 @@ import { EditorView } from '@codemirror/view';
 import { openSearchPanel } from '@codemirror/search';
 import { consumeRightClickCapture } from '../editor/custom-spellcheck';
 import { useTranslation } from 'react-i18next';
-import { emit } from '../lib/cascade-events';
+import { emit, on } from '../lib/cascade-events';
 
 import { FloatingVimBadge } from './editor/FloatingVimBadge';
 import { SlashCommandMenu } from './SlashCommandMenu';
@@ -26,11 +26,6 @@ import { ViewerPanes } from './editor/ViewerPanes';
 import { useTabContextMenu } from '../hooks/useTabContextMenu';
 import { useEditorContextMenu } from '../hooks/useEditorContextMenu';
 import { useTabDragDrop } from '../hooks/useTabDragDrop';
-
-const FOCUS_DIM_STYLE = `
-.focus-dim-paragraphs .cm-line { opacity: 0.3; transition: opacity 0.2s; }
-.focus-dim-paragraphs .cm-activeLine { opacity: 1; }
-`;
 
 const SPECIAL_TAB_LABELS: Record<string, { label: string }> = {
   '__graph__': { label: 'Graph' },
@@ -59,10 +54,9 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
   const tabDirty = useEditorStore(useShallow((s) => selectTabs(s).map((t) => t.isDirty)));
   const tabPinned = useEditorStore(useShallow((s) => selectTabs(s).map((t) => !!t.isPinned)));
   const tabTypes = useEditorStore(useShallow((s) => selectTabs(s).map((t) => t.type ?? getTabType(t.path))));
-  const tabsMeta = useCallback(() => {
-    // This is computed inline to avoid a useMemo import; but we actually need useMemo
+  const tabsMeta = useMemo(() => {
     return tabPaths.map((path, i) => ({ path, isDirty: tabDirty[i], isPinned: tabPinned[i], type: tabTypes[i] }));
-  }, [tabPaths, tabDirty, tabPinned, tabTypes])();
+  }, [tabPaths, tabDirty, tabPinned, tabTypes]);
   const activeTabIndex = useEditorStore(selectActiveTabIndex);
   const activeFilePath = useEditorStore((s) => {
     const tabs = selectTabs(s);
@@ -174,11 +168,12 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
   const handleEditorContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const capture = consumeRightClickCapture();
+    const view = getView();
+    const capture = view ? consumeRightClickCapture(view) : null;
     const docPos = capture?.docPos ?? null;
     const spellcheck = capture?.spellcheck ?? null;
     setEditorMenu({ x: e.clientX, y: e.clientY, docPos, spellcheck });
-  }, []);
+  }, [getView]);
 
   const editorMenuItems = useEditorContextMenu({ editorMenu, getView, t });
 
@@ -194,12 +189,9 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
 
   // Listen for plugin views requesting a tab
   useEffect(() => {
-    const handler = (e: Event) => {
-      const { viewType } = (e as CustomEvent).detail as { viewType: string };
+    return on('cascade:open-plugin-view', ({ viewType }) => {
       useEditorStore.getState().openSpecialTab(`__plugin-view:${viewType}`);
-    };
-    window.addEventListener('cascade:open-plugin-view', handler);
-    return () => window.removeEventListener('cascade:open-plugin-view', handler);
+    });
   }, []);
 
   // Sync store content into CodeMirror when active file changes
@@ -288,7 +280,6 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
       }}
       onMouseDown={handlePaneFocus}
     >
-      {focusModeActive && focusModeDimParagraphs && <style>{FOCUS_DIM_STYLE}</style>}
       {/* Tab bar -- hidden in focus mode */}
       {!focusModeActive && <TabBar
         tabsMeta={tabsMeta}
@@ -353,7 +344,7 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
       {/* Editor mount -- always rendered so CM instance persists; hidden when no file or special tab active */}
       <div
         ref={editorRef}
-        className={`flex-1 overflow-hidden font-mono${focusModeActive && focusModeDimParagraphs ? ' focus-dim-paragraphs' : ''}`}
+        className={`flex-1 overflow-hidden font-mono${focusModeActive && focusModeDimParagraphs ? ' focus-dim-active' : ''}`}
         onContextMenu={handleEditorContextMenu}
         style={{
           backgroundColor: 'var(--ctp-base)',

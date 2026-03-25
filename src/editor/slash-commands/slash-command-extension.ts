@@ -2,8 +2,16 @@ import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import type { Extension } from '@codemirror/state';
 import { slashCommandBus } from '../../lib/slash-command-bus';
 
-/** Track slash-command state within the editor */
-let activeSlashFrom: number | null = null;
+/** Per-view slash-command state (avoids shared mutable module-level variable) */
+const viewSlashFrom = new WeakMap<EditorView, number | null>();
+
+function getSlashFrom(view: EditorView): number | null {
+  return viewSlashFrom.get(view) ?? null;
+}
+
+function setSlashFrom(view: EditorView, value: number | null): void {
+  viewSlashFrom.set(view, value);
+}
 
 function isWordBoundary(view: EditorView, pos: number): boolean {
   if (pos === 0) return true;
@@ -24,7 +32,7 @@ const slashInputHandler = EditorView.inputHandler.of((view, from, _to, text) => 
     if (!coords) return;
 
     const editorRect = view.dom.getBoundingClientRect();
-    activeSlashFrom = from;
+    setSlashFrom(view, from);
 
     slashCommandBus.open({
       x: coords.left - editorRect.left,
@@ -40,13 +48,14 @@ const slashInputHandler = EditorView.inputHandler.of((view, from, _to, text) => 
 /** Watch for doc changes while menu is open to update filter query or dismiss */
 const slashUpdatePlugin = ViewPlugin.fromClass(class {
   update(update: ViewUpdate) {
+    const activeSlashFrom = getSlashFrom(update.view);
     if (activeSlashFrom === null) return;
 
     const head = update.state.selection.main.head;
 
     // Check if slash position is still valid
     if (activeSlashFrom >= update.state.doc.length) {
-      activeSlashFrom = null;
+      setSlashFrom(update.view, null);
       slashCommandBus.close();
       return;
     }
@@ -56,7 +65,7 @@ const slashUpdatePlugin = ViewPlugin.fromClass(class {
 
     // Dismiss if cursor moved to a different line or before the slash
     if (line.number !== slashLine.number || head < activeSlashFrom) {
-      activeSlashFrom = null;
+      setSlashFrom(update.view, null);
       slashCommandBus.close();
       return;
     }
@@ -66,7 +75,7 @@ const slashUpdatePlugin = ViewPlugin.fromClass(class {
 
     // Dismiss if query contains whitespace (user typed a space — probably not a command)
     if (/\s/.test(query)) {
-      activeSlashFrom = null;
+      setSlashFrom(update.view, null);
       slashCommandBus.close();
       return;
     }
@@ -75,17 +84,19 @@ const slashUpdatePlugin = ViewPlugin.fromClass(class {
   }
 });
 
-export function dismissSlashMenu() {
-  activeSlashFrom = null;
+export function dismissSlashMenu(view?: EditorView) {
+  if (view) {
+    setSlashFrom(view, null);
+  }
   slashCommandBus.close();
 }
 
-export function getActiveSlashFrom(): number | null {
-  return activeSlashFrom;
+export function getActiveSlashFrom(view: EditorView): number | null {
+  return getSlashFrom(view);
 }
 
-export function clearActiveSlash() {
-  activeSlashFrom = null;
+export function clearActiveSlash(view?: EditorView) {
+  if (view) setSlashFrom(view, null);
 }
 
 export const slashCommandExtension: Extension = [

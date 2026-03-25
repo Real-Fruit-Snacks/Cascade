@@ -147,7 +147,7 @@ export function SpellcheckOptionsPage() {
         </div>
         {dictWords.length > 0 && (
           <span className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>
-            {dictWords.length === 1 ? ts('spellcheckOptions.customDictionary.wordCount', { count: dictWords.length }) : ts('spellcheckOptions.customDictionary.wordCountPlural', { count: dictWords.length })}
+            {ts('spellcheckOptions.customDictionary.wordCount', { count: dictWords.length })}
           </span>
         )}
       </div>

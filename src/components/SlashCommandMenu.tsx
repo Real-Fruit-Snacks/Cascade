@@ -65,7 +65,7 @@ export function SlashCommandMenu({ editorViewRef }: Props) {
     if (item.id === 'template') {
       view.dispatch({ changes: { from: slashFrom, to } });
       view.focus();
-      clearActiveSlash();
+      clearActiveSlash(view);
       setIsOpen(false);
       quickOpenBus.requestLinkPicker(() => {});
       return;
@@ -74,7 +74,7 @@ export function SlashCommandMenu({ editorViewRef }: Props) {
     if (item.id === 'embedNote') {
       view.dispatch({ changes: { from: slashFrom, to, insert: '![[' } });
       view.focus();
-      clearActiveSlash();
+      clearActiveSlash(view);
       setIsOpen(false);
       quickOpenBus.requestLinkPicker((name: string) => {
         const currentView = editorViewRef.current;
@@ -90,7 +90,7 @@ export function SlashCommandMenu({ editorViewRef }: Props) {
     }
 
     item.action(view, slashFrom, to);
-    clearActiveSlash();
+    clearActiveSlash(view);
     setIsOpen(false);
   }, [editorViewRef, slashFrom]);
 
@@ -118,7 +118,7 @@ export function SlashCommandMenu({ editorViewRef }: Props) {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        clearActiveSlash();
+        clearActiveSlash(editorViewRef.current ?? undefined);
         setIsOpen(false);
         editorViewRef.current?.focus();
         return;
@@ -156,7 +156,7 @@ export function SlashCommandMenu({ editorViewRef }: Props) {
     if (!isOpen) return;
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        clearActiveSlash();
+        clearActiveSlash(editorViewRef.current ?? undefined);
         setIsOpen(false);
       }
     };

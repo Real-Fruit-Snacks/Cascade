@@ -1,6 +1,7 @@
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use chrono::Local;
 
 /// Get the sync log file path for a vault.
@@ -10,12 +11,18 @@ pub fn log_path(vault_path: &Path) -> PathBuf {
 
 const MAX_LOG_SIZE: u64 = 1_048_576; // 1MB
 
+/// Process-wide mutex to serialize all access to the sync log file,
+/// preventing TOCTOU races in log rotation.
+static LOG_MUTEX: Mutex<()> = Mutex::new(());
+
 /// Write a log entry to the sync log file.
 pub fn log(vault_path: &Path, level: &str, message: &str) {
     let path = log_path(vault_path);
     if let Some(parent) = path.parent() {
         let _ = fs::create_dir_all(parent);
     }
+    // Serialize check-size-read-truncate-write to avoid TOCTOU races.
+    let _guard = LOG_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
     // Rotate log if it exceeds 1MB — keep last 500 lines
     if let Ok(meta) = fs::metadata(&path) {
         if meta.len() > MAX_LOG_SIZE {

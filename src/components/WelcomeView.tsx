@@ -37,7 +37,7 @@ function buildModifiedMap(tree: FileEntry[], map: Map<string, number> = new Map(
   return map;
 }
 
-const mod = navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl';
+const mod = navigator.userAgent.includes('Mac') ? 'Cmd' : 'Ctrl';
 
 export function WelcomeView() {
   const { t } = useTranslation('editor');

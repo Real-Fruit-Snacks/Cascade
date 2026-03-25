@@ -397,7 +397,7 @@ export function ExportModal({ open, onClose, defaultScope }: ExportModalProps) {
                 {t('progress.exporting', { current: exportProgress.current, total: exportProgress.total })}
               </span>
               <span className="text-xs" style={{ color: 'var(--ctp-subtext0)' }}>
-                {Math.round((exportProgress.current / exportProgress.total) * 100)}%
+                {exportProgress.total > 0 ? Math.round((exportProgress.current / exportProgress.total) * 100) : 0}%
               </span>
             </div>
             <div
@@ -407,7 +407,7 @@ export function ExportModal({ open, onClose, defaultScope }: ExportModalProps) {
               <div
                 className="h-full rounded-full transition-all"
                 style={{
-                  width: `${(exportProgress.current / exportProgress.total) * 100}%`,
+                  width: `${exportProgress.total > 0 ? (exportProgress.current / exportProgress.total) * 100 : 0}%`,
                   backgroundColor: 'var(--ctp-accent)',
                 }}
               />

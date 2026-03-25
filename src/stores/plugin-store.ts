@@ -7,6 +7,16 @@ import { useVaultStore } from './vault-store';
 import { PluginSandbox } from '../plugin-api/sandbox';
 import i18n from '../i18n';
 
+/** Wrap plugin-supplied HTML with a restrictive CSP to limit what scripts can do */
+function sandboxPluginHtml(html: string): string {
+  const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:;">`;
+  // Inject CSP at the start — if the HTML has a <head>, insert there; otherwise prepend
+  if (html.includes('<head>')) {
+    return html.replace('<head>', `<head>${csp}`);
+  }
+  return `${csp}${html}`;
+}
+
 export interface PluginEntry {
   manifest: PluginManifest;
   enabled: boolean;
@@ -230,7 +240,7 @@ export const usePluginStore = create<PluginState & PluginActions>((set, get) => 
   addSidebarPanel: (id, pluginId, html) => {
     set((s) => {
       const items = new Map(s.sidebarPanels);
-      items.set(id, { pluginId, html });
+      items.set(id, { pluginId, html: sandboxPluginHtml(html) });
       return { sidebarPanels: items };
     });
   },
@@ -245,7 +255,7 @@ export const usePluginStore = create<PluginState & PluginActions>((set, get) => 
   registerView: (viewType, pluginId, html) => {
     set((s) => {
       const items = new Map(s.customViews);
-      items.set(viewType, { pluginId, html });
+      items.set(viewType, { pluginId, html: sandboxPluginHtml(html) });
       return { customViews: items };
     });
   },
@@ -290,7 +300,7 @@ export const usePluginStore = create<PluginState & PluginActions>((set, get) => 
   addSettingsTab: (id, pluginId, label, html) => {
     set((s) => {
       const items = new Map(s.settingsTabs);
-      items.set(id, { pluginId, label, html });
+      items.set(id, { pluginId, label, html: sandboxPluginHtml(html) });
       return { settingsTabs: items };
     });
   },

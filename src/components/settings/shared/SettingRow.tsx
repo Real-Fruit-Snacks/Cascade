@@ -1,7 +1,8 @@
-import i18n from '../../../i18n';
+import { useTranslation } from 'react-i18next';
 import { RotateCcw } from 'lucide-react';
 
 export function SettingRow({ label, description, children, onReset }: { label: string; description: string; children: React.ReactNode; onReset?: () => void }) {
+  const { t } = useTranslation('settings');
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="flex flex-col gap-0.5 min-w-0">
@@ -14,7 +15,7 @@ export function SettingRow({ label, description, children, onReset }: { label: s
           <button
             onClick={onReset}
             className="p-0.5 rounded transition-colors hover:bg-[var(--ctp-surface1)] ctp-overlay0"
-            title={i18n.t('settings:resetToDefault')}
+            title={t('resetToDefault')}
           >
             <RotateCcw size={11} />
           </button>

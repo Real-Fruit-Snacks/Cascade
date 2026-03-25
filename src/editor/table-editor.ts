@@ -6,7 +6,7 @@ import {
 } from '@codemirror/view';
 import { type ChangeSet, type EditorState, type Range, StateField } from '@codemirror/state';
 import { useToastStore } from '../stores/toast-store';
-import { renderInlineMarkdown } from './live-preview/helpers';
+import { renderInlineMarkdown, parseTableRow } from './live-preview/helpers';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -40,11 +40,6 @@ function getContainerState(container: HTMLElement): TableContainerState {
 }
 
 // ── Parsing ────────────────────────────────────────────────
-
-function parseTableRow(line: string): string[] {
-  const trimmed = line.replace(/^\|/, '').replace(/\|$/, '');
-  return trimmed.split('|').map((c) => c.trim());
-}
 
 function parseAlignments(line: string): Alignment[] {
   return parseTableRow(line).map((cell) => {
@@ -172,8 +167,6 @@ function createToolbar(
   headers: string[],
   rows: string[][],
   alignments: Alignment[],
-  from: number,
-  to: number,
   view: EditorView,
   container: HTMLElement,
 ): HTMLElement {
@@ -189,14 +182,22 @@ function createToolbar(
     return { rowIdx: state.lastActiveRow, colIdx: state.lastActiveCol };
   }
 
+  function getTableRange(): { from: number; to: number } {
+    return {
+      from: parseInt(container.dataset.tableFrom ?? '0', 10),
+      to: parseInt(container.dataset.tableTo ?? '0', 10),
+    };
+  }
+
   function dispatch(
     newHeaders: string[],
     newRows: string[][],
     newAlignments: Alignment[],
   ) {
+    const { from: f, to: t } = getTableRange();
     const newText = formatTable(newHeaders, newRows, newAlignments);
     state.suppressBlurSync = true;
-    view.dispatch({ changes: { from, to, insert: newText } });
+    view.dispatch({ changes: { from: f, to: t, insert: newText } });
     // Delay reset so any blur events from widget removal are still suppressed
     requestAnimationFrame(() => { state.suppressBlurSync = false; });
   }
@@ -304,8 +305,9 @@ function createToolbar(
     }),
     sep(),
     btn('Del table', 'Delete entire table', () => {
+      const { from: f, to: t } = getTableRange();
       state.suppressBlurSync = true;
-      view.dispatch({ changes: { from, to, insert: '' } });
+      view.dispatch({ changes: { from: f, to: t, insert: '' } });
       requestAnimationFrame(() => { state.suppressBlurSync = false; });
     }, 'del'),
   );
@@ -367,7 +369,7 @@ class InteractiveTableWidget extends WidgetType {
     });
 
     // Toolbar
-    const toolbar = createToolbar(headers, rows, alignments, from, to, view, container);
+    const toolbar = createToolbar(headers, rows, alignments, view, container);
     container.appendChild(toolbar);
 
     // Table
@@ -389,7 +391,7 @@ class InteractiveTableWidget extends WidgetType {
       th.dataset.col = String(colIdx);
       th.dataset.raw = h;
       if (alignments[colIdx]) th.style.textAlign = alignments[colIdx]!;
-      if (isEditable) attachCellHandlers(th, view, container, headers, rows, alignments, from, to);
+      if (isEditable) attachCellHandlers(th, view, container, headers, rows, alignments);
       headerTr.appendChild(th);
     });
     thead.appendChild(headerTr);
@@ -408,7 +410,7 @@ class InteractiveTableWidget extends WidgetType {
         td.dataset.col = String(colIdx);
         td.dataset.raw = cell;
         if (alignments[colIdx]) td.style.textAlign = alignments[colIdx]!;
-        if (isEditable) attachCellHandlers(td, view, container, headers, rows, alignments, from, to);
+        if (isEditable) attachCellHandlers(td, view, container, headers, rows, alignments);
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -438,10 +440,15 @@ function attachCellHandlers(
   headers: string[],
   rows: string[][],
   alignments: Alignment[],
-  from: number,
-  to: number,
 ): void {
   const state = getContainerState(container);
+
+  function getTableRange(): { from: number; to: number } {
+    return {
+      from: parseInt(container.dataset.tableFrom ?? '0', 10),
+      to: parseInt(container.dataset.tableTo ?? '0', 10),
+    };
+  }
 
   function getData(): { currentHeaders: string[]; currentRows: string[][] } {
     return collectCurrentData(container, rows.length, headers.length);
@@ -449,6 +456,7 @@ function attachCellHandlers(
 
   function syncToEditor(): void {
     if (state.suppressBlurSync) return;
+    const { from, to } = getTableRange();
     const { currentHeaders, currentRows } = getData();
     const newText = formatTable(currentHeaders, currentRows, alignments);
     // Only dispatch if changed
@@ -504,8 +512,9 @@ function attachCellHandlers(
       e.preventDefault();
       cell.blur();
       // Move cursor past the table in the editor
+      const { to: tEsc } = getTableRange();
       const docTo = view.state.doc.length;
-      const safePos = Math.min(to + 1, docTo);
+      const safePos = Math.min(tEsc + 1, docTo);
       view.dispatch({ selection: { anchor: safePos } });
       view.focus();
       return;
@@ -526,12 +535,13 @@ function attachCellHandlers(
           focusCell(allCells[idx + 1]);
         } else {
           // Last cell: add a new row
+          const { from: fTab, to: tTab } = getTableRange();
           const { currentHeaders, currentRows } = getData();
           const newRow = Array(currentHeaders.length).fill('');
           const newRows = [...currentRows, newRow];
           const newText = formatTable(currentHeaders, newRows, alignments);
           state.suppressBlurSync = true;
-          view.dispatch({ changes: { from, to, insert: newText } });
+          view.dispatch({ changes: { from: fTab, to: tTab, insert: newText } });
           requestAnimationFrame(() => { state.suppressBlurSync = false; });
         }
       }
@@ -582,12 +592,13 @@ function attachCellHandlers(
 
       if (isLastRow) {
         // Add a new row
+        const { from: fEnter, to: tEnter } = getTableRange();
         const { currentHeaders, currentRows } = getData();
         const newRow = Array(currentHeaders.length).fill('');
         const newRows = [...currentRows, newRow];
         const newText = formatTable(currentHeaders, newRows, alignments);
         state.suppressBlurSync = true;
-        view.dispatch({ changes: { from, to, insert: newText } });
+        view.dispatch({ changes: { from: fEnter, to: tEnter, insert: newText } });
         requestAnimationFrame(() => { state.suppressBlurSync = false; });
       } else {
         // Move to same column in next row

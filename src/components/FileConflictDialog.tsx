@@ -5,9 +5,10 @@ import { useEditorStore } from '../stores/editor-store';
 import { useVaultStore } from '../stores/vault-store';
 import { useFocusTrap } from '../hooks/use-focus-trap';
 import { useCloseAnimation } from '../hooks/use-close-animation';
+import { on } from '../lib/cascade-events';
 
 interface ConflictInfo {
-  path: string;
+  filePath: string;
   externalContent: string;
 }
 
@@ -19,12 +20,9 @@ export function FileConflictDialog() {
   const trapKeyDown = useFocusTrap(dialogRef, conflict !== null);
 
   useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as ConflictInfo;
+    return on('cascade:file-conflict', (detail) => {
       setConflict(detail);
-    };
-    window.addEventListener('cascade:file-conflict', handler);
-    return () => window.removeEventListener('cascade:file-conflict', handler);
+    });
   }, []);
 
   useEffect(() => {
@@ -41,7 +39,7 @@ export function FileConflictDialog() {
 
   if (!shouldRender || !conflict) return null;
 
-  const fileName = conflict.path?.replace(/\\/g, '/').split('/').pop() ?? conflict.path ?? '';
+  const fileName = conflict.filePath?.replace(/\\/g, '/').split('/').pop() ?? conflict.filePath ?? '';
 
   const handleKeepMine = () => {
     // Keep local edits, do nothing — user can save when ready
@@ -51,7 +49,7 @@ export function FileConflictDialog() {
   const handleLoadExternal = () => {
     const store = useEditorStore.getState();
     const { tabs, activeTabIndex } = store;
-    const tabIndex = tabs.findIndex((t) => t.path === conflict.path);
+    const tabIndex = tabs.findIndex((t) => t.path === conflict.filePath);
     if (tabIndex !== -1) {
       const updated = {
         ...tabs[tabIndex],
@@ -61,7 +59,7 @@ export function FileConflictDialog() {
       };
       const newTabs = tabs.map((t, i) => (i === tabIndex ? updated : t));
       const dirtyPaths = new Set(store.dirtyPaths);
-      dirtyPaths.delete(conflict.path);
+      dirtyPaths.delete(conflict.filePath);
       useEditorStore.setState({
         tabs: newTabs,
         dirtyPaths,
@@ -78,7 +76,7 @@ export function FileConflictDialog() {
     if (vaultPath) {
       // Update savedContent to match external, then save current content
       const store = useEditorStore.getState();
-      const tabIndex = store.tabs.findIndex((t) => t.path === conflict.path);
+      const tabIndex = store.tabs.findIndex((t) => t.path === conflict.filePath);
       if (tabIndex !== -1) {
         const tab = store.tabs[tabIndex];
         const updated = { ...tab, savedContent: conflict.externalContent };
@@ -87,7 +85,7 @@ export function FileConflictDialog() {
       }
       // Switch to the tab and save using fresh store reference after setState
       const freshStore = useEditorStore.getState();
-      const newTabIndex = freshStore.tabs.findIndex((t) => t.path === conflict.path);
+      const newTabIndex = freshStore.tabs.findIndex((t) => t.path === conflict.filePath);
       if (newTabIndex !== -1) {
         freshStore.switchTab(newTabIndex);
         await freshStore.saveFile(vaultPath);

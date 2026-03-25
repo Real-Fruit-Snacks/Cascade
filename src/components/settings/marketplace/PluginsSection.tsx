@@ -65,7 +65,7 @@ export function PluginsSection() {
 
   const handleOpenPluginFolder = async () => {
     if (!vaultPath) return;
-    const pluginDir = `${vaultPath}/.cascade/plugins`.replace(/\//g, '\\');
+    const pluginDir = `${vaultPath}/.cascade/plugins`;
     try {
       const { revealItemInDir } = await import('@tauri-apps/plugin-opener');
       await revealItemInDir(pluginDir);

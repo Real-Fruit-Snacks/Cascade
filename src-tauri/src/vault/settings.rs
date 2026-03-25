@@ -39,6 +39,8 @@ pub fn write_vault_settings(
         fs::create_dir_all(&dir_path)?;
     }
     let settings_path = canonical_root.join(SETTINGS_FILE);
+    serde_json::from_str::<serde_json::Value>(&settings)
+        .map_err(|e| CascadeError::Io(std::io::Error::new(std::io::ErrorKind::InvalidData, e)))?;
     fs::write(&settings_path, settings)?;
     Ok(())
 }

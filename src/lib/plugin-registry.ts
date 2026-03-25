@@ -65,6 +65,17 @@ export async function fetchPluginRegistry(repoUrls: string[]): Promise<RegistryP
   return all;
 }
 
+function isValidRegistryTheme(obj: unknown): obj is RegistryTheme {
+  if (!obj || typeof obj !== 'object') return false;
+  const t = obj as Record<string, unknown>;
+  return (
+    typeof t.id === 'string' &&
+    typeof t.name === 'string' &&
+    typeof t.downloadUrl === 'string' && t.downloadUrl.startsWith('https://') &&
+    typeof t.sha256 === 'string' && /^[a-f0-9]{64}$/.test(t.sha256)
+  );
+}
+
 export async function fetchThemeRegistry(repoUrls: string[]): Promise<RegistryTheme[]> {
   const all: RegistryTheme[] = [];
   for (const url of repoUrls) {
@@ -74,7 +85,9 @@ export async function fetchThemeRegistry(repoUrls: string[]): Promise<RegistryTh
       const data = await raw.json() as { version?: unknown; themes?: unknown[] };
       if (data.version !== 1 || !Array.isArray(data.themes)) continue;
       for (const theme of data.themes) {
-        all.push({ ...(theme as RegistryTheme), registry: url });
+        if (isValidRegistryTheme(theme)) {
+          all.push({ ...theme, registry: url });
+        }
       }
     } catch {
       // Skip unavailable registries

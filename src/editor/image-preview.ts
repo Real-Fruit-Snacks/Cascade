@@ -108,8 +108,14 @@ export function imagePreview(maxHeight = 300) {
         return buildDecorations(state, maxHeight);
       },
       update(decos, tr: Transaction) {
-        if (tr.docChanged || tr.selection) {
+        if (tr.docChanged) {
           return buildDecorations(tr.state, maxHeight);
+        }
+        // Only rebuild on cursor line change, not every cursor movement
+        if (tr.selection) {
+          const oldLine = tr.startState.doc.lineAt(tr.startState.selection.main.head).number;
+          const newLine = tr.state.doc.lineAt(tr.state.selection.main.head).number;
+          if (oldLine !== newLine) return buildDecorations(tr.state, maxHeight);
         }
         return decos;
       },

@@ -83,9 +83,9 @@ export async function resolveTemplateIncludes(
     try {
       let partial = await readFn(inc.path);
       partial = await resolveTemplateIncludes(partial, readFn, depth + 1);
-      result = result.replace(inc.full, partial);
+      result = result.split(inc.full).join(partial);
     } catch {
-      result = result.replace(inc.full, `[Template not found: ${inc.path}]`);
+      result = result.split(inc.full).join(`[Template not found: ${inc.path}]`);
     }
   }
   return result;

@@ -27,7 +27,7 @@ impl Matcher {
                 if *case_sensitive {
                     line.contains(query.as_str())
                 } else {
-                    line.to_ascii_lowercase().contains(query.as_str())
+                    line.to_lowercase().contains(query.as_str())
                 }
             }
             Matcher::Re(re) => re.is_match(line),

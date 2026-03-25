@@ -9,6 +9,7 @@ pub enum CascadeError {
     InvalidRegex(String),
     Import(String),
     Git(String),
+    Collab(String),
 }
 
 impl fmt::Display for CascadeError {
@@ -25,6 +26,7 @@ impl fmt::Display for CascadeError {
             CascadeError::InvalidRegex(msg) => write!(f, "Invalid regex: {}", msg),
             CascadeError::Import(msg) => write!(f, "Import error: {}", msg),
             CascadeError::Git(msg) => write!(f, "Git error: {}", msg),
+            CascadeError::Collab(msg) => write!(f, "Collab error: {}", msg),
         }
     }
 }

@@ -10,6 +10,7 @@ mod roam_importer;
 mod search;
 mod sync_log;
 mod types;
+mod utils;
 mod vault;
 mod collab;
 mod watcher;

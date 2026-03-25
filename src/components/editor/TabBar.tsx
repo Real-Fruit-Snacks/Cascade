@@ -72,7 +72,7 @@ export function TabBar({
         >
           {tabsMeta.length === 0 && (
             <div className="px-4 py-2 text-sm" style={{ color: 'var(--ctp-overlay0)' }}>
-              No file open
+              {t('tabs.noFileOpen', 'No file open')}
             </div>
           )}
           {tabsMeta.map((tab, index) => {

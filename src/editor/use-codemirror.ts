@@ -435,7 +435,7 @@ export function useCodeMirror() {
     });
 
     const docCount = docManager.activePaths().size;
-    if (docCount === 21) {
+    if (docCount === 20) {
       useToastStore.getState().addToast(
         `${docCount} files open for collaboration. Consider closing some for best performance.`,
         'warning',

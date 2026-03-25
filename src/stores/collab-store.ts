@@ -44,16 +44,20 @@ export const useCollabStore = create<CollabState>((set) => ({
   providerState: 'disconnected',
 
   startAsHost: async (password, name, color) => {
-    const status = await cmd.startCollab(password);
-    set({
-      active: status.active,
-      role: status.role,
-      connectedClients: status.connectedClients,
-      serverPort: status.serverPort,
-      hostAddress: status.hostAddress,
-      userName: name,
-      userColor: color,
-    });
+    try {
+      const status = await cmd.startCollab(password);
+      set({
+        active: status.active,
+        role: status.role,
+        connectedClients: status.connectedClients,
+        serverPort: status.serverPort,
+        hostAddress: status.hostAddress,
+        userName: name,
+        userColor: color,
+      });
+    } catch {
+      set({ active: false, role: null });
+    }
   },
 
   setClientState: (address, name, color) => {
@@ -67,14 +71,18 @@ export const useCollabStore = create<CollabState>((set) => ({
   },
 
   promoteToHost: async (password) => {
-    const status = await cmd.startCollab(password);
-    set({
-      active: status.active,
-      role: 'host',
-      connectedClients: status.connectedClients,
-      serverPort: status.serverPort,
-      hostAddress: status.hostAddress,
-    });
+    try {
+      const status = await cmd.startCollab(password);
+      set({
+        active: status.active,
+        role: 'host',
+        connectedClients: status.connectedClients,
+        serverPort: status.serverPort,
+        hostAddress: status.hostAddress,
+      });
+    } catch {
+      set({ active: false, role: null });
+    }
   },
 
   disconnect: async () => {
@@ -120,6 +128,8 @@ export const useCollabStore = create<CollabState>((set) => ({
   },
 
   updateProviderState: (state) => {
+    const known = ['disconnected', 'connecting', 'authenticating', 'connected', 'auth_failed'] as const;
+    if (!(known as readonly string[]).includes(state)) return;
     set({ providerState: state as CollabState['providerState'] });
   },
 }));

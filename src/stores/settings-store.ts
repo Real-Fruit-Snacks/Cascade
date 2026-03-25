@@ -500,7 +500,7 @@ export const useSettingsStore = create<Settings & SettingsActions>((set, get) =>
       // Only pick known settings keys with matching types to prevent injection
       const safe: Partial<Settings> = {};
       for (const key of Object.keys(DEFAULTS) as (keyof Settings)[]) {
-        if (key in parsed && typeof parsed[key] === typeof DEFAULTS[key]) {
+        if (key in parsed && parsed[key] !== null && typeof parsed[key] === typeof DEFAULTS[key]) {
           if (Array.isArray(DEFAULTS[key]) && !Array.isArray(parsed[key])) continue;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic key assignment from validated source
           (safe as Record<string, any>)[key] = parsed[key];

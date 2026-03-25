@@ -19,7 +19,7 @@ export function UiFontSizeSlider({ value, onCommit }: UiFontSizeSliderProps) {
         onChange={(e) => setDraft(Number(e.target.value))}
         onMouseUp={() => onCommit(draft)}
         onTouchEnd={() => onCommit(draft)}
-        onKeyUp={(e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') onCommit(draft); }}
+        onKeyUp={() => onCommit(draft)}
         className="accent-[var(--ctp-accent)]"
         style={{ width: 120 }}
       />

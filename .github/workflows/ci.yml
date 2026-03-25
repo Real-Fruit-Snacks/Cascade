@@ -10,18 +10,29 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
       - run: npm ci
+
+      - uses: dtolnay/rust-toolchain@d0592ec69cc00f4eae4abb8e942e7544d1ddd4ef
+        with:
+          components: clippy
+
+      - name: Rust check
+        working-directory: src-tauri
+        run: cargo clippy -- -D warnings
 
       - name: TypeScript check
         run: npx tsc --noEmit
@@ -31,6 +42,9 @@ jobs:
 
       - name: Unit tests
         run: npm test
+
+      - name: Security audit
+        run: npm audit --audit-level=high
 
   build:
     needs: check
@@ -50,18 +64,18 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@d0592ec69cc00f4eae4abb8e942e7544d1ddd4ef
         with:
           targets: ${{ matrix.rust-targets }}
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@9d47f7b6b80d8ede1bab8ce7ca3bf48768afd73e
         with:
           workspaces: src-tauri
 

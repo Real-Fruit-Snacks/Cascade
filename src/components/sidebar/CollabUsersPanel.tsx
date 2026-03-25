@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { useCollabStore } from '../../stores/collab-store';
 
 export function CollabUsersPanel() {
+  const { t } = useTranslation('sidebar');
   const users = useCollabStore((s) => s.users);
   const userName = useCollabStore((s) => s.userName);
   const userColor = useCollabStore((s) => s.userColor);
@@ -13,7 +15,7 @@ export function CollabUsersPanel() {
         className="px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-wider"
         style={{ color: 'var(--ctp-accent)' }}
       >
-        Collaborators
+        {t('collab.collaborators')}
       </div>
       <div className="flex-1 overflow-y-auto px-2">
         {/* Current user */}
@@ -23,13 +25,13 @@ export function CollabUsersPanel() {
             style={{ width: 8, height: 8, backgroundColor: userColor || '#89b4fa' }}
           />
           <span style={{ color: 'var(--ctp-text)' }} className="truncate">
-            {userName} (you)
+            {userName} {t('collab.you')}
           </span>
         </div>
 
         {/* Other users */}
-        {userList.map((user, i) => (
-          <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded text-xs">
+        {userList.map((user) => (
+          <div key={user.name} className="flex items-center gap-2 px-2 py-1.5 rounded text-xs">
             <span
               className="rounded-full shrink-0"
               style={{ width: 8, height: 8, backgroundColor: user.color }}
@@ -55,7 +57,7 @@ export function CollabUsersPanel() {
             className="px-2 py-4 text-xs text-center"
             style={{ color: 'var(--ctp-overlay0)' }}
           >
-            No other collaborators connected
+            {t('collab.noOthers')}
           </div>
         )}
       </div>

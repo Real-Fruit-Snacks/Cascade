@@ -118,11 +118,16 @@ pub fn extract_plugin_zip(
     let mut archive = zip::ZipArchive::new(cursor)?;
     for i in 0..archive.len() {
         let mut file = archive.by_index(i)?;
-        let name = file.name().to_string();
-        if name.contains("..") || name.starts_with('/') || name.starts_with('\\') {
+        // Use enclosed_name() to reject path traversal attempts (e.g. "../foo")
+        let entry_path = match file.enclosed_name() {
+            Some(p) => p.to_path_buf(),
+            None => continue, // path traversal attempt — skip
+        };
+        let dest = plugin_dir.join(&entry_path);
+        // Verify destination stays within plugin_dir after joining
+        if !dest.starts_with(&plugin_dir) {
             continue; // path traversal prevention
         }
-        let dest = plugin_dir.join(&name);
         if file.is_dir() {
             fs::create_dir_all(&dest)?;
         } else {

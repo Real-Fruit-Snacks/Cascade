@@ -754,7 +754,7 @@
   <!-- ─── Hero ─────────────────────────────────────────────── -->
   <section class="hero">
     <div class="container">
-      <span class="hero-badge">v0.1.0 &mdash; Free &amp; Open Source</span>
+      <span class="hero-badge">v0.3.3 &mdash; Free &amp; Open Source</span>
       <h1>Your notes,<br /><span class="gradient-text">beautifully fast.</span></h1>
       <p>A native markdown note-taking app built for speed, privacy, and personal knowledge management. No cloud. No Electron. Just your notes.</p>
       <div class="hero-buttons">
@@ -1200,6 +1200,7 @@
         img.style.opacity = '0';
         setTimeout(() => {
           img.src = `screenshots/${tab.dataset.img}.png`;
+          img.alt = `Cascade — ${tab.textContent.trim()} screenshot`;
           img.style.opacity = '1';
         }, 150);
       });
@@ -1239,6 +1240,8 @@
           btn.textContent = 'Copy';
           btn.classList.remove('copied');
         }, 2000);
+      }).catch(() => {
+        alert('Copy failed. Please copy the text manually.');
       });
     }
 

@@ -26,13 +26,12 @@ export function CollaborationSettingsPage({ settings, visibleIds, isSearching }:
   const handleEnable = async (next: boolean) => {
     settings.update({ enableCollaboration: next });
     if (!next && collabActive) {
-      const { stopCollabSession } = await import('../../../lib/collab-init');
       await stopCollabSession();
     }
   };
 
   const handleStartHosting = async () => {
-    if (!settings.collabName || !password) return;
+    if (!settings.collabName || password.length < 8) return;
     setIsStarting(true);
     try {
       await startCollabSession(password);
@@ -46,7 +45,7 @@ export function CollaborationSettingsPage({ settings, visibleIds, isSearching }:
     setPassword('');
   };
 
-  const canStart = !!settings.collabName && !!password && !isStarting;
+  const canStart = !!settings.collabName && password.length >= 8 && !isStarting;
 
   return (
     <>

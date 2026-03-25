@@ -52,7 +52,7 @@ export function markdownToHtml(md: string, options: RenderOptions = {}): string 
     result = result.replace(/__(.+?)__/g, '<strong>$1</strong>');
     // Italic
     result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    result = result.replace(/_(.+?)_/g, '<em>$1</em>');
+    result = result.replace(/(?<!\w)_([^_]+?)_(?!\w)/g, '<em>$1</em>');
     // Inline code
     result = result.replace(/`([^`]+)`/g, '<code>$1</code>');
     // Links (only allow safe URL schemes)

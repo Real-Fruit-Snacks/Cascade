@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { FileEntry } from '../types/index';
 import * as cmd from '../lib/tauri-commands';
-import { getAllFilePaths } from '../lib/wiki-link-resolver';
+import { getAllFilePaths, clearWikiLinkCache } from '../lib/wiki-link-resolver';
 import { extractTags } from '../lib/tag-utils';
 import { useSettingsStore } from './settings-store';
 import { useToastStore } from './toast-store';
@@ -93,6 +93,7 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
   recentVaults: loadRecentVaults(),
 
   openVault: async (path: string) => {
+    clearWikiLinkCache();
     set({
       isLoading: true,
       error: null,
@@ -143,6 +144,7 @@ export const useVaultStore = create<VaultState & VaultActions>((set, get) => ({
     if (vaultPath) {
       emit('cascade:vault-closing', { vaultPath });
     }
+    clearWikiLinkCache();
     set({
       vaultPath: null,
       fileTree: [],

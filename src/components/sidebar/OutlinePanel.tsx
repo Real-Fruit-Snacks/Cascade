@@ -4,6 +4,15 @@ import { List } from 'lucide-react';
 import { useEditorStore } from '../../stores/editor-store';
 import { useSettingsStore } from '../../stores/settings-store';
 
+const HEADING_COLORS = [
+  'var(--ctp-red)',
+  'var(--ctp-peach)',
+  'var(--ctp-yellow)',
+  'var(--ctp-green)',
+  'var(--ctp-blue)',
+  'var(--ctp-accent)',
+];
+
 interface Heading {
   level: number;
   text: string;
@@ -193,15 +202,7 @@ export function OutlinePanel() {
           if (!visibleLines.has(heading.line)) return null;
 
           const indent = (heading.level - minLevel) * 16;
-          const colors = [
-            'var(--ctp-red)',
-            'var(--ctp-peach)',
-            'var(--ctp-yellow)',
-            'var(--ctp-green)',
-            'var(--ctp-blue)',
-            'var(--ctp-accent)',
-          ];
-          const color = colors[heading.level - 1] ?? 'var(--ctp-text)';
+          const color = HEADING_COLORS[heading.level - 1] ?? 'var(--ctp-text)';
           const isParent = parentLines.has(heading.line);
           const isExpanded = expanded.has(heading.line);
 

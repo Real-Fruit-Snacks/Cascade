@@ -4,11 +4,7 @@ import type { AccentColor } from '../stores/settings-store';
 import type { IndentGuideStyle } from '../stores/settings-store';
 import { ViewportBuffer, getDecorationRanges } from './viewport-buffer';
 
-/** Currently active guide color CSS value */
-let guideColor = 'var(--ctp-lavender)';
-let guideStyle: IndentGuideStyle = 'solid';
-
-function makeGradient(): string {
+function makeGradient(guideColor: string, guideStyle: IndentGuideStyle): string {
   const color = guideColor;
   if (guideStyle === 'dashed') {
     return `repeating-linear-gradient(to bottom, ${color} 0px, ${color} 4px, transparent 4px, transparent 8px)`;
@@ -20,12 +16,12 @@ function makeGradient(): string {
   return `linear-gradient(to bottom, ${color}, ${color})`;
 }
 
-function buildDecorations(view: EditorView): DecorationSet {
+function buildDecorations(view: EditorView, guideColor: string, guideStyle: IndentGuideStyle): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
   const tabSize = view.state.tabSize;
   const charWidth = view.defaultCharacterWidth;
   const indentWidth = charWidth * tabSize;
-  const gradient = makeGradient();
+  const gradient = makeGradient(guideColor, guideStyle);
 
   for (const { from, to } of getDecorationRanges(view)) {
     for (let pos = from; pos <= to; ) {
@@ -76,33 +72,34 @@ function buildDecorations(view: EditorView): DecorationSet {
   return builder.finish();
 }
 
-const plugin = ViewPlugin.fromClass(
-  class {
-    decorations: DecorationSet;
-    private vpBuffer = new ViewportBuffer();
-    constructor(view: EditorView) {
-      this.decorations = buildDecorations(view);
-      this.vpBuffer.update(view);
-    }
-    update(update: ViewUpdate) {
-      if (update.docChanged || update.geometryChanged) {
-        this.vpBuffer.reset();
-        this.decorations = buildDecorations(update.view);
-        this.vpBuffer.update(update.view);
-      } else if (update.viewportChanged) {
-        if (this.vpBuffer.needsRebuild(update.view)) {
-          this.decorations = buildDecorations(update.view);
-          this.vpBuffer.update(update.view);
-        }
-      }
-    }
-  },
-  { decorations: (v) => v.decorations },
-);
-
 /** Create the indent guides extension with the given color and style. */
 export function indentGuides(color: AccentColor, style: string) {
-  guideColor = `var(--ctp-${color})`;
-  guideStyle = style as IndentGuideStyle;
+  const guideColor = `var(--ctp-${color})`;
+  const guideStyle = style as IndentGuideStyle;
+
+  const plugin = ViewPlugin.fromClass(
+    class {
+      decorations: DecorationSet;
+      private vpBuffer = new ViewportBuffer();
+      constructor(view: EditorView) {
+        this.decorations = buildDecorations(view, guideColor, guideStyle);
+        this.vpBuffer.update(view);
+      }
+      update(update: ViewUpdate) {
+        if (update.docChanged || update.geometryChanged) {
+          this.vpBuffer.reset();
+          this.decorations = buildDecorations(update.view, guideColor, guideStyle);
+          this.vpBuffer.update(update.view);
+        } else if (update.viewportChanged) {
+          if (this.vpBuffer.needsRebuild(update.view)) {
+            this.decorations = buildDecorations(update.view, guideColor, guideStyle);
+            this.vpBuffer.update(update.view);
+          }
+        }
+      }
+    },
+    { decorations: (v) => v.decorations },
+  );
+
   return [plugin];
 }

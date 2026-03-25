@@ -395,7 +395,7 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
     // Re-read current state after the async save to avoid overwriting edits made during the save
     const current = get();
     const newTabs = current.tabs.map((t, i) =>
-      i === current.activeTabIndex ? { ...t, content: updated.content, isDirty: false } : t
+      i === current.activeTabIndex ? { ...t, content: updated.content, savedContent: updated.content, isDirty: false } : t
     );
     const dirtyPaths = new Set(current.dirtyPaths);
     dirtyPaths.delete(tab.path);

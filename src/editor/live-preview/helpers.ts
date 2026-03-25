@@ -251,7 +251,8 @@ export const HEADING_STYLES: Record<number, string> = {
 };
 
 const escapeHtml = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 const isSafeUrl = (url: string): boolean =>
   !/^(javascript|data|vbscript):/i.test(url.trim().toLowerCase());
@@ -265,16 +266,26 @@ export function renderInlineMarkdown(text: string): string {
       ? `<img src="${url}" alt="${alt}" style="max-width:100%;border-radius:4px;margin:4px 0">`
       : escapeHtml(alt || url)
   );
+  // Inline code first — protect its contents from further substitution
+  const codeChunks: string[] = [];
+  r = r.replace(/`([^`]+)`/g, (_, inner) => {
+    const idx = codeChunks.length;
+    codeChunks.push(`<code style="background:var(--ctp-surface0);border-radius:3px;padding:1px 4px;font-size:0.9em">${inner}</code>`);
+    return `\x00CODE${idx}\x00`;
+  });
   // Strikethrough
   r = r.replace(/~~(.+?)~~/g, '<del style="text-decoration:line-through;color:var(--ctp-overlay1)">$1</del>');
+  // Bold+italic combined (*** or ___) — must come before bold and italic separately
+  r = r.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  r = r.replace(/___(.+?)___/g, '<strong><em>$1</em></strong>');
   // Bold
   r = r.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   r = r.replace(/__(.+?)__/g, '<strong>$1</strong>');
-  // Italic
+  // Italic — use word-boundary aware pattern for _ to avoid matching mid-word underscores
   r = r.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  r = r.replace(/_(.+?)_/g, '<em>$1</em>');
-  // Inline code
-  r = r.replace(/`([^`]+)`/g, '<code style="background:var(--ctp-surface0);border-radius:3px;padding:1px 4px;font-size:0.9em">$1</code>');
+  r = r.replace(/(?<![a-zA-Z0-9])_([^_]+?)_(?![a-zA-Z0-9])/g, '<em>$1</em>');
+  // Restore inline code placeholders
+  r = r.replace(/\x00CODE(\d+)\x00/g, (_, idx) => codeChunks[parseInt(idx, 10)]);
   // Markdown links
   r = r.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a style="color:var(--ctp-blue);text-decoration:underline;text-underline-offset:2px">$1</a>');
   // Wiki links

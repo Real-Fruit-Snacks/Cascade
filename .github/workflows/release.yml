@@ -23,18 +23,18 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@d0592ec69cc00f4eae4abb8e942e7544d1ddd4ef
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin' || '' }}
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@9d47f7b6b80d8ede1bab8ce7ca3bf48768afd73e
         with:
           workspaces: src-tauri
 
@@ -54,22 +54,7 @@ jobs:
 
       - run: npm ci
 
-      - name: Extract release notes from CHANGELOG.md
-        id: changelog
-        run: |
-          # Extract the version from the tag (e.g., v0.3.0 -> 0.3.0)
-          VERSION="${GITHUB_REF_NAME#v}"
-          # Extract the section for this version from CHANGELOG.md
-          # Matches from "## [VERSION]" until the next "## [" or end of file
-          NOTES=$(awk "/^## \\[${VERSION}\\]/{found=1; next} /^## \\[/{if(found) exit} found{print}" CHANGELOG.md)
-          if [ -z "$NOTES" ]; then
-            NOTES="See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details."
-          fi
-          # Write to file to preserve multiline content
-          echo "$NOTES" > /tmp/release-notes.md
-        shell: bash
-
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@48a1b8e4c64560d2d1764032d7091b3e472e2170
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -84,7 +69,7 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Extract release notes from CHANGELOG.md
         id: changelog

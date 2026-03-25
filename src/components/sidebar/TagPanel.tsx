@@ -53,10 +53,10 @@ export function TagPanel() {
       }
     }
     switch (sortMode) {
-      case 'count-desc': return entries.sort((a, b) => b[1] - a[1]);
-      case 'count-asc': return entries.sort((a, b) => a[1] - b[1]);
-      case 'alpha-asc': return entries.sort((a, b) => a[0].localeCompare(b[0]));
-      case 'alpha-desc': return entries.sort((a, b) => b[0].localeCompare(a[0]));
+      case 'count-desc': return [...entries].sort((a, b) => b[1] - a[1]);
+      case 'count-asc': return [...entries].sort((a, b) => a[1] - b[1]);
+      case 'alpha-asc': return [...entries].sort((a, b) => a[0].localeCompare(b[0]));
+      case 'alpha-desc': return [...entries].sort((a, b) => b[0].localeCompare(a[0]));
     }
   }, [tagIndex, search, sortMode]);
 

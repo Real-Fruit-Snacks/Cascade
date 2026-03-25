@@ -19,8 +19,8 @@ function isSshUrl(url: string) {
 
 export function SyncOptionsPage({ settings }: OptionsPageProps) {
   const { t: ts } = useTranslation('settings');
-  const update = useSettingsStore.getState().update;
-  const vaultPath = useVaultStore.getState().vaultPath;
+  const update = useSettingsStore((s) => s.update);
+  const vaultPath = useVaultStore((s) => s.vaultPath);
   const isSSH = isSshUrl(settings.syncRepoUrl);
   const syncStatus = useSyncStore((s) => s.syncStatus);
   const lastSyncTime = useSyncStore((s) => s.lastSyncTime);

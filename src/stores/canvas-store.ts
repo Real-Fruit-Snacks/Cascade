@@ -277,7 +277,7 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
 
   pushUndo: () => {
     const { nodes, edges, undoStack } = get();
-    const snapshot: CanvasData = { nodes: [...nodes], edges: [...edges] };
+    const snapshot: CanvasData = { nodes: nodes.map(n => ({...n})), edges: edges.map(e => ({...e})) };
     const next = [...undoStack, snapshot];
     if (next.length > MAX_UNDO) next.shift();
     set({ undoStack: next, redoStack: [] });
@@ -453,12 +453,17 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
   },
 
   applyLayout: (layoutFn) => {
-    get().pushUndo();
     const { nodes, edges } = get();
     const result = layoutFn(nodes, edges);
     if (result instanceof Promise) {
-      result.then((newNodes) => set({ nodes: newNodes, isDirty: true }));
+      result
+        .then((newNodes) => {
+          get().pushUndo();
+          set({ nodes: newNodes, isDirty: true });
+        })
+        .catch((e) => console.error('Layout failed:', e));
     } else {
+      get().pushUndo();
       set({ nodes: result, isDirty: true });
     }
   },

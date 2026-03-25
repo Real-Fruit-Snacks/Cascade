@@ -164,19 +164,21 @@ export const spellcheckTheme = EditorView.baseTheme({
   },
 });
 
-/**
- * Capture right-click position and misspelled word on mousedown, BEFORE live preview
- * reflows the line. EditorPane consumes this via consumeRightClickCapture().
- */
-let pendingRightClick: {
+type RightClickCapture = {
   docPos: number;
   spellcheck: { word: string; from: number; to: number } | null;
-} | null = null;
+};
+
+/**
+ * Per-view right-click capture state. Avoids shared mutable module-level variable
+ * so multiple editor panes don't interfere with each other.
+ */
+const pendingRightClickMap = new WeakMap<EditorView, RightClickCapture | null>();
 
 const spellcheckRightClickCapture = EditorView.domEventHandlers({
   mousedown(event: MouseEvent, view: EditorView) {
     if (event.button !== 2) return false;
-    pendingRightClick = null;
+    pendingRightClickMap.set(view, null);
 
     const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
     if (pos === null) return false;
@@ -199,18 +201,15 @@ const spellcheckRightClickCapture = EditorView.domEventHandlers({
       }
     }
 
-    pendingRightClick = { docPos: pos, spellcheck: spellclick };
+    pendingRightClickMap.set(view, { docPos: pos, spellcheck: spellclick });
     return false;
   },
 });
 
-/** Consume the pending right-click capture (docPos + spellcheck info) */
-export function consumeRightClickCapture(): {
-  docPos: number;
-  spellcheck: { word: string; from: number; to: number } | null;
-} | null {
-  const result = pendingRightClick;
-  pendingRightClick = null;
+/** Consume the pending right-click capture (docPos + spellcheck info) for a given view */
+export function consumeRightClickCapture(view: EditorView): RightClickCapture | null {
+  const result = pendingRightClickMap.get(view) ?? null;
+  pendingRightClickMap.set(view, null);
   return result;
 }
 

@@ -10,6 +10,7 @@ use tauri::Emitter;
 
 use crate::error::CascadeError;
 use crate::importer::ImportResult;
+use crate::utils::sanitize_filename;
 
 static EMBED_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\{\{embed:\s*\(\(([^)]+)\)\)\}\}").unwrap());
 static BLOCK_REF_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\(\(([^)]+)\)\)").unwrap());
@@ -180,17 +181,6 @@ fn render_block(
     for child in &block.children {
         render_block(child, depth + 1, uid_page_map, lines);
     }
-}
-
-/// Sanitize a page title into a safe filename.
-fn sanitize_filename(title: &str) -> String {
-    let forbidden: &[char] = &['/', '\\', ':', '*', '?', '"', '<', '>', '|'];
-    let sanitized: String = title
-        .chars()
-        .map(|c| if forbidden.contains(&c) { '_' } else { c })
-        .collect();
-    // Truncate to 200 chars to stay safe on all file systems
-    sanitized.chars().take(200).collect()
 }
 
 /// Convert a single Roam page to markdown text.

@@ -75,7 +75,7 @@ pub fn batch_export(vault_root: String, folder_path: String, format: String, out
     let options = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
     let mut count: usize = 0;
-    for entry in walkdir::WalkDir::new(&base_dir).into_iter().filter_map(|e| e.ok()) {
+    for entry in walkdir::WalkDir::new(&base_dir).into_iter().filter_entry(|e| !e.file_name().to_string_lossy().starts_with('.')).filter_map(|e| e.ok()) {
         let path = entry.path();
         if path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("md") {
             let relative = path.strip_prefix(&base_dir).unwrap_or(path);

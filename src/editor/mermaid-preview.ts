@@ -53,7 +53,14 @@ class MermaidWidget extends WidgetType {
     getMermaid()
       .then(async (m) => {
         const { svg } = await m.default.render(id, this.code);
-        wrap.innerHTML = svg;
+        // Parse SVG safely via DOMParser instead of raw innerHTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svg, 'image/svg+xml');
+        const svgEl = doc.documentElement;
+        // Strip any script elements as defense-in-depth
+        svgEl.querySelectorAll('script,foreignObject').forEach((el) => el.remove());
+        wrap.textContent = '';
+        wrap.appendChild(document.importNode(svgEl, true));
       })
       .catch(() => {
         wrap.textContent = 'Mermaid render error';

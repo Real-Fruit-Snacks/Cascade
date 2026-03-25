@@ -183,7 +183,7 @@ export function FileTreeRow({
             <span className="flex items-center gap-0.5 shrink-0 mr-1">
               {fileCollaborators.slice(0, 3).map((user, i) => (
                 <span
-                  key={i}
+                  key={user.name || i}
                   className="rounded-full"
                   style={{ width: 5, height: 5, backgroundColor: user.color }}
                   title={user.name}

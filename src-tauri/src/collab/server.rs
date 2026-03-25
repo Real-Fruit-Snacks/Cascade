@@ -14,7 +14,6 @@ use tokio_tungstenite::tungstenite::Message;
 #[derive(Debug, Clone)]
 pub struct ClientInfo {
     pub connected_at: u128,
-    pub addr: SocketAddr,
 }
 
 pub struct VaultAuth {
@@ -22,16 +21,19 @@ pub struct VaultAuth {
 }
 
 impl VaultAuth {
-    pub fn new(password: &str) -> Self {
+    pub fn new(password: &str) -> Result<Self, String> {
+        if password.len() < 8 {
+            return Err("Password must be at least 8 characters".to_string());
+        }
         let salt = SaltString::generate(&mut OsRng);
         let argon2 = Argon2::default();
         let hash = argon2
             .hash_password(password.as_bytes(), &salt)
-            .expect("Failed to hash password")
+            .map_err(|e| format!("Failed to hash password: {}", e))?
             .to_string();
-        VaultAuth {
+        Ok(VaultAuth {
             password_hash: hash,
-        }
+        })
     }
 
     pub fn verify(&self, password: &str) -> bool {
@@ -54,7 +56,7 @@ pub struct RelayServer {
 
 impl RelayServer {
     pub async fn start(password: String, app_handle: AppHandle) -> Result<(Arc<Self>, u16), String> {
-        let listener = TcpListener::bind("0.0.0.0:0")
+        let listener = TcpListener::bind("127.0.0.1:0")
             .await
             .map_err(|e| format!("Failed to bind listener: {}", e))?;
 
@@ -67,7 +69,7 @@ impl RelayServer {
         let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
 
         let server = Arc::new(RelayServer {
-            auth: VaultAuth::new(&password),
+            auth: VaultAuth::new(&password)?,
             clients: Arc::new(RwLock::new(HashMap::new())),
             tx,
             shutdown: shutdown_tx,
@@ -161,7 +163,6 @@ impl RelayServer {
                 addr,
                 ClientInfo {
                     connected_at: crate::collab::presence::now_ms(),
-                    addr,
                 },
             );
             let count = clients.len();
@@ -256,17 +257,18 @@ mod tests {
 
     #[test]
     fn test_vault_auth_roundtrip() {
-        let auth = VaultAuth::new("correct-horse-battery-staple");
+        let auth = VaultAuth::new("correct-horse-battery-staple").unwrap();
         assert!(auth.verify("correct-horse-battery-staple"));
         assert!(!auth.verify("wrong-password"));
         assert!(!auth.verify(""));
     }
 
     #[test]
-    fn test_vault_auth_empty_password() {
-        let auth = VaultAuth::new("");
-        assert!(auth.verify(""));
-        assert!(!auth.verify("notempty"));
+    fn test_vault_auth_rejects_short_password() {
+        assert!(VaultAuth::new("").is_err());
+        assert!(VaultAuth::new("short").is_err());
+        assert!(VaultAuth::new("1234567").is_err());
+        assert!(VaultAuth::new("12345678").is_ok());
     }
 
     #[test]

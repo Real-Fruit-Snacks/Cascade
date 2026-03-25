@@ -202,8 +202,14 @@ export const queryPreview = StateField.define<DecorationSet>({
     return buildQueryDecorations(state);
   },
   update(decos, tr: Transaction) {
-    if (tr.docChanged || tr.selection) {
+    if (tr.docChanged) {
       return buildQueryDecorations(tr.state);
+    }
+    // Only rebuild on cursor line change, not every cursor movement
+    if (tr.selection) {
+      const oldLine = tr.startState.doc.lineAt(tr.startState.selection.main.head).number;
+      const newLine = tr.state.doc.lineAt(tr.state.selection.main.head).number;
+      if (oldLine !== newLine) return buildQueryDecorations(tr.state);
     }
     return decos;
   },

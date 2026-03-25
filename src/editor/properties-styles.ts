@@ -42,7 +42,7 @@ export const propertiesTheme = EditorView.theme({
     alignItems: 'center',
     gap: '6px',
     padding: '4px 10px 4px 6px',
-    borderBottom: '1px solid rgba(69,71,90,0.3)',
+    borderBottom: '1px solid color-mix(in srgb, var(--ctp-overlay0) 30%, transparent)',
     transition: 'background-color 100ms',
     minHeight: '32px',
   },
@@ -50,7 +50,7 @@ export const propertiesTheme = EditorView.theme({
     borderBottom: 'none',
   },
   '.cm-props-row:hover': {
-    backgroundColor: 'rgba(49,50,68,0.4)',
+    backgroundColor: 'color-mix(in srgb, var(--ctp-surface0) 40%, transparent)',
   },
   '.cm-props-row:hover .cm-props-delete': {
     opacity: '1',

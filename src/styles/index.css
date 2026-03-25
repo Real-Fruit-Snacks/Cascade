@@ -460,6 +460,21 @@ body.is-dragging-file * {
   cursor: grabbing;
 }
 
+/* Focus mode: dim non-active paragraphs */
+.focus-dim-active .cm-line { opacity: 0.3; transition: opacity 0.2s; }
+.focus-dim-active .cm-activeLine { opacity: 1; }
+
+/* Toast slide animations */
+@keyframes toast-slide-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-slide-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(20px); }
+}
+
 /* Respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

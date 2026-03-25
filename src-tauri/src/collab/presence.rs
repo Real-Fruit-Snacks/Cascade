@@ -95,13 +95,6 @@ pub fn delete_presence(vault_root: &Path) {
     let _ = std::fs::remove_file(&path);
 }
 
-pub fn is_our_presence(vault_root: &Path, our_ip: &str, our_port: u16) -> bool {
-    match read_presence(vault_root) {
-        Some(info) => info.host == our_ip && info.port == our_port,
-        None => false,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

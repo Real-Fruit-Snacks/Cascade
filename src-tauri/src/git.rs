@@ -9,6 +9,21 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
+/// Validate that a vault_path is a real directory and contains no traversal tricks.
+fn validate_vault_path(vault_path: &str) -> Result<PathBuf, CascadeError> {
+    let p = Path::new(vault_path);
+    if !p.is_absolute() {
+        return Err(CascadeError::InvalidPath("vault path must be absolute".into()));
+    }
+    let canonical = p.canonicalize().map_err(|_| {
+        CascadeError::InvalidPath(format!("vault path does not exist: {}", vault_path))
+    })?;
+    if !canonical.is_dir() {
+        return Err(CascadeError::InvalidPath("vault path is not a directory".into()));
+    }
+    Ok(canonical)
+}
+
 fn is_ssh_url(url: &str) -> bool {
     url.starts_with("git@") || url.starts_with("ssh://")
 }
@@ -122,7 +137,7 @@ fn signature() -> Result<Signature<'static>, CascadeError> {
 fn ensure_gitignore(vault_path: &Path) -> Result<(), CascadeError> {
     let gitignore = vault_path.join(".gitignore");
     if !gitignore.exists() {
-        let content = ".cascade/\n.DS_Store\nThumbs.db\n*.tmp\n";
+        let content = ".cascade/\n.DS_Store\nThumbs.db\n*.tmp\n.env\n*.key\n*.pem\ncredentials.json\n";
         fs::write(&gitignore, content)
             .map_err(|e| CascadeError::Git(format!("Failed to write .gitignore: {e}")))?;
     }
@@ -254,29 +269,29 @@ fn resolve_auth(remote_url: &str, ssh_key_path: &str) -> Result<SyncAuth, Cascad
 
 #[tauri::command]
 pub fn git_test_connection(vault_path: String, remote_url: String, ssh_key_path: String) -> Result<(), CascadeError> {
-    let path = Path::new(&vault_path);
-    sync_log::info(path, &format!("Testing connection to: {}", remote_url));
-    sync_log::debug(path, &format!("Auth method: {}", if is_ssh_url(&remote_url) { "SSH" } else { "HTTPS" }));
+    let path = validate_vault_path(&vault_path)?;
+    sync_log::info(&path, &format!("Testing connection to: {}", remote_url));
+    sync_log::debug(&path, &format!("Auth method: {}", if is_ssh_url(&remote_url) { "SSH" } else { "HTTPS" }));
     let auth = match resolve_auth(&remote_url, &ssh_key_path) {
         Ok(a) => a,
         Err(e) => {
-            sync_log::error(path, &format!("Auth resolution failed: {e}"));
+            sync_log::error(&path, &format!("Auth resolution failed: {e}"));
             return Err(e);
         }
     };
     let mut remote = match git2::Remote::create_detached(&*remote_url) {
         Ok(r) => r,
         Err(e) => {
-            sync_log::error(path, &format!("Failed to create remote: {e}"));
+            sync_log::error(&path, &format!("Failed to create remote: {e}"));
             return Err(e.into());
         }
     };
     match remote.connect_auth(Direction::Fetch, Some(make_callbacks(&auth)), None) {
         Ok(_) => {
-            sync_log::info(path, "Connection test successful");
+            sync_log::info(&path, "Connection test successful");
         }
         Err(e) => {
-            sync_log::error(path, &format!("Connection failed: {e}"));
+            sync_log::error(&path, &format!("Connection failed: {e}"));
             return Err(e.into());
         }
     }
@@ -291,10 +306,10 @@ pub fn git_init_repo(
     ssh_key_path: String,
 ) -> Result<(), CascadeError> {
     let auth = resolve_auth(&remote_url, &ssh_key_path)?;
-    let path = Path::new(&vault_path);
-    sync_log::info(path, &format!("Initializing repository with remote: {}", remote_url));
-    ensure_gitignore(path)?;
-    let repo = Repository::init(path)?;
+    let path = validate_vault_path(&vault_path)?;
+    sync_log::info(&path, &format!("Initializing repository with remote: {}", remote_url));
+    ensure_gitignore(&path)?;
+    let repo = Repository::init(&path)?;
     repo.remote("origin", &remote_url)?;
 
     let mut index = repo.index()?;
@@ -313,7 +328,7 @@ pub fn git_init_repo(
     let mut remote = repo.find_remote("origin")?;
     let mut push_opts = make_push_options(&auth);
     remote.push(&["refs/heads/main:refs/heads/main"], Some(&mut push_opts))?;
-    sync_log::info(path, "Repository initialized and initial push complete");
+    sync_log::info(&path, "Repository initialized and initial push complete");
     Ok(())
 }
 
@@ -327,21 +342,25 @@ pub fn git_clone_repo(
     let fo = make_fetch_options(&auth);
     let mut builder = git2::build::RepoBuilder::new();
     builder.fetch_options(fo);
-    builder.clone(&remote_url, Path::new(&vault_path))?;
+    let clone_path = Path::new(&vault_path);
+    if !clone_path.is_absolute() {
+        return Err(CascadeError::InvalidPath("vault path must be absolute".into()));
+    }
+    builder.clone(&remote_url, clone_path)?;
     Ok(())
 }
 
 #[tauri::command]
 pub fn git_sync(vault_path: String, ssh_key_path: String) -> Result<SyncResult, CascadeError> {
-    let path = Path::new(&vault_path);
-    sync_log::info(path, "Starting sync...");
-    let repo = Repository::open(path)?;
+    let path = validate_vault_path(&vault_path)?;
+    sync_log::info(&path, "Starting sync...");
+    let repo = Repository::open(&path)?;
     let remote_url = repo.find_remote("origin")?
         .url()
         .unwrap_or_default()
         .to_string();
     let auth = resolve_auth(&remote_url, &ssh_key_path)?;
-    sync_log::debug(path, &format!("Auth method: {}", if is_ssh_url(&remote_url) { "SSH" } else { "HTTPS" }));
+    sync_log::debug(&path, &format!("Auth method: {}", if is_ssh_url(&remote_url) { "SSH" } else { "HTTPS" }));
     let mut conflicts = Vec::new();
     let mut conflict_details = Vec::new();
 
@@ -352,7 +371,7 @@ pub fn git_sync(vault_path: String, ssh_key_path: String) -> Result<SyncResult, 
         if let Err(e) = remote.fetch(&["main"], Some(&mut fo), None) {
             // Network/auth failure — commit locally and report offline
             eprintln!("[cascade sync] fetch failed: {e}");
-            sync_log::error(path, &format!("Fetch failed: {e}"));
+            sync_log::error(&path, &format!("Fetch failed: {e}"));
             let committed = commit_changes(&repo)?;
             return Ok(SyncResult {
                 committed_files: committed,
@@ -361,7 +380,7 @@ pub fn git_sync(vault_path: String, ssh_key_path: String) -> Result<SyncResult, 
                 push_status: "offline".to_string(),
             });
         }
-        sync_log::debug(path, "Fetch complete");
+        sync_log::debug(&path, "Fetch complete");
     }
 
     // 2. Merge
@@ -422,7 +441,7 @@ pub fn git_sync(vault_path: String, ssh_key_path: String) -> Result<SyncResult, 
                             remote_content,
                         });
                     }
-                    sync_log::info(path, &format!("{} conflicts detected", conflict_details.len()));
+                    sync_log::info(&path, &format!("{} conflicts detected", conflict_details.len()));
                 }
 
                 // Resolve conflicts by keeping our side
@@ -473,7 +492,7 @@ pub fn git_sync(vault_path: String, ssh_key_path: String) -> Result<SyncResult, 
     // 3. Commit local changes
     let committed = commit_changes(&repo)?;
     if !committed.is_empty() {
-        sync_log::info(path, &format!("Committed {} files", committed.len()));
+        sync_log::info(&path, &format!("Committed {} files", committed.len()));
     }
 
     // 4. Push
@@ -490,7 +509,7 @@ pub fn git_sync(vault_path: String, ssh_key_path: String) -> Result<SyncResult, 
             }
             Err(e) => {
                 let msg = e.to_string();
-                sync_log::error(path, &format!("Push failed: {msg}"));
+                sync_log::error(&path, &format!("Push failed: {msg}"));
                 if msg.contains("401") || msg.contains("403") || msg.contains("auth") {
                     "auth_error"
                 } else {
@@ -501,8 +520,8 @@ pub fn git_sync(vault_path: String, ssh_key_path: String) -> Result<SyncResult, 
         .to_string()
     };
 
-    sync_log::info(path, &format!("Push status: {}", push_status));
-    sync_log::info(path, "Sync complete");
+    sync_log::info(&path, &format!("Push status: {}", push_status));
+    sync_log::info(&path, "Sync complete");
 
     Ok(SyncResult {
         committed_files: committed,
@@ -559,8 +578,8 @@ fn commit_changes(repo: &Repository) -> Result<Vec<String>, CascadeError> {
 
 #[tauri::command]
 pub fn git_status(vault_path: String) -> Result<GitStatus, CascadeError> {
-    let path = Path::new(&vault_path);
-    let repo = match Repository::open(path) {
+    let path = validate_vault_path(&vault_path)?;
+    let repo = match Repository::open(&path) {
         Ok(r) => r,
         Err(_) => {
             return Ok(GitStatus {
@@ -576,7 +595,7 @@ pub fn git_status(vault_path: String) -> Result<GitStatus, CascadeError> {
     let mut opts = StatusOptions::new();
     opts.include_untracked(true);
     let statuses = repo.statuses(Some(&mut opts))?;
-    let changed_files = statuses.len() as u32;
+    let changed_files = u32::try_from(statuses.len()).unwrap_or(u32::MAX);
 
     let mut unpushed = 0u32;
     if has_remote {
@@ -587,7 +606,7 @@ pub fn git_status(vault_path: String) -> Result<GitStatus, CascadeError> {
             if let Ok(mut revwalk) = repo.revwalk() {
                 let _ = revwalk.push(local.id());
                 let _ = revwalk.hide(remote_ref.id());
-                unpushed = revwalk.count() as u32;
+                unpushed = u32::try_from(revwalk.count()).unwrap_or(u32::MAX);
             }
         }
     }
@@ -602,14 +621,16 @@ pub fn git_status(vault_path: String) -> Result<GitStatus, CascadeError> {
 
 #[tauri::command]
 pub fn git_disconnect(vault_path: String) -> Result<(), CascadeError> {
-    let repo = Repository::open(Path::new(&vault_path))?;
+    let path = validate_vault_path(&vault_path)?;
+    let repo = Repository::open(&path)?;
     repo.remote_delete("origin")?;
     Ok(())
 }
 
 #[tauri::command]
 pub fn open_sync_log_folder(vault_path: String) -> Result<String, CascadeError> {
-    let log_dir = Path::new(&vault_path).join(".cascade").join("logs");
+    let vp = validate_vault_path(&vault_path)?;
+    let log_dir = vp.join(".cascade").join("logs");
     fs::create_dir_all(&log_dir)
         .map_err(|e| CascadeError::Git(format!("Failed to create log directory: {e}")))?;
     Ok(log_dir.to_string_lossy().into_owned())
@@ -620,30 +641,30 @@ pub fn open_sync_log_folder(vault_path: String) -> Result<String, CascadeError> 
 /// Store PAT via git credential helper.
 #[tauri::command]
 pub fn store_sync_pat(vault_path: String, remote_url: String, pat: String) -> Result<(), CascadeError> {
-    let path = Path::new(&vault_path);
-    sync_log::debug(path, "Storing PAT via git credential helper");
+    let path = validate_vault_path(&vault_path)?;
+    sync_log::debug(&path, "Storing PAT via git credential helper");
     store_pat_in_credential_helper(&remote_url, &pat)?;
-    sync_log::debug(path, "PAT stored via git credential helper");
+    sync_log::debug(&path, "PAT stored via git credential helper");
     Ok(())
 }
 
 /// Check if a PAT exists. Returns boolean, NEVER the actual PAT.
 #[tauri::command]
 pub fn has_sync_pat(vault_path: String, remote_url: String) -> Result<bool, CascadeError> {
-    let path = Path::new(&vault_path);
+    let path = validate_vault_path(&vault_path)?;
     let pat = read_pat_from_credential_helper(&remote_url).unwrap_or_default();
     let has = !pat.is_empty();
-    sync_log::debug(path, &format!("PAT check: {}", if has { "found" } else { "not found" }));
+    sync_log::debug(&path, &format!("PAT check: {}", if has { "found" } else { "not found" }));
     Ok(has)
 }
 
 /// Delete PAT from credential store.
 #[tauri::command]
 pub fn delete_sync_pat(vault_path: String, remote_url: String) -> Result<(), CascadeError> {
-    let path = Path::new(&vault_path);
-    sync_log::debug(path, "Deleting PAT from git credential helper");
+    let path = validate_vault_path(&vault_path)?;
+    sync_log::debug(&path, "Deleting PAT from git credential helper");
     delete_pat_from_credential_helper(&remote_url)?;
-    sync_log::debug(path, "PAT deleted");
+    sync_log::debug(&path, "PAT deleted");
 
     // Clean up old base64 credential file if it exists
     let old_cred = Path::new(&vault_path).join(".cascade").join("credentials");

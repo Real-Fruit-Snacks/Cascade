@@ -9,11 +9,13 @@ function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
   const needsAlt = parts.includes('Alt');
   const needsMeta = parts.includes('Meta');
 
+  // Ctrl and Meta are treated as interchangeable (Cmd on macOS = Ctrl on Win/Linux)
+  // unless Meta is explicitly required in the shortcut
   const mod = e.ctrlKey || e.metaKey;
-  const ctrlOrMeta = needsCtrl ? mod : !e.ctrlKey && !e.metaKey;
+  const ctrlOrMeta = needsCtrl ? mod : needsMeta ? false : !e.ctrlKey && !e.metaKey;
   const shift = needsShift ? e.shiftKey : !e.shiftKey;
   const alt = needsAlt ? e.altKey : !e.altKey;
-  const meta = needsMeta ? e.metaKey : true; // Meta handled via ctrlOrMeta
+  const meta = needsMeta ? e.metaKey : true;
 
   if (!ctrlOrMeta || !shift || !alt || !meta) return false;
 

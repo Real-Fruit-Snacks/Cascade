@@ -92,7 +92,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
       }}
     >
       {items.map((item, i) => (
-        <div key={i}>
+        <div key={item.separator ? `sep-${i}` : item.label}>
           {item.separator ? (
             <div
               style={{

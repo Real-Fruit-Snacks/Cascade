@@ -46,7 +46,7 @@ async function openPeriodicNote(
     await writeFile(vaultPath, filePath, content);
   }
 
-  useEditorStore.getState().openFile(vaultPath, filePath);
+  await useEditorStore.getState().openFile(vaultPath, filePath);
 
   if (cursorOffset !== null) {
     const offset = cursorOffset;

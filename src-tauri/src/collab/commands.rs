@@ -7,6 +7,7 @@ use super::{
 };
 use crate::collab::presence;
 use crate::collab::server::RelayServer;
+use crate::error::CascadeError;
 
 #[tauri::command]
 pub async fn start_collab(
@@ -16,15 +17,15 @@ pub async fn start_collab(
     config_state: tauri::State<'_, CollabConfig>,
     heartbeat_state: tauri::State<'_, HeartbeatHandle>,
     vault_root: tauri::State<'_, crate::VaultRoot>,
-) -> Result<CollabStatus, String> {
+) -> Result<CollabStatus, CascadeError> {
     let vault_path: PathBuf = {
         let guard = vault_root
             .0
             .lock()
-            .map_err(|_| "Failed to lock vault root".to_string())?;
+            .map_err(|_| CascadeError::Collab("Failed to lock vault root".to_string()))?;
         guard
             .clone()
-            .ok_or_else(|| "No vault open".to_string())?
+            .ok_or_else(|| CascadeError::Collab("No vault open".to_string()))?
     };
 
     // Check if a fresh host presence exists — if so, join as client
@@ -34,7 +35,7 @@ pub async fn start_collab(
             let mut cfg = config_state
                 .0
                 .lock()
-                .map_err(|_| "Failed to lock config".to_string())?;
+                .map_err(|_| CascadeError::Collab("Failed to lock config".to_string()))?;
             *cfg = CollabConfigInner {
                 role: Some(CollabRole::Client),
                 server_port: Some(info.port),
@@ -51,7 +52,9 @@ pub async fn start_collab(
     }
 
     // Start server
-    let (relay, port) = RelayServer::start(password, app_handle.clone()).await?;
+    let (relay, port) = RelayServer::start(password, app_handle.clone())
+        .await
+        .map_err(|e| CascadeError::Collab(e))?;
 
     // Get local IP
     let local_ip = local_ip_address::local_ip()
@@ -59,7 +62,8 @@ pub async fn start_collab(
         .unwrap_or_else(|_| "127.0.0.1".to_string());
 
     // Write presence file
-    presence::write_presence(&vault_path, &local_ip, port)?;
+    presence::write_presence(&vault_path, &local_ip, port)
+        .map_err(|e| CascadeError::Collab(e))?;
 
     let host_address = format!("{}:{}", local_ip, port);
 
@@ -68,7 +72,7 @@ pub async fn start_collab(
         let mut cfg = config_state
             .0
             .lock()
-            .map_err(|_| "Failed to lock config".to_string())?;
+            .map_err(|_| CascadeError::Collab("Failed to lock config".to_string()))?;
         *cfg = CollabConfigInner {
             role: Some(CollabRole::Host),
             server_port: Some(port),
@@ -117,7 +121,7 @@ pub async fn stop_collab(
     config_state: tauri::State<'_, CollabConfig>,
     heartbeat_state: tauri::State<'_, HeartbeatHandle>,
     vault_root: tauri::State<'_, crate::VaultRoot>,
-) -> Result<(), String> {
+) -> Result<(), CascadeError> {
     // Abort heartbeat
     {
         let mut hb = heartbeat_state.0.lock().await;
@@ -136,14 +140,14 @@ pub async fn stop_collab(
 
     // Delete presence file only if we are the host
     let should_delete_presence = {
-        let config = config_state.0.lock().unwrap();
+        let config = config_state.0.lock().unwrap_or_else(|e| e.into_inner());
         config.role == Some(super::CollabRole::Host)
     };
     if should_delete_presence {
         let guard = vault_root
             .0
             .lock()
-            .map_err(|_| "Failed to lock vault root".to_string())?;
+            .map_err(|_| CascadeError::Collab("Failed to lock vault root".to_string()))?;
         if let Some(vp) = guard.as_ref() {
             presence::delete_presence(vp);
         }
@@ -154,7 +158,7 @@ pub async fn stop_collab(
         let mut cfg = config_state
             .0
             .lock()
-            .map_err(|_| "Failed to lock config".to_string())?;
+            .map_err(|_| CascadeError::Collab("Failed to lock config".to_string()))?;
         *cfg = CollabConfigInner::default();
     }
 
@@ -174,12 +178,12 @@ pub fn read_collab_presence(
 pub async fn get_collab_status(
     server_state: tauri::State<'_, CollabServerState>,
     config_state: tauri::State<'_, CollabConfig>,
-) -> Result<CollabStatus, String> {
+) -> Result<CollabStatus, CascadeError> {
     let cfg = {
         let guard = config_state
             .0
             .lock()
-            .map_err(|_| "Failed to lock config".to_string())?;
+            .map_err(|_| CascadeError::Collab("Failed to lock config".to_string()))?;
         guard.clone()
     };
 

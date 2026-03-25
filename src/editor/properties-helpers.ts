@@ -54,6 +54,16 @@ export function convertValue(oldValue: string, oldType: PropType, newType: PropT
   }
 }
 
+/** Quote a YAML value if it could be misinterpreted as a non-string scalar. */
+function yamlQuoteIfNeeded(v: string): string {
+  if (!v) return '""';
+  const lower = v.toLowerCase();
+  if (/^(true|false|yes|no|null|~)$/i.test(lower) || /^[{[\-:#>|!&*?]/.test(v) || v.includes(': ') || v.includes(' #') || /^\d+(\.\d+)?$/.test(v)) {
+    return `"${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  }
+  return v;
+}
+
 export function serializeYaml(props: { key: string; value: string; type: PropType }[]): string {
   let yaml = '---\n';
   for (const { key, value, type } of props) {
@@ -65,11 +75,11 @@ export function serializeYaml(props: { key: string; value: string; type: PropTyp
       } else {
         yaml += `${key}:\n`;
         for (const item of items) {
-          yaml += `  - ${item}\n`;
+          yaml += `  - ${yamlQuoteIfNeeded(item)}\n`;
         }
       }
     } else {
-      yaml += `${key}: ${value}\n`;
+      yaml += `${key}: ${yamlQuoteIfNeeded(value)}\n`;
     }
   }
   yaml += '---';

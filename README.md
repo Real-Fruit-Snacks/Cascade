@@ -117,7 +117,10 @@ Built with Tauri, React, and CodeMirror.
 
 **Performance & Security**
 - Native desktop app — no Electron, no browser overhead
-- Rust backend for file I/O with path traversal protection
+- Rust backend for file I/O with canonical path validation and traversal protection
+- Collaboration server binds to localhost with Argon2 password hashing
+- Plugin HTML sandboxed with restrictive CSP; asset protocol scoped to user documents
+- CI pipeline with SHA-pinned actions, cargo clippy, and npm audit
 - Files stay on your disk, no cloud dependency
 - Lazy-loaded components and namespaced i18n bundles
 - Deep link support (`cascade://open/vault/note`)

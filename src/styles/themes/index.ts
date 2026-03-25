@@ -109,10 +109,13 @@ export function isDarkFlavor(flavor: CatppuccinFlavor): boolean {
 
 // --- Theme application ---
 
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{3,8}$/;
+
 function applyColors(colors: FlavorColors) {
   const root = document.documentElement;
   for (const [key, value] of Object.entries(colors)) {
-    const cssKey = key.replace(/([A-Z])/g, (_, c: string) => c.toLowerCase());
+    if (!HEX_COLOR_RE.test(value)) continue;
+    const cssKey = key.replace(/([A-Z])/g, (_: string, c: string) => c.toLowerCase());
     root.style.setProperty(`--ctp-${cssKey}`, value);
   }
 }

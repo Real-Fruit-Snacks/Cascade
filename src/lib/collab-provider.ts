@@ -211,8 +211,8 @@ export class CollabProvider {
       try {
         const event = decodeLifecycleEvent(data);
         this.onLifecycleEvent?.(event);
-      } catch {
-        // ignore malformed lifecycle messages
+      } catch (e) {
+        console.warn('[collab] Malformed lifecycle message:', e);
       }
     }
   }
@@ -243,22 +243,25 @@ export class CollabProvider {
         // Apply the update
         try {
           applyUpdate(doc, payload);
-        } catch {
-          // ignore malformed updates
+        } catch (e) {
+          console.warn('[collab] Malformed sync update:', e);
         }
       }
     } else if (msgType === MSG_AWARENESS) {
       const update = data.slice(1);
       try {
         applyAwarenessUpdate(this.awareness, update, this);
-      } catch {
-        // ignore malformed awareness updates
+      } catch (e) {
+        console.warn('[collab] Malformed awareness update:', e);
       }
     }
   }
 
   private _buildSyncHeader(path: string, syncType: number): Uint8Array {
     const pathBytes = new TextEncoder().encode(path);
+    if (pathBytes.byteLength > 65535) {
+      throw new Error(`Path too long for sync protocol: ${pathBytes.byteLength} bytes`);
+    }
     const header = new Uint8Array(1 + 2 + pathBytes.byteLength + 1);
     header[0] = MSG_SYNC;
     header[1] = (pathBytes.byteLength >> 8) & 0xff;

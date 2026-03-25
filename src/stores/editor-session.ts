@@ -61,7 +61,7 @@ export async function restoreSession(vaultRoot: string, store: typeof useEditorS
     const restoredTabCount = store.getState().tabs.length;
     const idx = Math.min(session.activeTabIndex, restoredTabCount - 1);
     if (idx >= 0) {
-      state.switchTab(idx);
+      store.getState().switchTab(idx);
     }
 
     if (Array.isArray(session.panes) && session.panes.length >= 2 && session.splitDirection) {

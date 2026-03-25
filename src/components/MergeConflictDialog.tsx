@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GitMerge } from 'lucide-react';
 import { useFocusTrap } from '../hooks/use-focus-trap';
 import { useCloseAnimation } from '../hooks/use-close-animation';
@@ -28,6 +28,13 @@ export function MergeConflictDialog({ open, conflicts, onResolve, onCancel }: Me
   });
   const [selectedIdx, setSelectedIdx] = useState(0);
 
+  useEffect(() => {
+    const m = new Map<string, 'local' | 'remote'>();
+    for (const c of conflicts) m.set(c.path, 'local');
+    setResolutions(m);
+    setSelectedIdx(0);
+  }, [conflicts]);
+
   if (!shouldRender || conflicts.length === 0) return null;
 
   const selected = conflicts[selectedIdx];
@@ -39,10 +46,13 @@ export function MergeConflictDialog({ open, conflicts, onResolve, onCancel }: Me
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
       style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-      onKeyDown={trapKeyDown}
     >
       <div
         ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Merge Conflicts"
+        onKeyDown={trapKeyDown}
         className="rounded-xl overflow-hidden flex flex-col"
         style={{
           backgroundColor: 'var(--ctp-base)',

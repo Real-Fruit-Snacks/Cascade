@@ -12,6 +12,9 @@ pub(crate) fn save_version_snapshot_from_content(canonical_root: &Path, rel_path
         return Ok(());
     }
     let sanitized = rel_path.replace('\\', "/");
+    if sanitized.contains("..") || sanitized.starts_with('/') {
+        return Err(CascadeError::InvalidPath("invalid history path".to_string()));
+    }
     let history_dir = canonical_root.join(".cascade").join("history").join(&sanitized);
     fs::create_dir_all(&history_dir)?;
     let ts = SystemTime::now()

@@ -64,7 +64,7 @@ export const dropHandler = EditorView.domEventHandlers({
         if (selectedText.includes('\n')) return false;
         event.preventDefault();
         // Percent-encode unbalanced parens in the URL to avoid breaking markdown link syntax
-        const safeUrl = clipText.replace(/\)/g, '%29');
+        const safeUrl = clipText.replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/ /g, '%20');
         const mdLink = `[${selectedText}](${safeUrl})`;
         view.dispatch({
           changes: { from: sel.from, to: sel.to, insert: mdLink },

@@ -51,6 +51,7 @@ export const COLOR_META: Record<string, ColorMeta> = {
 };
 
 export const CATEGORIES: { id: ColorCategory | 'all'; label: string }[] = [
+  { id: 'all', label: 'All' },
   { id: 'surfaces', label: 'Surfaces' },
   { id: 'text', label: 'Text' },
   { id: 'accents', label: 'Accents' },
