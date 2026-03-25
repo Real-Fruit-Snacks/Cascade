@@ -52,6 +52,17 @@ Built with Tauri, React, and CodeMirror.
 - Embed preview for transclusion (`![[note]]`)
 - Query/Dataview-like preview blocks
 
+**Real-Time Collaboration**
+- Live collaborative editing for shared folder vaults — multiple users edit simultaneously
+- Live cursors and selections with user colors
+- Collaborators sidebar panel showing who's editing what
+- File tree presence dots showing active collaborators per file
+- Auto host election with presence file discovery — zero config, just open the same vault
+- Password-protected sessions (never saved to disk)
+- Automatic host promotion on disconnect
+- Collab-aware file operations — rename/delete events sync across all users
+- Settings profiles for per-user preferences when sharing a vault
+
 **Focus & Writing**
 - Focus mode with paragraph dimming
 - Typewriter mode (keeps current line centered)
