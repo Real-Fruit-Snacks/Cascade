@@ -8,6 +8,7 @@ import {
 } from '@codemirror/view';
 import type { Range } from '@codemirror/state';
 import { getCursorLineChange, needsRebuildForLine } from './cursor-line';
+import { ViewportBuffer } from './viewport-buffer';
 
 // ── Callout types & icons ──────────────────────────────────
 
@@ -214,12 +215,21 @@ const CALLOUT_PATTERN = /^>/;
 export const calloutPreview = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
+    private vpBuffer = new ViewportBuffer();
     constructor(view: EditorView) {
       this.decorations = buildCalloutDecorations(view);
+      this.vpBuffer.update(view);
     }
     update(update: ViewUpdate) {
-      if (update.docChanged || update.viewportChanged) {
+      if (update.docChanged) {
+        this.vpBuffer.reset();
         this.decorations = buildCalloutDecorations(update.view);
+        this.vpBuffer.update(update.view);
+      } else if (update.viewportChanged) {
+        if (this.vpBuffer.needsRebuild(update.view)) {
+          this.decorations = buildCalloutDecorations(update.view);
+          this.vpBuffer.update(update.view);
+        }
       } else if (update.selectionSet) {
         const change = getCursorLineChange(update);
         if (change && (

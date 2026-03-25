@@ -9,6 +9,7 @@ import type { EditorState, Range } from '@codemirror/state';
 import { useEditorStore } from '../stores/editor-store';
 import { useVaultStore } from '../stores/vault-store';
 import { getCursorLineChange, needsRebuildForLine } from './cursor-line';
+import { ViewportBuffer } from './viewport-buffer';
 import { useToastStore } from '../stores/toast-store';
 import { useSettingsStore } from '../stores/settings-store';
 import { resolveWikiLink, parseWikiTarget } from '../lib/wiki-link-resolver';
@@ -83,12 +84,21 @@ const WIKI_LINK_PATTERN = /\[\[/;
 export const wikiLinks = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
+    private vpBuffer = new ViewportBuffer();
     constructor(view: EditorView) {
       this.decorations = buildDecorations(view);
+      this.vpBuffer.update(view);
     }
     update(update: ViewUpdate) {
-      if (update.docChanged || update.viewportChanged) {
+      if (update.docChanged) {
+        this.vpBuffer.reset();
         this.decorations = buildDecorations(update.view);
+        this.vpBuffer.update(update.view);
+      } else if (update.viewportChanged) {
+        if (this.vpBuffer.needsRebuild(update.view)) {
+          this.decorations = buildDecorations(update.view);
+          this.vpBuffer.update(update.view);
+        }
       } else if (update.selectionSet) {
         const change = getCursorLineChange(update);
         if (change && (

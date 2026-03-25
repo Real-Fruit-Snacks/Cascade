@@ -1,5 +1,6 @@
 import { EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet } from '@codemirror/view';
 import { RangeSetBuilder, StateEffect } from '@codemirror/state';
+import { ViewportBuffer } from './viewport-buffer';
 import { syntaxTree } from '@codemirror/language';
 import { isCorrect, isDictionaryReady, initDictionary } from './spellcheck-engine';
 import { useSettingsStore } from '../stores/settings-store';
@@ -56,6 +57,7 @@ const spellcheckPlugin = ViewPlugin.fromClass(
     decorations: DecorationSet;
     destroyed = false;
     private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    private vpBuffer = new ViewportBuffer();
 
     constructor(view: EditorView) {
       this.decorations = Decoration.none;
@@ -63,6 +65,7 @@ const spellcheckPlugin = ViewPlugin.fromClass(
       initDictionary().then(() => {
         if (this.destroyed) return;
         this.decorations = this.buildDecorations(view);
+        this.vpBuffer.update(view);
         // Use requestMeasure to trigger a re-read of decorations without empty dispatch
         view.requestMeasure();
       });
@@ -77,26 +80,30 @@ const spellcheckPlugin = ViewPlugin.fromClass(
       );
       if (hasRecheck) {
         this.decorations = this.buildDecorations(update.view);
+        this.vpBuffer.update(update.view);
         return;
       }
 
-      if (update.docChanged || update.viewportChanged) {
-        if (update.docChanged) {
-          // Debounce on doc changes
+      if (update.docChanged) {
+        // Debounce on doc changes
+        this.vpBuffer.reset();
+        if (this.debounceTimer) clearTimeout(this.debounceTimer);
+        this.debounceTimer = setTimeout(() => {
+          if (this.destroyed) return;
+          this.decorations = this.buildDecorations(update.view);
+          this.vpBuffer.update(update.view);
+          update.view.requestMeasure();
+        }, 300);
+        // Map existing decorations for immediate display
+        this.decorations = this.decorations.map(update.changes);
+      } else if (update.viewportChanged) {
+        // Only rebuild if new content scrolled into view beyond the buffer
+        if (this.vpBuffer.needsRebuild(update.view)) {
           if (this.debounceTimer) clearTimeout(this.debounceTimer);
           this.debounceTimer = setTimeout(() => {
             if (this.destroyed) return;
             this.decorations = this.buildDecorations(update.view);
-            update.view.requestMeasure();
-          }, 300);
-          // Map existing decorations for immediate display
-          this.decorations = this.decorations.map(update.changes);
-        } else {
-          // Viewport change — debounce to avoid per-frame rebuilds during fast scroll
-          if (this.debounceTimer) clearTimeout(this.debounceTimer);
-          this.debounceTimer = setTimeout(() => {
-            if (this.destroyed) return;
-            this.decorations = this.buildDecorations(update.view);
+            this.vpBuffer.update(update.view);
             update.view.requestMeasure();
           }, 150);
         }

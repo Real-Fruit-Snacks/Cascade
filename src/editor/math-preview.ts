@@ -8,6 +8,7 @@ import {
 } from '@codemirror/view';
 import type { Range } from '@codemirror/state';
 import { getCursorLineChange, needsRebuildForLine } from './cursor-line';
+import { ViewportBuffer } from './viewport-buffer';
 let katexPromise: Promise<typeof import('katex')> | null = null;
 function getKatex() {
   if (!katexPromise) {
@@ -126,12 +127,21 @@ const MATH_PATTERN = /\$/;
 export const mathPreview = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
+    private vpBuffer = new ViewportBuffer();
     constructor(view: EditorView) {
       this.decorations = buildMathDecorations(view);
+      this.vpBuffer.update(view);
     }
     update(update: ViewUpdate) {
-      if (update.docChanged || update.viewportChanged) {
+      if (update.docChanged) {
+        this.vpBuffer.reset();
         this.decorations = buildMathDecorations(update.view);
+        this.vpBuffer.update(update.view);
+      } else if (update.viewportChanged) {
+        if (this.vpBuffer.needsRebuild(update.view)) {
+          this.decorations = buildMathDecorations(update.view);
+          this.vpBuffer.update(update.view);
+        }
       } else if (update.selectionSet) {
         const change = getCursorLineChange(update);
         if (change && (

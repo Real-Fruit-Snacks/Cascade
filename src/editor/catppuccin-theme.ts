@@ -15,6 +15,7 @@ export function createCatppuccinTheme(dark: boolean): Extension {
     '.cm-content': {
       caretColor: 'var(--ctp-text)',
       lineHeight: '1.6',
+      contain: 'layout style',
       paddingLeft: '40px',
       paddingRight: '40px',
       paddingBottom: '30vh',
@@ -45,6 +46,7 @@ export function createCatppuccinTheme(dark: boolean): Extension {
     '.cm-scroller': {
       overscrollBehavior: 'contain',
       willChange: 'scroll-position',
+      contain: 'strict',
     },
   }, { dark });
 }

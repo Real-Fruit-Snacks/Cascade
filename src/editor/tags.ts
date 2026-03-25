@@ -8,6 +8,7 @@ import {
 import { EditorState, type Range } from '@codemirror/state';
 import { type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
 import { TAG_PATTERN } from '../lib/tag-utils';
+import { ViewportBuffer } from './viewport-buffer';
 import { useSettingsStore } from '../stores/settings-store';
 import { emit } from '../lib/cascade-events';
 
@@ -42,12 +43,21 @@ function buildDecorations(view: EditorView): DecorationSet {
 export const tags = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
+    private vpBuffer = new ViewportBuffer();
     constructor(view: EditorView) {
       this.decorations = buildDecorations(view);
+      this.vpBuffer.update(view);
     }
     update(update: ViewUpdate) {
-      if (update.docChanged || update.viewportChanged) {
+      if (update.docChanged) {
+        this.vpBuffer.reset();
         this.decorations = buildDecorations(update.view);
+        this.vpBuffer.update(update.view);
+      } else if (update.viewportChanged) {
+        if (this.vpBuffer.needsRebuild(update.view)) {
+          this.decorations = buildDecorations(update.view);
+          this.vpBuffer.update(update.view);
+        }
       }
     }
   },

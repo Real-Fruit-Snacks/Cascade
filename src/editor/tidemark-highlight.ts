@@ -21,6 +21,7 @@ import {
   type TidemarkOptions,
 } from '../lib/tidemark';
 import { useSettingsStore } from '../stores/settings-store';
+import { ViewportBuffer } from './viewport-buffer';
 
 function getVariableOptions(): TidemarkOptions {
   const s = useSettingsStore.getState();
@@ -72,12 +73,21 @@ function buildDecorations(view: EditorView): DecorationSet {
 export const tidemarkHighlight = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
+    private vpBuffer = new ViewportBuffer();
     constructor(view: EditorView) {
       this.decorations = buildDecorations(view);
+      this.vpBuffer.update(view);
     }
     update(update: ViewUpdate) {
-      if (update.docChanged || update.viewportChanged) {
+      if (update.docChanged) {
+        this.vpBuffer.reset();
         this.decorations = buildDecorations(update.view);
+        this.vpBuffer.update(update.view);
+      } else if (update.viewportChanged) {
+        if (this.vpBuffer.needsRebuild(update.view)) {
+          this.decorations = buildDecorations(update.view);
+          this.vpBuffer.update(update.view);
+        }
       }
     }
   },
