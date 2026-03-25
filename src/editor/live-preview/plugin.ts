@@ -2,6 +2,7 @@ import { DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@codemirror/v
 import { StateEffect, StateField } from '@codemirror/state';
 import { foldEffect, unfoldEffect } from '@codemirror/language';
 import { cursorLineField, getCursorLineChange, needsRebuildForLine } from '../cursor-line';
+import { ViewportBuffer } from '../viewport-buffer';
 import { useVaultStore } from '../../stores/vault-store';
 import { useEditorStore } from '../../stores/editor-store';
 import { useSettingsStore } from '../../stores/settings-store';
@@ -44,8 +45,10 @@ export const livePreview = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
     private pendingRebuild: ReturnType<typeof setTimeout> | null = null;
+    private vpBuffer = new ViewportBuffer();
     constructor(view: EditorView) {
       this.decorations = buildDecorations(view);
+      this.vpBuffer.update(view);
     }
     update(update: ViewUpdate) {
       // Check if fold state changed (fold/unfold effects)
@@ -54,13 +57,22 @@ export const livePreview = ViewPlugin.fromClass(
       // Deferred rebuild triggered by our own effect (after a pointer click)
       if (update.transactions.some(tr => tr.effects.some(e => e.is(deferredRebuildEffect)))) {
         this.decorations = buildDecorations(update.view);
+        this.vpBuffer.update(update.view);
         return;
       }
 
-      if (update.docChanged || update.viewportChanged || foldChanged) {
-        // Immediate rebuild on content/viewport/fold changes
+      if (update.docChanged || foldChanged) {
+        // Content or fold change — must rebuild
         if (this.pendingRebuild) { clearTimeout(this.pendingRebuild); this.pendingRebuild = null; }
+        this.vpBuffer.reset();
         this.decorations = buildDecorations(update.view);
+        this.vpBuffer.update(update.view);
+      } else if (update.viewportChanged) {
+        // Scroll — only rebuild if new content scrolled into view beyond our buffer
+        if (this.vpBuffer.needsRebuild(update.view)) {
+          this.decorations = buildDecorations(update.view);
+          this.vpBuffer.update(update.view);
+        }
       } else if (update.selectionSet) {
         const change = getCursorLineChange(update);
         if (change && (
