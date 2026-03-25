@@ -4,6 +4,18 @@ All notable changes to Cascade will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.2] — 2026-03-25
+
+### Performance
+
+- **Buttery-smooth scrolling** — Decorations are now built once when opening a file, not on every scroll frame. Previously 11 ViewPlugins all rebuilt decorations on each scroll, causing jank. Now scrolling triggers zero rebuilds for files under 200K characters.
+- **GPU-accelerated paint isolation** — Added CSS `contain: strict` on the scroll container and `contain: layout style` on editor content for faster compositing.
+
+### Bug Fixes
+
+- **Source mode shows raw markdown** — Source mode now correctly disables all preview decorations (callouts, images, math, mermaid, tables, wiki-links, tags). Previously 9 standalone preview extensions were active regardless of view mode.
+- **New lines below block widgets** — Added 30vh bottom padding and a click handler so you can create new lines below tables, images, and other block widgets at the end of a document.
+
 ## [0.3.1] — 2026-03-24
 
 ### UI Polish & Component System
