@@ -75,7 +75,7 @@ jobs:
         with:
           targets: ${{ matrix.rust-targets }}
 
-      - uses: Swatinem/rust-cache@9d47f7b6b80d8ede1bab8ce7ca3bf48768afd73e
+      - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
 
