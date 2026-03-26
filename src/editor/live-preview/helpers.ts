@@ -256,7 +256,8 @@ const escapeHtml = (s: string) =>
    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 const isSafeUrl = (url: string): boolean => {
-  const trimmed = url.trim().replace(/[\x00-\x1f]/g, '').toLowerCase();
+  // Strip control characters that could obfuscate protocol detection
+  const trimmed = url.trim().split('').filter(c => c.charCodeAt(0) >= 0x20).join('').toLowerCase();
   if (!trimmed) return false;
   if (/^https?:/i.test(trimmed)) return true;
   if (/^mailto:/i.test(trimmed)) return true;
@@ -279,7 +280,7 @@ export function renderInlineMarkdown(text: string): string {
   r = r.replace(/`([^`]+)`/g, (_, inner) => {
     const idx = codeChunks.length;
     codeChunks.push(`<code style="background:var(--ctp-surface0);border-radius:3px;padding:1px 4px;font-size:0.9em">${inner}</code>`);
-    return `\x00CODE${idx}\x00`;
+    return `\uE000CODE${idx}\uE000`;
   });
   // Strikethrough
   r = r.replace(/~~(.+?)~~/g, '<del style="text-decoration:line-through;color:var(--ctp-overlay1)">$1</del>');
@@ -293,7 +294,7 @@ export function renderInlineMarkdown(text: string): string {
   r = r.replace(/\*(.+?)\*/g, '<em>$1</em>');
   r = r.replace(/(?<![a-zA-Z0-9])_([^_]+?)_(?![a-zA-Z0-9])/g, '<em>$1</em>');
   // Restore inline code placeholders
-  r = r.replace(/\x00CODE(\d+)\x00/g, (_, idx) => codeChunks[parseInt(idx, 10)]);
+  r = r.replace(/\uE000CODE(\d+)\uE000/g, (_, idx) => codeChunks[parseInt(idx, 10)]);
   // Markdown links
   r = r.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a style="color:var(--ctp-blue);text-decoration:underline;text-underline-offset:2px">$1</a>');
   // Wiki links
