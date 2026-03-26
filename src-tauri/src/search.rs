@@ -47,6 +47,9 @@ pub async fn search_vault(
     if query.is_empty() {
         return Ok(vec![]);
     }
+    if use_regex && query.len() > 1000 {
+        return Err(CascadeError::InvalidPath("regex query too long".into()));
+    }
 
     let root = PathBuf::from(&vault_root)
         .canonicalize()

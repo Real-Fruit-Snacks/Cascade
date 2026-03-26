@@ -54,6 +54,10 @@ pub fn debug(vault_path: &Path, message: &str) {
 
 /// Tauri command so the frontend can write to the same sync log.
 #[tauri::command]
-pub fn write_sync_log(vault_path: String, level: String, message: String) {
+pub fn write_sync_log(vault_path: String, level: String, message: String) -> Result<(), crate::error::CascadeError> {
+    if !std::path::Path::new(&vault_path).is_absolute() {
+        return Err(crate::error::CascadeError::InvalidPath("vault path must be absolute".into()));
+    }
     log(Path::new(&vault_path), &level, &message);
+    Ok(())
 }

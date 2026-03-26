@@ -98,7 +98,9 @@
     "zoomOut": "Zoom out",
     "zoomIn": "Zoom in",
     "fitToWidth": "Fit to width",
-    "fitWidth": "Fit Width"
+    "fitWidth": "Fit Width",
+    "failedToLoad": "Failed to load PDF",
+    "loading": "Loading PDF..."
   },
   "pluginView": {
     "iframeTitle": "Plugin view: {{viewType}}"

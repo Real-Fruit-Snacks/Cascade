@@ -154,7 +154,7 @@ pub fn verify_plugin_integrity(
         .join(&plugin_id)
         .join(".integrity.json");
     if !integrity_path.exists() {
-        return Ok(true); // No integrity file = dev plugin, allow
+        return Ok(false); // No integrity file = fail closed
     }
     let raw = fs::read_to_string(&integrity_path)?;
     let data: serde_json::Value = serde_json::from_str(&raw)
@@ -164,6 +164,9 @@ pub fn verify_plugin_integrity(
         .ok_or_else(|| CascadeError::InvalidPath("malformed integrity file: missing files".into()))?;
     let plugin_dir = canonical_root.join(".cascade").join("plugins").join(&plugin_id);
     for (rel_path, expected_hash) in files {
+        if !plugin_dir.join(rel_path).starts_with(&plugin_dir) {
+            continue;
+        }
         let abs_path = plugin_dir.join(rel_path);
         if !abs_path.exists() {
             return Ok(false);

@@ -127,160 +127,175 @@ pub fn parse_frontmatter_properties(yaml: &str) -> HashMap<String, PropertyValue
 }
 
 #[tauri::command]
-pub fn build_index(vault_root: String, fts_state: State<'_, FtsState>) -> Result<VaultIndex, CascadeError> {
-    let root = PathBuf::from(&vault_root)
-        .canonicalize()
-        .map_err(|_| CascadeError::NotADirectory(vault_root.clone()))?;
-    if !root.is_dir() {
-        return Err(CascadeError::NotADirectory(vault_root));
+pub async fn build_index(vault_root: String, fts_state: State<'_, FtsState>) -> Result<VaultIndex, CascadeError> {
+    struct IndexResult {
+        tag_index: HashMap<String, Vec<String>>,
+        backlink_index: HashMap<String, Vec<String>>,
+        fts_entries: Vec<(String, String)>,
+        property_index: Vec<FileProperties>,
     }
 
-    let mut tag_index: HashMap<String, Vec<String>> = HashMap::new();
-    let mut backlink_index: HashMap<String, Vec<String>> = HashMap::new();
-    let mut fts_entries: Vec<(String, String)> = Vec::new();
-    let mut property_index: Vec<FileProperties> = Vec::new();
-
-    for entry in WalkDir::new(&root)
-        .follow_links(false)
-        .into_iter()
-        .filter_entry(|e| !e.file_name().to_string_lossy().starts_with('.'))
-        .filter_map(|e| e.ok())
-    {
-        if !entry.file_type().is_file() {
-            continue;
+    let result = tokio::task::spawn_blocking(move || -> Result<IndexResult, CascadeError> {
+        let root = PathBuf::from(&vault_root)
+            .canonicalize()
+            .map_err(|_| CascadeError::NotADirectory(vault_root.clone()))?;
+        if !root.is_dir() {
+            return Err(CascadeError::NotADirectory(vault_root));
         }
-        let path = entry.path();
-        let ext = path.extension().and_then(|e| e.to_str());
 
-        let rel_path = path
-            .strip_prefix(&root)
-            .unwrap_or(path)
-            .to_string_lossy()
-            .replace('\\', "/");
+        let mut tag_index: HashMap<String, Vec<String>> = HashMap::new();
+        let mut backlink_index: HashMap<String, Vec<String>> = HashMap::new();
+        let mut fts_entries: Vec<(String, String)> = Vec::new();
+        let mut property_index: Vec<FileProperties> = Vec::new();
 
-        let content = match std::fs::read_to_string(path) {
-            Ok(c) => c,
-            Err(_) => continue,
-        };
+        for entry in WalkDir::new(&root)
+            .follow_links(false)
+            .into_iter()
+            .filter_entry(|e| !e.file_name().to_string_lossy().starts_with('.'))
+            .filter_map(|e| e.ok())
+        {
+            if !entry.file_type().is_file() {
+                continue;
+            }
+            let path = entry.path();
+            let ext = path.extension().and_then(|e| e.to_str());
 
-        // Handle .canvas files — extract file node references as backlinks
-        if ext == Some("canvas") {
-            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
-                if let Some(nodes) = json.get("nodes").and_then(|n| n.as_array()) {
-                    for node in nodes {
-                        if node.get("type").and_then(|t| t.as_str()) == Some("file") {
-                            if let Some(file_ref) = node.get("file").and_then(|f| f.as_str()) {
-                                let target = file_ref
-                                    .to_lowercase()
-                                    .trim_end_matches(".md")
-                                    .to_string();
-                                backlink_index
-                                    .entry(target)
-                                    .or_default()
-                                    .push(rel_path.clone());
+            let rel_path = path
+                .strip_prefix(&root)
+                .unwrap_or(path)
+                .to_string_lossy()
+                .replace('\\', "/");
+
+            let content = match std::fs::read_to_string(path) {
+                Ok(c) => c,
+                Err(_) => continue,
+            };
+
+            // Handle .canvas files — extract file node references as backlinks
+            if ext == Some("canvas") {
+                if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+                    if let Some(nodes) = json.get("nodes").and_then(|n| n.as_array()) {
+                        for node in nodes {
+                            if node.get("type").and_then(|t| t.as_str()) == Some("file") {
+                                if let Some(file_ref) = node.get("file").and_then(|f| f.as_str()) {
+                                    let target = file_ref
+                                        .to_lowercase()
+                                        .trim_end_matches(".md")
+                                        .to_string();
+                                    backlink_index
+                                        .entry(target)
+                                        .or_default()
+                                        .push(rel_path.clone());
+                                }
                             }
                         }
                     }
                 }
+                continue;
             }
-            continue;
-        }
 
-        if ext != Some("md") {
-            continue;
-        }
+            if ext != Some("md") {
+                continue;
+            }
 
-        fts_entries.push((rel_path.clone(), content.clone()));
+            // --- Extract tags and properties ---
 
-        // --- Extract tags and properties ---
+            // Frontmatter tags
+            if let Some(fm_caps) = FRONTMATTER_RE.captures(&content) {
+                let yaml = fm_caps.get(1).unwrap().as_str();
 
-        // Frontmatter tags
-        if let Some(fm_caps) = FRONTMATTER_RE.captures(&content) {
-            let yaml = fm_caps.get(1).unwrap().as_str();
+                // Parse all properties
+                let properties = parse_frontmatter_properties(yaml);
+                property_index.push(FileProperties {
+                    path: rel_path.clone(),
+                    properties,
+                });
 
-            // Parse all properties
-            let properties = parse_frontmatter_properties(yaml);
-            property_index.push(FileProperties {
-                path: rel_path.clone(),
-                properties,
-            });
+                // Inline format: tags: [a, b, c]
+                if let Some(inline_caps) = FM_INLINE_RE.captures(yaml) {
+                    for item in inline_caps.get(1).unwrap().as_str().split(',') {
+                        let t = item.trim().trim_matches(|c| c == '\'' || c == '"');
+                        if !t.is_empty() {
+                            tag_index
+                                .entry(t.to_lowercase())
+                                .or_default()
+                                .push(rel_path.clone());
+                        }
+                    }
+                }
 
-            // Inline format: tags: [a, b, c]
-            if let Some(inline_caps) = FM_INLINE_RE.captures(yaml) {
-                for item in inline_caps.get(1).unwrap().as_str().split(',') {
-                    let t = item.trim().trim_matches(|c| c == '\'' || c == '"');
-                    if !t.is_empty() {
-                        tag_index
-                            .entry(t.to_lowercase())
-                            .or_default()
-                            .push(rel_path.clone());
+                // List format: tags:\n  - a\n  - b
+                if let Some(list_caps) = FM_LIST_RE.captures(yaml) {
+                    let list_text = list_caps.get(1).unwrap().as_str();
+                    for item_caps in FM_LIST_ITEM_RE.captures_iter(list_text) {
+                        let t = item_caps.get(1).unwrap().as_str().trim().trim_matches(|c| c == '\'' || c == '"');
+                        if !t.is_empty() {
+                            tag_index
+                                .entry(t.to_lowercase())
+                                .or_default()
+                                .push(rel_path.clone());
+                        }
                     }
                 }
             }
 
-            // List format: tags:\n  - a\n  - b
-            if let Some(list_caps) = FM_LIST_RE.captures(yaml) {
-                let list_text = list_caps.get(1).unwrap().as_str();
-                for item_caps in FM_LIST_ITEM_RE.captures_iter(list_text) {
-                    let t = item_caps.get(1).unwrap().as_str().trim().trim_matches(|c| c == '\'' || c == '"');
-                    if !t.is_empty() {
-                        tag_index
-                            .entry(t.to_lowercase())
-                            .or_default()
-                            .push(rel_path.clone());
-                    }
-                }
+            // Inline #tags (skip frontmatter)
+            let body = FRONTMATTER_RE.replace(&content, "");
+            for caps in INLINE_TAG_RE.captures_iter(&body) {
+                let tag = caps.get(1).unwrap().as_str().to_lowercase();
+                tag_index
+                    .entry(tag)
+                    .or_default()
+                    .push(rel_path.clone());
             }
+
+            // --- Extract wiki-links ---
+            for caps in WIKI_LINK_RE.captures_iter(&content) {
+                let target = caps
+                    .get(1)
+                    .unwrap()
+                    .as_str()
+                    .to_lowercase()
+                    .trim_end_matches(".md")
+                    .to_string();
+                backlink_index
+                    .entry(target)
+                    .or_default()
+                    .push(rel_path.clone());
+            }
+
+            // Collect for FTS (after all other processing, no extra clone needed)
+            fts_entries.push((rel_path, content));
         }
 
-        // Inline #tags (skip frontmatter)
-        let body = FRONTMATTER_RE.replace(&content, "");
-        for caps in INLINE_TAG_RE.captures_iter(&body) {
-            let tag = caps.get(1).unwrap().as_str().to_lowercase();
-            tag_index
-                .entry(tag)
-                .or_default()
-                .push(rel_path.clone());
+        // Deduplicate (a file may have multiple occurrences of the same tag/link)
+        for files in tag_index.values_mut() {
+            files.sort();
+            files.dedup();
+        }
+        for files in backlink_index.values_mut() {
+            files.sort();
+            files.dedup();
         }
 
-        // --- Extract wiki-links ---
-        for caps in WIKI_LINK_RE.captures_iter(&content) {
-            let target = caps
-                .get(1)
-                .unwrap()
-                .as_str()
-                .to_lowercase()
-                .trim_end_matches(".md")
-                .to_string();
-            backlink_index
-                .entry(target)
-                .or_default()
-                .push(rel_path.clone());
-        }
-    }
-
-    // Deduplicate (a file may have multiple occurrences of the same tag/link)
-    for files in tag_index.values_mut() {
-        files.sort();
-        files.dedup();
-    }
-    for files in backlink_index.values_mut() {
-        files.sort();
-        files.dedup();
-    }
+        Ok(IndexResult { tag_index, backlink_index, fts_entries, property_index })
+    })
+    .await
+    .map_err(|e| CascadeError::InvalidPath(e.to_string()))??;
 
     // Build FTS index from already-read file contents (single-pass, no re-read)
+    // Done outside spawn_blocking so we can access the managed State.
     if let Ok(conn) = fts::create_fts_db() {
-        if fts::rebuild_fts_from_entries(&conn, &fts_entries).is_ok() {
+        if fts::rebuild_fts_from_entries(&conn, &result.fts_entries).is_ok() {
             let mut guard = fts_state.0.lock().unwrap_or_else(|e| e.into_inner());
             *guard = Some(conn);
         }
     }
 
     Ok(VaultIndex {
-        tag_index,
-        backlink_index,
-        property_index,
+        tag_index: result.tag_index,
+        backlink_index: result.backlink_index,
+        property_index: result.property_index,
     })
 }
 

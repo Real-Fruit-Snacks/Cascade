@@ -10,6 +10,9 @@ export class CommandRegistry {
   private listeners = new Set<() => void>();
 
   register(cmd: Command): () => void {
+    if (this.commands.has(cmd.id) && import.meta.env.DEV) {
+      console.warn(`[CommandRegistry] Overwriting command: ${cmd.id}`);
+    }
     this.commands.set(cmd.id, cmd);
     this.notify();
     return () => {

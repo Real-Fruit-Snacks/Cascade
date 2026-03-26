@@ -189,6 +189,8 @@ export function ExportModal({ open, onClose, defaultScope }: ExportModalProps) {
       } else if (format === 'docx') {
         const blob = await markdownToDocx(content, fileName);
         const arrayBuf = await blob.arrayBuffer();
+        // Array.from is required here: Tauri IPC serializes arguments as JSON,
+        // which cannot represent a Uint8Array directly — a plain number[] is needed.
         const bytes = Array.from(new Uint8Array(arrayBuf));
         await exportBinary(savePath, bytes);
       }

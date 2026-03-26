@@ -36,4 +36,10 @@ describe('parseFileParts', () => {
     expect(result.fileName).toBe('');
     expect(result.dir).toBeNull();
   });
+
+  it('handles multiple dots in filename', () => {
+    const result = parseFileParts('folder/my.note.v2.md');
+    expect(result.fileName).toBe('my.note.v2');
+    expect(result.dir).toBe('folder');
+  });
 });

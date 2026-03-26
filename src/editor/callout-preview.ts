@@ -150,7 +150,7 @@ function buildCalloutDecorations(view: EditorView): DecorationSet {
         let nextLineNum = line.number + 1;
         while (nextLineNum <= doc.lines) {
           const nextLine = doc.line(nextLineNum);
-          if (nextLine.text.startsWith('>') || nextLine.text.match(/^>\s/)) {
+          if (nextLine.text.startsWith('>')) {
             blockEnd = nextLine.to;
             nextLineNum++;
           } else {

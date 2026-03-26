@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 
 // Mock Tauri APIs globally
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(),
+  invoke: vi.fn().mockRejectedValue(new Error('unmocked Tauri invoke')),
 }));
 
 vi.mock('@tauri-apps/api/event', () => ({

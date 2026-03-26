@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BookOpen, ChevronDown } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { useTranslation } from 'react-i18next';
 import { featureWikiContent, type FeatureWikiEntry } from '../data/feature-wiki-content';
 
@@ -58,7 +59,7 @@ export function FeatureWiki({ featureId }: FeatureWikiProps) {
           {/* Overview */}
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>{t('featureWiki.overview')}</span>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--ctp-subtext0)' }} dangerouslySetInnerHTML={{ __html: entry.overview }} />
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--ctp-subtext0)' }} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(entry.overview) }} />
           </div>
 
           {/* How to Use */}
@@ -66,7 +67,7 @@ export function FeatureWiki({ featureId }: FeatureWikiProps) {
             <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>{t('featureWiki.howToUse')}</span>
             <ol className="flex flex-col gap-1 pl-4 text-xs leading-relaxed" style={{ color: 'var(--ctp-subtext0)', listStyleType: 'decimal' }}>
               {entry.usage.map((step, i) => (
-                <li key={i} dangerouslySetInnerHTML={{ __html: step }} />
+                <li key={i} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(step) }} />
               ))}
             </ol>
           </div>
@@ -77,7 +78,7 @@ export function FeatureWiki({ featureId }: FeatureWikiProps) {
               <span className="text-xs font-medium" style={{ color: 'var(--ctp-subtext1)' }}>{t('featureWiki.tips')}</span>
               <ul className="flex flex-col gap-1 pl-4 text-xs leading-relaxed" style={{ color: 'var(--ctp-subtext0)', listStyleType: 'disc' }}>
                 {entry.tips.map((tip, i) => (
-                  <li key={i} dangerouslySetInnerHTML={{ __html: tip }} />
+                  <li key={i} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tip) }} />
                 ))}
               </ul>
             </div>

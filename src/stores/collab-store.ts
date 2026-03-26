@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as cmd from '../lib/tauri-commands';
 import { normalizePath } from '../lib/collab-messages';
+import { useToastStore } from './toast-store';
 
 export interface CollabUser {
   name: string;
@@ -55,8 +56,9 @@ export const useCollabStore = create<CollabState>((set) => ({
         userName: name,
         userColor: color,
       });
-    } catch {
+    } catch (e) {
       set({ active: false, role: null });
+      useToastStore.getState().addToast('Failed to start collaboration: ' + String(e), 'error');
     }
   },
 
@@ -86,7 +88,11 @@ export const useCollabStore = create<CollabState>((set) => ({
   },
 
   disconnect: async () => {
-    await cmd.stopCollab();
+    try {
+      await cmd.stopCollab();
+    } catch {
+      // ignore stop errors
+    }
     set({
       active: false,
       role: null,

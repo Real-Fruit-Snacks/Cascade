@@ -36,6 +36,7 @@ export class CollabProvider {
   private password: string;
   private ws: WebSocket | null = null;
   private docs: Map<string, Y.Doc> = new Map();
+  private docHandlers: Map<string, (update: Uint8Array) => void> = new Map();
   private shouldReconnect = false;
   private reconnectAttempt = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -82,11 +83,13 @@ export class CollabProvider {
     const key = normalizePath(filePath);
     this.docs.set(key, doc);
 
-    doc.on('update', (update: Uint8Array) => {
+    const handler = (update: Uint8Array) => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN && this.state === ProviderState.Connected) {
         this._sendSyncUpdate(key, update);
       }
-    });
+    };
+    this.docHandlers.set(key, handler);
+    doc.on('update', handler);
 
     if (this.state === ProviderState.Connected) {
       this._sendSyncStep1(key, doc);
@@ -95,6 +98,12 @@ export class CollabProvider {
 
   unregisterDoc(filePath: string): void {
     const key = normalizePath(filePath);
+    const doc = this.docs.get(key);
+    const handler = this.docHandlers.get(key);
+    if (doc && handler) {
+      doc.off('update', handler);
+    }
+    this.docHandlers.delete(key);
     this.docs.delete(key);
   }
 
@@ -106,9 +115,14 @@ export class CollabProvider {
     const oldKey = normalizePath(oldPath);
     const newKey = normalizePath(newPath);
     const doc = this.docs.get(oldKey);
+    const handler = this.docHandlers.get(oldKey);
     if (doc) {
       this.docs.delete(oldKey);
       this.docs.set(newKey, doc);
+    }
+    if (handler) {
+      this.docHandlers.delete(oldKey);
+      this.docHandlers.set(newKey, handler);
     }
   }
 
@@ -123,6 +137,7 @@ export class CollabProvider {
     removeAwarenessStates(this.awareness, [this.awareness.clientID], 'destroy');
     this.awareness.destroy();
     this.docs.clear();
+    this.docHandlers.clear();
   }
 
   private _setState(state: ProviderState): void {
@@ -210,7 +225,9 @@ export class CollabProvider {
     } else if (isLifecycleMessage(data)) {
       try {
         const event = decodeLifecycleEvent(data);
-        this.onLifecycleEvent?.(event);
+        if (event) {
+          this.onLifecycleEvent?.(event);
+        }
       } catch (e) {
         console.warn('[collab] Malformed lifecycle message:', e);
       }

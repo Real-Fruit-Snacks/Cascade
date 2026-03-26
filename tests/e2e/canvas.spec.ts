@@ -21,7 +21,11 @@ test.beforeAll(async () => {
   });
 
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(1000);
+  // Wait for the app shell to mount
+  await page.waitForFunction(
+    () => document.querySelector('.cm-editor') !== null || document.querySelector('[data-path]') !== null || document.querySelector('button') !== null,
+    { timeout: 10000 }
+  ).catch(() => null);
 });
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -41,7 +45,11 @@ async function ensureVaultOpen() {
     if (await vaultButtons.count() > 0) {
       await vaultButtons.first().click();
       await page.waitForSelector('[data-path]', { timeout: 10000 }).catch(() => null);
-      await page.waitForTimeout(2000);
+      // Wait for file tree to stabilize after vault load
+      await page.waitForFunction(
+        () => document.querySelectorAll('[data-path]').length > 1,
+        { timeout: 5000 }
+      ).catch(() => null);
     }
   }
 }
@@ -61,7 +69,7 @@ async function ensureCanvasOpen() {
   const canvasItem = page.locator('[data-path$=".canvas"]').first();
   if (await canvasItem.isVisible().catch(() => false)) {
     await canvasItem.click();
-    await page.waitForTimeout(1500);
+    await tb.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null);
     if (await tb.isVisible().catch(() => false)) return;
   }
 
@@ -77,7 +85,7 @@ async function ensureCanvasOpen() {
   const canvasItem2 = page.locator('[data-path$=".canvas"]').first();
   if (await canvasItem2.isVisible().catch(() => false)) {
     await canvasItem2.click();
-    await page.waitForTimeout(1500);
+    await tb.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null);
     if (await tb.isVisible().catch(() => false)) return;
   }
 
@@ -91,7 +99,7 @@ async function ensureCanvasOpen() {
     const item = page.locator('[role="option"], [role="listitem"]').filter({ hasText: /canvas/i }).first();
     if (await item.isVisible().catch(() => false)) {
       await item.click();
-      await page.waitForTimeout(2000);
+      await tb.waitFor({ state: 'visible', timeout: 8000 }).catch(() => null);
     } else {
       await page.keyboard.press('Escape');
     }
@@ -101,7 +109,6 @@ async function ensureCanvasOpen() {
 /** Add a text card via toolbar. Returns after the card is visible. */
 async function addTextCard() {
   await toolbarButton('Add text node').click();
-  await page.waitForTimeout(500);
   const emptyText = page.locator('text=Empty card').last();
   await expect(emptyText).toBeVisible({ timeout: 3000 });
 }
@@ -814,9 +821,9 @@ test.describe('Canvas Auto-Save', () => {
     const saveErrors = consoleLogs.filter((l) => l.text.includes('save failed'));
     expect(saveErrors).toHaveLength(0);
 
-    // Clean up
+    // Clean up — undo, then wait for any pending auto-save to settle
     await page.keyboard.press('Control+z');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(500); // short stabilization for undo debounce
 
     expectNoErrors();
   });

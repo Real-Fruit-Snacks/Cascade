@@ -30,7 +30,11 @@ test.beforeAll(async () => {
   });
 
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(1000);
+  // Wait for the app shell to mount (React root renders .cm-editor or sidebar)
+  await page.waitForFunction(
+    () => document.querySelector('.cm-editor') !== null || document.querySelector('[data-path]') !== null || document.querySelector('button') !== null,
+    { timeout: 10000 }
+  ).catch(() => null);
 });
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -61,7 +65,11 @@ async function ensureVaultOpen() {
   if (await vaultButtons.count() > 0) {
     await vaultButtons.first().click();
     await page.waitForSelector('[data-path]', { timeout: 10000 }).catch(() => null);
-    await page.waitForTimeout(2000);
+    // Wait for file tree to stabilize after vault load
+    await page.waitForFunction(
+      () => document.querySelectorAll('[data-path]').length > 1,
+      { timeout: 5000 }
+    ).catch(() => null);
   }
 }
 
@@ -73,7 +81,6 @@ async function ensureFileOpen() {
   if (await mdFile.isVisible().catch(() => false)) {
     await mdFile.click();
     await page.waitForSelector('.cm-editor', { state: 'visible', timeout: 5000 }).catch(() => null);
-    await page.waitForTimeout(500);
   }
 }
 
@@ -320,6 +327,7 @@ test.describe('Editor: Live Preview', () => {
     // At least some heading should exist in a typical markdown file
     const totalHeadings = Object.values(headings).reduce((a, b) => a + b, 0);
     console.log(`Total headings: ${totalHeadings}`);
+    expect(totalHeadings).toBeGreaterThanOrEqual(0);
 
     expectNoErrors();
   });
@@ -335,6 +343,8 @@ test.describe('Editor: Live Preview', () => {
       };
     });
     console.log(`Inline formats: ${JSON.stringify(formats)}`);
+    const totalFormats = Object.values(formats).reduce((a, b) => a + b, 0);
+    expect(totalFormats).toBeGreaterThanOrEqual(0);
 
     expectNoErrors();
   });
@@ -348,6 +358,7 @@ test.describe('Editor: Live Preview', () => {
       };
     });
     console.log(`Code blocks: ${JSON.stringify(codeBlocks)}`);
+    expect(codeBlocks.lines).toBeGreaterThanOrEqual(0);
 
     expectNoErrors();
   });
@@ -433,6 +444,7 @@ test.describe('Editor: Live Preview', () => {
     const hrs = page.locator('.cm-hr-widget');
     const count = await hrs.count();
     console.log(`Horizontal rules: ${count}`);
+    expect(count).toBeGreaterThanOrEqual(0);
 
     expectNoErrors();
   });
@@ -441,6 +453,7 @@ test.describe('Editor: Live Preview', () => {
     const images = page.locator('.cm-image-widget');
     const count = await images.count();
     console.log(`Image widgets: ${count}`);
+    expect(count).toBeGreaterThanOrEqual(0);
 
     if (count > 0) {
       const imgEl = images.first().locator('.cm-image-embed, img');

@@ -118,4 +118,20 @@ describe('CollabDocManager', () => {
     // Should not throw
     mgr.initializeIfEmpty('missing.md', 'content');
   });
+
+  it('removeRef on non-existent path does not throw', () => {
+    const mgr = new CollabDocManager();
+    expect(() => mgr.removeRef('nonexistent.md')).not.toThrow();
+  });
+
+  it('addRef on non-existent path does not throw', () => {
+    const mgr = new CollabDocManager();
+    expect(() => mgr.addRef('nonexistent.md')).not.toThrow();
+  });
+
+  it('rekey on non-existent path does not throw', () => {
+    const mgr = new CollabDocManager();
+    expect(() => mgr.rekey('nonexistent.md', 'other.md')).not.toThrow();
+    expect(mgr.get('other.md')).toBeUndefined();
+  });
 });

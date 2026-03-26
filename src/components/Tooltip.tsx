@@ -16,6 +16,8 @@ export function Tooltip({ label, children, side = 'top', delay = 400 }: TooltipP
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const exitTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const triggerRef = useRef<HTMLDivElement>(null);
+  const visibleRef = useRef(visible);
+  useEffect(() => { visibleRef.current = visible; }, [visible]);
 
   const show = useCallback(() => {
     clearTimeout(exitTimerRef.current);
@@ -58,14 +60,14 @@ export function Tooltip({ label, children, side = 'top', delay = 400 }: TooltipP
 
   const hide = useCallback(() => {
     clearTimeout(timerRef.current);
-    if (visible) {
+    if (visibleRef.current) {
       setIsExiting(true);
       exitTimerRef.current = setTimeout(() => {
         setVisible(false);
         setIsExiting(false);
       }, 100);
     }
-  }, [visible]);
+  }, []);
 
   // Dismiss tooltip when any click happens anywhere in the document,
   // or when the window loses focus (e.g. modal overlay steals events)

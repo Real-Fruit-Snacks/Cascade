@@ -23,6 +23,8 @@ function getKatex() {
 // ── Widgets ────────────────────────────────────────────────
 
 class MathWidget extends WidgetType {
+  private _destroyed = false;
+
   constructor(
     readonly latex: string,
     readonly displayMode: boolean,
@@ -34,11 +36,16 @@ class MathWidget extends WidgetType {
     return this.latex === other.latex && this.displayMode === other.displayMode;
   }
 
+  destroy() {
+    this._destroyed = true;
+  }
+
   toDOM() {
     const wrap = document.createElement('span');
     wrap.className = this.displayMode ? 'cm-math-block' : 'cm-math-inline';
     wrap.textContent = this.latex; // placeholder while loading
     getKatex().then((katexModule) => {
+      if (this._destroyed) return;
       try {
         katexModule.default.render(this.latex, wrap, {
           displayMode: this.displayMode,
@@ -50,6 +57,7 @@ class MathWidget extends WidgetType {
         wrap.classList.add('cm-math-error');
       }
     }).catch(() => {
+      if (this._destroyed) return;
       wrap.textContent = this.latex;
       wrap.classList.add('cm-math-error');
     });

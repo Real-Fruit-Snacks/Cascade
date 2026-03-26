@@ -38,6 +38,7 @@ export interface EditorState {
   tabs: Tab[];
   activeTabIndex: number;
   justSaved: boolean;
+  justSavedSeq: number;
   viewMode: ViewMode;
   editorViewRef: { current: EditorView | null };
   isFileLoading: boolean;

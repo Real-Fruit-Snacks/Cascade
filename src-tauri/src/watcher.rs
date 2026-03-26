@@ -14,6 +14,11 @@ pub struct WatcherState(pub Mutex<Option<Debouncer<RecommendedWatcher, Recommend
 /// instead of globally dropping all events for 1 second.
 pub struct SuppressTimestamp(pub Mutex<HashMap<PathBuf, Instant>>);
 
+/// Number of changed paths above which the watcher treats the batch as a bulk operation
+/// (e.g. a large paste, a file import, or a git checkout) and rebuilds the full tree
+/// instead of applying incremental patches.
+const BULK_THRESHOLD: usize = 50;
+
 /// Remove the entry at `rel_path` from the tree. Returns true if removed.
 fn tree_remove(tree: &mut Vec<FileEntry>, rel_path: &str) -> bool {
     let first_seg = rel_path.split('/').next().unwrap_or("");
@@ -100,6 +105,108 @@ fn make_entry(path: &Path, vault_root: &Path) -> Option<FileEntry> {
     Some(FileEntry { name, path: rel_path, is_dir, children, modified })
 }
 
+/// Handles a bulk-change batch (>= BULK_THRESHOLD paths): rebuilds the full tree and
+/// emits both `vault://tree-updated` and a `bulk` `vault://fs-change` event.
+fn handle_bulk_change(app_handle: &AppHandle, vault_root: &Path) {
+    let cached_tree_state = app_handle.state::<crate::CachedTree>();
+    let new_tree = crate::vault::build_tree_pub(vault_root, vault_root);
+    let mut guard = cached_tree_state.inner().0.lock().unwrap_or_else(|e| e.into_inner());
+    *guard = Some(new_tree.clone());
+    let _ = app_handle.emit("vault://tree-updated", new_tree);
+    // Also emit fs-change so the frontend can refresh open files
+    let _ = app_handle.emit("vault://fs-change", &FsChangeEvent {
+        kind: "bulk".to_string(),
+        path: String::new(),
+    });
+}
+
+/// Updates the FTS index for a single file event.
+///
+/// Reads file content outside the FTS mutex to avoid blocking concurrent
+/// search queries during disk I/O.
+fn handle_fts_update(app_handle: &AppHandle, path: &Path, vault_root: &Path, kind: &str) {
+    if path.extension().and_then(|e| e.to_str()) != Some("md") {
+        return;
+    }
+    let rel = path
+        .strip_prefix(vault_root)
+        .unwrap_or(path)
+        .to_string_lossy()
+        .replace('\\', "/");
+    // Read file content before acquiring the FTS mutex
+    let content = match kind {
+        "create" | "modify" => std::fs::read_to_string(path).ok(),
+        _ => None,
+    };
+    let fts_s = app_handle.state::<crate::fts::FtsState>();
+    let fts_guard = fts_s.0.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(ref conn) = *fts_guard {
+        match kind {
+            "remove" => { crate::fts::remove_file(conn, &rel); }
+            "create" | "modify" => {
+                if let Some(ref text) = content {
+                    crate::fts::update_file(conn, &rel, text);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Applies an incremental patch to the cached file tree for a single file event
+/// and emits `vault://tree-updated`.
+fn handle_tree_patch(app_handle: &AppHandle, path: &Path, vault_root: &Path, kind: &str) {
+    let cached_tree_state = app_handle.state::<crate::CachedTree>();
+    let rel = match path.strip_prefix(vault_root) {
+        Ok(r) => r.to_string_lossy().replace('\\', "/"),
+        Err(_) => return,
+    };
+
+    // Do blocking I/O (make_entry) outside the mutex lock
+    let new_entry = if kind == "create" {
+        make_entry(path, vault_root)
+    } else {
+        None
+    };
+
+    let mut guard = cached_tree_state.inner().0.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(ref mut tree) = *guard {
+        match kind {
+            "remove" => {
+                tree_remove(tree, &rel);
+            }
+            "create" => {
+                if let Some(entry) = new_entry {
+                    let parent_rel = rel.rsplit_once('/').map(|x| x.0).unwrap_or("");
+                    tree_insert(tree, parent_rel, entry);
+                }
+            }
+            _ => {} // modify: no tree structure change
+        }
+        let _ = app_handle.emit("vault://tree-updated", tree.clone());
+    }
+}
+
+/// Processes a single file event: emits `vault://fs-change`, updates FTS, and patches the tree.
+fn handle_single_event(
+    app_handle: &AppHandle,
+    path: &Path,
+    kind: &str,
+    canonical_vault: &Option<PathBuf>,
+) {
+    let path_str = path.to_string_lossy().replace('\\', "/");
+    let fs_event = FsChangeEvent {
+        kind: kind.to_string(),
+        path: path_str,
+    };
+    let _ = app_handle.emit("vault://fs-change", &fs_event);
+
+    if let Some(ref vault_root) = canonical_vault {
+        handle_fts_update(app_handle, path, vault_root, kind);
+        handle_tree_patch(app_handle, path, vault_root, kind);
+    }
+}
+
 pub fn start_watcher(app_handle: AppHandle, vault_path: String) {
     // Drop old watcher first
     {
@@ -128,7 +235,6 @@ pub fn start_watcher(app_handle: AppHandle, vault_path: String) {
             }
 
             let vault_root_state = app_handle_clone.state::<crate::VaultRoot>();
-            let cached_tree_state = app_handle_clone.state::<crate::CachedTree>();
             let canonical_vault = {
                 let g = vault_root_state.inner().0.lock().unwrap_or_else(|e| e.into_inner());
                 g.clone()
@@ -140,21 +246,11 @@ pub fn start_watcher(app_handle: AppHandle, vault_path: String) {
                 .filter(|p| !p.components().any(|c| c.as_os_str().to_string_lossy().starts_with('.')))
                 .count();
 
-            const BULK_THRESHOLD: usize = 50;
-
             if total_paths >= BULK_THRESHOLD {
                 // Bulk change detected (e.g. git checkout) — full tree rebuild
                 if let Some(ref vault_root) = canonical_vault {
-                    let new_tree = crate::vault::build_tree_pub(vault_root, vault_root);
-                    let mut guard = cached_tree_state.inner().0.lock().unwrap_or_else(|e| e.into_inner());
-                    *guard = Some(new_tree.clone());
-                    let _ = app_handle_clone.emit("vault://tree-updated", new_tree);
+                    handle_bulk_change(&app_handle_clone, vault_root);
                 }
-                // Also emit fs-change for the frontend to refresh open files
-                let _ = app_handle_clone.emit("vault://fs-change", &FsChangeEvent {
-                    kind: "bulk".to_string(),
-                    path: String::new(),
-                });
             } else {
                 for event in &events {
                     for path in &event.paths {
@@ -184,74 +280,7 @@ pub fn start_watcher(app_handle: AppHandle, vault_path: String) {
                             }
                         }
 
-                        let path_str = path.to_string_lossy().replace('\\', "/");
-                        let fs_event = FsChangeEvent {
-                            kind: kind.to_string(),
-                            path: path_str,
-                        };
-                        let _ = app_handle_clone.emit("vault://fs-change", &fs_event);
-
-                        // Incremental FTS update
-                        // Read file content BEFORE acquiring the FTS mutex to avoid
-                        // blocking concurrent search queries during disk I/O
-                        if let Some(ref vault_root) = canonical_vault {
-                            if path.extension().and_then(|e| e.to_str()) == Some("md") {
-                                let rel = path.strip_prefix(vault_root)
-                                    .unwrap_or(path)
-                                    .to_string_lossy()
-                                    .replace('\\', "/");
-                                let content = match kind {
-                                    "create" | "modify" => std::fs::read_to_string(path).ok(),
-                                    _ => None,
-                                };
-                                let fts_s = app_handle_clone.state::<crate::fts::FtsState>();
-                                let fts_guard = fts_s.0.lock().unwrap_or_else(|e| e.into_inner());
-                                if let Some(ref conn) = *fts_guard {
-                                    match kind {
-                                        "remove" => { crate::fts::remove_file(conn, &rel); }
-                                        "create" | "modify" => {
-                                            if let Some(ref text) = content {
-                                                crate::fts::update_file(conn, &rel, text);
-                                            }
-                                        }
-                                        _ => {}
-                                    }
-                                }
-                                drop(fts_guard);
-                            }
-                        }
-
-                        // Incremental tree patch for create/remove
-                        if let Some(ref vault_root) = canonical_vault {
-                            let rel = match path.strip_prefix(vault_root) {
-                                Ok(r) => r.to_string_lossy().replace('\\', "/"),
-                                Err(_) => continue,
-                            };
-
-                            // T4: Do blocking I/O (make_entry) outside the mutex lock
-                            let new_entry = if kind == "create" {
-                                make_entry(path, vault_root)
-                            } else {
-                                None
-                            };
-
-                            let mut guard = cached_tree_state.inner().0.lock().unwrap_or_else(|e| e.into_inner());
-                            if let Some(ref mut tree) = *guard {
-                                match kind {
-                                    "remove" => {
-                                        tree_remove(tree, &rel);
-                                    }
-                                    "create" => {
-                                        if let Some(entry) = new_entry {
-                                            let parent_rel = rel.rsplit_once('/').map(|x| x.0).unwrap_or("");
-                                            tree_insert(tree, parent_rel, entry);
-                                        }
-                                    }
-                                    _ => {} // modify: no tree structure change
-                                }
-                                let _ = app_handle_clone.emit("vault://tree-updated", tree.clone());
-                            }
-                        }
+                        handle_single_event(&app_handle_clone, path, kind, &canonical_vault);
                     }
                 }
             }

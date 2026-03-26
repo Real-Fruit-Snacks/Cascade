@@ -31,12 +31,18 @@ function getMermaid() {
 let mermaidIdCounter = 0;
 
 class MermaidWidget extends WidgetType {
+  private _destroyed = false;
+
   constructor(readonly code: string) {
     super();
   }
 
   eq(other: MermaidWidget) {
     return this.code === other.code;
+  }
+
+  destroy() {
+    this._destroyed = true;
   }
 
   toDOM() {
@@ -52,7 +58,9 @@ class MermaidWidget extends WidgetType {
 
     getMermaid()
       .then(async (m) => {
+        if (this._destroyed) return;
         const { svg } = await m.default.render(id, this.code);
+        if (this._destroyed) return;
         // Parse SVG safely via DOMParser instead of raw innerHTML
         const parser = new DOMParser();
         const doc = parser.parseFromString(svg, 'image/svg+xml');
@@ -63,6 +71,7 @@ class MermaidWidget extends WidgetType {
         wrap.appendChild(document.importNode(svgEl, true));
       })
       .catch(() => {
+        if (this._destroyed) return;
         wrap.textContent = 'Mermaid render error';
         wrap.classList.add('cm-mermaid-error');
       });

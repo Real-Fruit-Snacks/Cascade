@@ -1,4 +1,8 @@
 // Typed event bus for cascade:* DOM events.
+// NOTE: This event bus dispatches and listens on `window`, making all events
+// accessible to plugins and any code with access to the window object.
+// Plugins should use these events for inter-component communication rather
+// than coupling directly to internal stores.
 
 export interface CascadeEventMap {
   'cascade:new-file': void;

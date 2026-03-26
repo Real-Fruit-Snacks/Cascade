@@ -71,7 +71,7 @@ export function PdfViewer({ filePath, vaultPath }: PdfViewerProps) {
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed to load PDF');
+        setError(err instanceof Error ? err.message : t('pdfViewer.failedToLoad'));
         setLoading(false);
       });
 
@@ -240,7 +240,7 @@ export function PdfViewer({ filePath, vaultPath }: PdfViewerProps) {
   if (error) {
     return (
       <div className="flex flex-col flex-1 items-center justify-center gap-2" style={{ backgroundColor: 'var(--ctp-base)' }}>
-        <span className="text-sm" style={{ color: 'var(--ctp-red)' }}>Failed to load PDF</span>
+        <span className="text-sm" style={{ color: 'var(--ctp-red)' }}>{t('pdfViewer.failedToLoad')}</span>
         <span className="text-xs" style={{ color: 'var(--ctp-overlay0)' }}>{error}</span>
       </div>
     );
@@ -249,7 +249,7 @@ export function PdfViewer({ filePath, vaultPath }: PdfViewerProps) {
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center" style={{ backgroundColor: 'var(--ctp-base)' }}>
-        <span className="text-sm" style={{ color: 'var(--ctp-overlay1)' }}>Loading PDF...</span>
+        <span className="text-sm" style={{ color: 'var(--ctp-overlay1)' }}>{t('pdfViewer.loading')}</span>
       </div>
     );
   }
@@ -361,6 +361,7 @@ export function PdfViewer({ filePath, vaultPath }: PdfViewerProps) {
               data-page={pageNum}
               ref={(el) => {
                 if (el) pageObserver.current?.observe(el);
+                // cleanup handled by disconnect on unmount
               }}
               className="shadow-lg"
               style={{

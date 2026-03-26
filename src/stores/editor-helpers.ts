@@ -49,6 +49,8 @@ export async function performSave(
       if (collabState.role === 'client') {
         // Client: skip disk write, just clear draft and mark clean
         clearDraft(tab.path);
+        useVaultStore.getState().updateFileTags(tab.path, tab.content);
+        useVaultStore.getState().updateFileLinks(tab.path, tab.content);
         return { ...tab, savedContent: tab.content, isDirty: false };
       } else {
         // Host: write the Y.Doc content to disk instead of the editor buffer

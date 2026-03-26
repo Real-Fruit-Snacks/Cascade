@@ -102,7 +102,7 @@ Built with Tauri, React, and CodeMirror.
 - GitHub sync for vault backup and collaboration
 
 **Import & Export**
-- Import from Obsidian, Notion, Logseq, Roam Research, and plain markdown
+- Import from Obsidian, Notion, Bear, Roam Research, and plain markdown
 - Export to Markdown, HTML, or PDF
 - Batch export with customizable options
 
@@ -256,11 +256,14 @@ cascade/
 | State    | [Zustand 5](https://zustand.docs.pmnd.rs/) |
 | i18n     | [react-i18next](https://react.i18next.com/) |
 | Themes   | [Catppuccin](https://catppuccin.com/) + 17 more |
-| Testing  | [Playwright](https://playwright.dev/) |
+| Testing  | [Vitest, Playwright](https://playwright.dev/) |
 
 ### Running Tests
 
 ```bash
+# Run unit tests
+npm test
+
 # Start the app first
 npm run tauri dev
 

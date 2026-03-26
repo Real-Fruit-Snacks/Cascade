@@ -177,7 +177,7 @@ pub(super) fn strip_trash_timestamp(name: &str) -> String {
         let before_ext = &name[..dot_ext];
         if let Some(dot_ts) = before_ext.rfind('.') {
             let candidate = &before_ext[dot_ts + 1..];
-            if candidate.len() >= 10 && candidate.chars().all(|c| c.is_ascii_digit()) {
+            if candidate.len() == 13 && candidate.chars().all(|c| c.is_ascii_digit()) {
                 return format!("{}{}", &before_ext[..dot_ts], &name[dot_ext..]);
             }
         }

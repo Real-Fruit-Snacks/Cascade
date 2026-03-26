@@ -39,7 +39,8 @@ export function SplitPaneContainer() {
   }, []);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+    const onMouseMove = (e: MouseEvent) => {
       if (!dragging.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       let newRatio: number;
@@ -51,22 +52,18 @@ export function SplitPaneContainer() {
       newRatio = Math.max(MIN_PANE_PERCENT, Math.min(100 - MIN_PANE_PERCENT, newRatio));
       setRatio(newRatio);
     };
-
-    const handleMouseUp = () => {
-      if (dragging.current) {
-        dragging.current = false;
-        document.body.style.userSelect = '';
-        setIsDragging(false);
-      }
+    const onMouseUp = () => {
+      dragging.current = false;
+      document.body.style.userSelect = '';
+      setIsDragging(false);
     };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
     };
-  }, [splitDirection]);
+  }, [isDragging, splitDirection]);
 
   // Single pane mode — no split
   if (paneCount < 2) {

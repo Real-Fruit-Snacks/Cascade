@@ -35,12 +35,13 @@ export async function initCollab(): Promise<void> {
   // Listen for presence change window events (split-brain detection)
   window.addEventListener('cascade:collab-presence-changed', handlePresenceChange as EventListener);
 
-  // Stop collab session on window/app close (fire-and-forget)
+  // Stop collab session on window/app close — synchronous only, async won't complete in beforeunload
   window.addEventListener('beforeunload', () => {
-    const collab = useCollabStore.getState();
-    if (collab.active) {
-      cmd.stopCollab().catch(() => {});
+    if (provider) {
+      provider.destroy();
+      provider = null;
     }
+    currentPassword = '';
   });
 }
 

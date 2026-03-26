@@ -121,130 +121,134 @@ fn file_has_tag(content: &str, tag: &str) -> bool {
 }
 
 #[tauri::command]
-pub fn query_properties(vault_root: String, query: PropertyQuery) -> Result<QueryResult, CascadeError> {
-    let root = PathBuf::from(&vault_root)
-        .canonicalize()
-        .map_err(|_| CascadeError::NotADirectory(vault_root.clone()))?;
-    if !root.is_dir() {
-        return Err(CascadeError::NotADirectory(vault_root));
-    }
-
-    // Determine folder filter base path
-    let folder_filter: Option<PathBuf> = query.from_folder.as_ref().map(|f| root.join(f));
-
-    let mut rows: Vec<QueryRow> = Vec::new();
-
-    for entry in WalkDir::new(&root)
-        .follow_links(false)
-        .into_iter()
-        .filter_entry(|e| !e.file_name().to_string_lossy().starts_with('.'))
-        .filter_map(|e| e.ok())
-    {
-        if !entry.file_type().is_file() {
-            continue;
-        }
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("md") {
-            continue;
+pub async fn query_properties(vault_root: String, query: PropertyQuery) -> Result<QueryResult, CascadeError> {
+    tokio::task::spawn_blocking(move || -> Result<QueryResult, CascadeError> {
+        let root = PathBuf::from(&vault_root)
+            .canonicalize()
+            .map_err(|_| CascadeError::NotADirectory(vault_root.clone()))?;
+        if !root.is_dir() {
+            return Err(CascadeError::NotADirectory(vault_root));
         }
 
-        // Apply folder filter
-        if let Some(ref folder) = folder_filter {
-            if !path.starts_with(folder) {
+        // Determine folder filter base path
+        let folder_filter: Option<PathBuf> = query.from_folder.as_ref().map(|f| root.join(f));
+
+        let mut rows: Vec<QueryRow> = Vec::new();
+
+        for entry in WalkDir::new(&root)
+            .follow_links(false)
+            .into_iter()
+            .filter_entry(|e| !e.file_name().to_string_lossy().starts_with('.'))
+            .filter_map(|e| e.ok())
+        {
+            if !entry.file_type().is_file() {
                 continue;
             }
-        }
-
-        let rel_path = path
-            .strip_prefix(&root)
-            .unwrap_or(path)
-            .to_string_lossy()
-            .replace('\\', "/");
-
-        let content = match std::fs::read_to_string(path) {
-            Ok(c) => c,
-            Err(_) => continue,
-        };
-
-        // Apply tag filter
-        if let Some(ref tag) = query.from_tag {
-            if !file_has_tag(&content, tag) {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
                 continue;
             }
-        }
 
-        // Parse properties
-        let props = if let Some(fm_caps) = FRONTMATTER_RE.captures(&content) {
-            let yaml = fm_caps.get(1).unwrap().as_str();
-            parse_frontmatter_properties(yaml)
-        } else {
-            HashMap::new()
-        };
-
-        // Apply WHERE filters
-        if !query.filters.iter().all(|f| apply_filter(&props, f)) {
-            continue;
-        }
-
-        // Build values map for requested fields
-        let file_name = path
-            .file_stem()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_default();
-
-        let values: HashMap<String, String> = if query.fields.is_empty() {
-            props.iter().map(|(k, v)| (k.clone(), property_value_to_string(v))).collect()
-        } else {
-            query
-                .fields
-                .iter()
-                .map(|field| {
-                    let val = props
-                        .get(field)
-                        .map(|v| property_value_to_string(v))
-                        .unwrap_or_default();
-                    (field.clone(), val)
-                })
-                .collect()
-        };
-
-        rows.push(QueryRow {
-            file_path: rel_path,
-            file_name,
-            values,
-        });
-    }
-
-    // Sort
-    if let Some(ref sort_field) = query.sort_by {
-        let descending = query
-            .sort_order
-            .as_deref()
-            .map(|o| o.eq_ignore_ascii_case("desc"))
-            .unwrap_or(false);
-
-        rows.sort_by(|a, b| {
-            let av = a.values.get(sort_field).map(|s| s.as_str()).unwrap_or("");
-            let bv = b.values.get(sort_field).map(|s| s.as_str()).unwrap_or("");
-            // Try numeric comparison first
-            match (av.parse::<f64>(), bv.parse::<f64>()) {
-                (Ok(an), Ok(bn)) => {
-                    let ord = an.partial_cmp(&bn).unwrap_or(std::cmp::Ordering::Equal);
-                    if descending { ord.reverse() } else { ord }
-                }
-                _ => {
-                    let ord = av.cmp(bv);
-                    if descending { ord.reverse() } else { ord }
+            // Apply folder filter
+            if let Some(ref folder) = folder_filter {
+                if !path.starts_with(folder) {
+                    continue;
                 }
             }
-        });
-    }
 
-    // Apply limit
-    let total = rows.len() as u32;
-    if let Some(limit) = query.limit {
-        rows.truncate(limit as usize);
-    }
+            let rel_path = path
+                .strip_prefix(&root)
+                .unwrap_or(path)
+                .to_string_lossy()
+                .replace('\\', "/");
 
-    Ok(QueryResult { rows, total })
+            let content = match std::fs::read_to_string(path) {
+                Ok(c) => c,
+                Err(_) => continue,
+            };
+
+            // Apply tag filter
+            if let Some(ref tag) = query.from_tag {
+                if !file_has_tag(&content, tag) {
+                    continue;
+                }
+            }
+
+            // Parse properties
+            let props = if let Some(fm_caps) = FRONTMATTER_RE.captures(&content) {
+                let yaml = fm_caps.get(1).unwrap().as_str();
+                parse_frontmatter_properties(yaml)
+            } else {
+                HashMap::new()
+            };
+
+            // Apply WHERE filters
+            if !query.filters.iter().all(|f| apply_filter(&props, f)) {
+                continue;
+            }
+
+            // Build values map for requested fields
+            let file_name = path
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default();
+
+            let values: HashMap<String, String> = if query.fields.is_empty() {
+                props.iter().map(|(k, v)| (k.clone(), property_value_to_string(v))).collect()
+            } else {
+                query
+                    .fields
+                    .iter()
+                    .map(|field| {
+                        let val = props
+                            .get(field)
+                            .map(|v| property_value_to_string(v))
+                            .unwrap_or_default();
+                        (field.clone(), val)
+                    })
+                    .collect()
+            };
+
+            rows.push(QueryRow {
+                file_path: rel_path,
+                file_name,
+                values,
+            });
+        }
+
+        // Sort
+        if let Some(ref sort_field) = query.sort_by {
+            let descending = query
+                .sort_order
+                .as_deref()
+                .map(|o| o.eq_ignore_ascii_case("desc"))
+                .unwrap_or(false);
+
+            rows.sort_by(|a, b| {
+                let av = a.values.get(sort_field).map(|s| s.as_str()).unwrap_or("");
+                let bv = b.values.get(sort_field).map(|s| s.as_str()).unwrap_or("");
+                // Try numeric comparison first
+                match (av.parse::<f64>(), bv.parse::<f64>()) {
+                    (Ok(an), Ok(bn)) => {
+                        let ord = an.partial_cmp(&bn).unwrap_or(std::cmp::Ordering::Equal);
+                        if descending { ord.reverse() } else { ord }
+                    }
+                    _ => {
+                        let ord = av.cmp(bv);
+                        if descending { ord.reverse() } else { ord }
+                    }
+                }
+            });
+        }
+
+        // Apply limit
+        let total = rows.len() as u32;
+        if let Some(limit) = query.limit {
+            rows.truncate(limit as usize);
+        }
+
+        Ok(QueryResult { rows, total })
+    })
+    .await
+    .map_err(|e| CascadeError::InvalidPath(e.to_string()))?
 }

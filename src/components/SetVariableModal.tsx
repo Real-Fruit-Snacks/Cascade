@@ -26,22 +26,13 @@ export function SetVariableModal({ open, variableName, currentValue, onClose, on
   const trapKeyDown = useFocusTrap(dialogRef, open);
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-  const [_viewport, setViewport] = useState({ w: window.innerWidth, h: window.innerHeight });
 
   const sidebarPosition = useSettingsStore((s) => s.sidebarPosition);
   const focusModeActive = useEditorStore((s) => s.focusModeActive);
 
   useEffect(() => {
-    if (!open) return;
-    const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [open]);
-
-  useEffect(() => {
     if (open) {
       setValue(currentValue);
-      setViewport({ w: window.innerWidth, h: window.innerHeight });
       requestAnimationFrame(() => {
         inputRef.current?.focus();
         inputRef.current?.select();
@@ -105,7 +96,7 @@ export function SetVariableModal({ open, variableName, currentValue, onClose, on
         onKeyDown={trapKeyDown}
         role="dialog"
         aria-modal="true"
-        aria-label="Set Variable"
+        aria-label={t('setVariableModal.title')}
         style={{
           position: 'fixed',
           zIndex: 50,

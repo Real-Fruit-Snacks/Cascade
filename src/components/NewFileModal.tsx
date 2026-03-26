@@ -79,7 +79,7 @@ export function NewFileModal({ open, onClose, onCreate }: NewFileModalProps) {
         onKeyDown={trapKeyDown}
         role="dialog"
         aria-modal="true"
-        aria-label="New File"
+        aria-label={t('newFileModal.title')}
         className="flex flex-col w-full rounded-xl overflow-hidden modal-content"
         style={{
           maxWidth: '28rem',

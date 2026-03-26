@@ -43,10 +43,10 @@ describe('update-checker', () => {
 
   describe('fetchReleaseNotes', () => {
     it('returns release body on success', async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue({
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ body: '## Bug Fixes\n- Fixed stuff' }),
-      });
+      } as Response);
 
       const result = await fetchReleaseNotes('0.2.0');
       expect(result).toBe('## Bug Fixes\n- Fixed stuff');
@@ -57,20 +57,20 @@ describe('update-checker', () => {
     });
 
     it('returns null on 404', async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: false, status: 404 } as Response);
       expect(await fetchReleaseNotes('99.99.99')).toBeNull();
     });
 
     it('returns null on network error', async () => {
-      globalThis.fetch = vi.fn().mockRejectedValue(new Error('network down'));
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network down'));
       expect(await fetchReleaseNotes('0.2.0')).toBeNull();
     });
 
     it('returns null when body is missing', async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue({
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({}),
-      });
+      } as Response);
       expect(await fetchReleaseNotes('0.2.0')).toBeNull();
     });
   });

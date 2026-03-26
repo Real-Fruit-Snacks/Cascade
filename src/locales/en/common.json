@@ -71,7 +71,11 @@
     "keyboardShortcuts": "Keyboard Shortcuts",
     "syntax": "Syntax"
   },
+  "variables": {
+    "title": "Variables"
+  },
   "newFileModal": {
+    "title": "New File",
     "hint": "Enter a file name or path. The .md extension is added automatically.",
     "invalidChars": "File name contains invalid characters: < > : \" | ? *"
   },
@@ -86,6 +90,7 @@
     "saveTitleHint": "Save (Enter)"
   },
   "setVariableModal": {
+    "title": "Set Variable",
     "setValueFor": "Set value for",
     "enterValuePlaceholder": "Enter value..."
   },

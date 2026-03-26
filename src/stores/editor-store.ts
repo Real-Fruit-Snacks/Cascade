@@ -19,12 +19,32 @@ const log = createLogger('EditorStore');
 
 let openFileSeq = 0;
 
+function scrollToPositionAfterDelay(
+  get: () => EditorState & EditorActions & EditorDerived,
+  set: (partial: Partial<EditorState>) => void,
+  findPosition: (view: EditorView, target: string) => number | null,
+  target: string,
+  clearField: keyof EditorState,
+): void {
+  setTimeout(() => {
+    const view = get().editorViewRef.current;
+    if (!view) return;
+    const pos = findPosition(view, target);
+    if (pos != null) {
+      view.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(pos, { y: 'center' }) });
+      view.focus();
+    }
+    set({ [clearField]: null } as Partial<EditorState>);
+  }, 100);
+}
+
 export const useEditorStore = create<EditorState & EditorActions & EditorDerived>((set, get) => ({
   // Core state
   tabs: [],
   activeTabIndex: -1,
   justSaved: false,
-  viewMode: useSettingsStore.getState().defaultViewMode,
+  justSavedSeq: 0,
+  viewMode: 'live' as ViewMode,
   editorViewRef: { current: null },
   isFileLoading: false,
   pendingScrollLine: null,
@@ -73,35 +93,13 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
         const scrollHeading = get().pendingScrollHeading;
         if (scrollHeading !== null) {
           set({ pendingScrollHeading: null });
-          setTimeout(() => {
-            const view = get().editorViewRef.current;
-            if (!view) return;
-            const pos = findHeadingPosition(view, scrollHeading);
-            if (pos !== null) {
-              view.dispatch({
-                selection: { anchor: pos },
-                effects: EditorView.scrollIntoView(pos, { y: 'center' }),
-              });
-              view.focus();
-            }
-          }, 100);
+          scrollToPositionAfterDelay(get, set, findHeadingPosition, scrollHeading, 'pendingScrollHeading');
         }
         // If there's a pending block ID, scroll to it
         const scrollBlock = get().pendingScrollBlockId;
         if (scrollBlock !== null) {
           set({ pendingScrollBlockId: null });
-          setTimeout(() => {
-            const view = get().editorViewRef.current;
-            if (!view) return;
-            const pos = findBlockIdPosition(view, scrollBlock);
-            if (pos !== null) {
-              view.dispatch({
-                selection: { anchor: pos },
-                effects: EditorView.scrollIntoView(pos, { y: 'center' }),
-              });
-              view.focus();
-            }
-          }, 100);
+          scrollToPositionAfterDelay(get, set, findBlockIdPosition, scrollBlock, 'pendingScrollBlockId');
         }
       }
       return;
@@ -399,8 +397,11 @@ export const useEditorStore = create<EditorState & EditorActions & EditorDerived
     );
     const dirtyPaths = new Set(current.dirtyPaths);
     dirtyPaths.delete(tab.path);
-    set({ tabs: newTabs, justSaved: true, dirtyPaths, ...derived(newTabs, current.activeTabIndex) });
-    setTimeout(() => set({ justSaved: false }), 1500);
+    const seq = get().justSavedSeq + 1;
+    set({ tabs: newTabs, justSaved: true, justSavedSeq: seq, dirtyPaths, ...derived(newTabs, current.activeTabIndex) });
+    setTimeout(() => {
+      if (get().justSavedSeq === seq) set({ justSaved: false });
+    }, 1500);
   },
 
   saveAllDirty: async (vaultRoot: string) => {

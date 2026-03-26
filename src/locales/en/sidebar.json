@@ -19,7 +19,7 @@
     "graphView": "Graph View (Ctrl+Shift+G)",
     "variables": "Variables",
     "search": "Search (Ctrl+Shift+F)",
-    "commandPalette": "Command Palette (Ctrl+K)",
+    "commandPalette": "Command Palette (Ctrl+P)",
     "closeVault": "Close Vault",
     "settings": "Settings (Ctrl+,)"
   },

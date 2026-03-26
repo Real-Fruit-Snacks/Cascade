@@ -129,6 +129,26 @@ fn make_push_options(auth: &SyncAuth) -> PushOptions<'_> {
     po
 }
 
+/// Detect the default branch name from the remote. Falls back to "main".
+fn detect_default_branch(repo: &Repository) -> String {
+    // Try to read the remote HEAD reference
+    if let Ok(remote_head) = repo.find_reference("refs/remotes/origin/HEAD") {
+        if let Some(target) = remote_head.symbolic_target() {
+            if let Some(branch) = target.strip_prefix("refs/remotes/origin/") {
+                return branch.to_string();
+            }
+        }
+    }
+    // Fallback: check if "main" or "master" exists
+    if repo.find_reference("refs/remotes/origin/main").is_ok() {
+        return "main".to_string();
+    }
+    if repo.find_reference("refs/remotes/origin/master").is_ok() {
+        return "master".to_string();
+    }
+    "main".to_string()
+}
+
 fn signature() -> Result<Signature<'static>, CascadeError> {
     Signature::now("Cascade", "cascade@localhost")
         .map_err(|e| CascadeError::Git(format!("Failed to create git signature: {e}")))
@@ -360,7 +380,9 @@ pub fn git_sync(vault_path: String, ssh_key_path: String) -> Result<SyncResult, 
         .unwrap_or_default()
         .to_string();
     let auth = resolve_auth(&remote_url, &ssh_key_path)?;
+    let branch = detect_default_branch(&repo);
     sync_log::debug(&path, &format!("Auth method: {}", if is_ssh_url(&remote_url) { "SSH" } else { "HTTPS" }));
+    sync_log::debug(&path, &format!("Default branch: {}", branch));
     let mut conflicts = Vec::new();
     let mut conflict_details = Vec::new();
 
@@ -368,7 +390,7 @@ pub fn git_sync(vault_path: String, ssh_key_path: String) -> Result<SyncResult, 
     {
         let mut remote = repo.find_remote("origin")?;
         let mut fo = make_fetch_options(&auth);
-        if let Err(e) = remote.fetch(&["main"], Some(&mut fo), None) {
+        if let Err(e) = remote.fetch(&[&branch as &str], Some(&mut fo), None) {
             // Network/auth failure — commit locally and report offline
             eprintln!("[cascade sync] fetch failed: {e}");
             sync_log::error(&path, &format!("Fetch failed: {e}"));
@@ -384,17 +406,17 @@ pub fn git_sync(vault_path: String, ssh_key_path: String) -> Result<SyncResult, 
     }
 
     // 2. Merge
-    let fetch_head = repo.find_reference("refs/remotes/origin/main");
+    let fetch_head = repo.find_reference(&format!("refs/remotes/origin/{}", branch));
     if let Ok(fetch_ref) = fetch_head {
         let fetch_commit = repo.reference_to_annotated_commit(&fetch_ref)?;
         let (analysis, _) = repo.merge_analysis(&[&fetch_commit])?;
 
         if analysis.is_fast_forward() {
-            let refname = "refs/heads/main";
-            if let Ok(mut reference) = repo.find_reference(refname) {
+            let refname = format!("refs/heads/{}", branch);
+            if let Ok(mut reference) = repo.find_reference(&refname) {
                 reference.set_target(fetch_commit.id(), "fast-forward")?;
             }
-            repo.set_head(refname)?;
+            repo.set_head(&refname)?;
             repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
         } else if analysis.is_normal() {
             let their_commit = repo.find_commit(fetch_commit.id())?;
@@ -499,7 +521,8 @@ pub fn git_sync(vault_path: String, ssh_key_path: String) -> Result<SyncResult, 
     let push_status = {
         let mut remote = repo.find_remote("origin")?;
         let mut po = make_push_options(&auth);
-        match remote.push(&["refs/heads/main:refs/heads/main"], Some(&mut po)) {
+        let push_refspec = format!("refs/heads/{0}:refs/heads/{0}", branch);
+        match remote.push(&[&push_refspec as &str], Some(&mut po)) {
             Ok(_) => {
                 if committed.is_empty() && conflicts.is_empty() {
                     "nothing_to_push"
@@ -599,9 +622,11 @@ pub fn git_status(vault_path: String) -> Result<GitStatus, CascadeError> {
 
     let mut unpushed = 0u32;
     if has_remote {
+        let default_branch = detect_default_branch(&repo);
+        let remote_ref_name = format!("refs/remotes/origin/{}", default_branch);
         if let (Ok(local), Ok(remote_ref)) = (
             repo.revparse_single("HEAD"),
-            repo.revparse_single("refs/remotes/origin/main"),
+            repo.revparse_single(&remote_ref_name),
         ) {
             if let Ok(mut revwalk) = repo.revwalk() {
                 let _ = revwalk.push(local.id());

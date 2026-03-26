@@ -10,6 +10,7 @@ import { SyncStatusIndicator } from './SyncStatusIndicator';
 // B2: Lazily loaded only when vim mode is enabled
 let _getCM: typeof import('@replit/codemirror-vim').getCM | null = null;
 let _getCMLoading = false;
+let _getCMFailed = false;
 
 // R5: Shared DOM listener manager — one set of listeners shared across all status bar hooks
 const sharedEditorSub = {
@@ -89,13 +90,14 @@ export function useVimMode(): string | null {
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
+    if (_getCMFailed) return;
     if (vimEnabled && !_getCM && !_getCMLoading) {
       _getCMLoading = true;
       import('@replit/codemirror-vim').then((m) => {
         _getCM = m.getCM;
         _getCMLoading = false;
         forceUpdate((n) => n + 1);
-      }).catch(() => { _getCMLoading = false; });
+      }).catch(() => { _getCMLoading = false; _getCMFailed = true; });
     }
   }, [vimEnabled]);
 

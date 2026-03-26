@@ -1,5 +1,6 @@
 import type { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
+import DOMPurify from 'dompurify';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { useVaultStore } from '../../stores/vault-store';
 import { useEditorStore } from '../../stores/editor-store';
@@ -254,8 +255,15 @@ const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-const isSafeUrl = (url: string): boolean =>
-  !/^(javascript|data|vbscript):/i.test(url.trim().toLowerCase());
+const isSafeUrl = (url: string): boolean => {
+  const trimmed = url.trim().replace(/[\x00-\x1f]/g, '').toLowerCase();
+  if (!trimmed) return false;
+  if (/^https?:/i.test(trimmed)) return true;
+  if (/^mailto:/i.test(trimmed)) return true;
+  if (/^asset:/i.test(trimmed)) return true;
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return true;
+  return false;
+};
 
 /** Render inline markdown (bold, italic, code, links, etc.) to HTML. */
 export function renderInlineMarkdown(text: string): string {
@@ -293,7 +301,7 @@ export function renderInlineMarkdown(text: string): string {
     `<span style="color:var(--ctp-accent);text-decoration:underline;text-underline-offset:2px;cursor:pointer">${alias || target}</span>`);
   // Tags
   r = r.replace(/(^|\s)#([a-zA-Z][\w/-]*)/g, '$1<span style="color:var(--ctp-accent);font-size:0.9em">#$2</span>');
-  return r;
+  return DOMPurify.sanitize(r);
 }
 
 /** Render markdown to HTML matching the editor's live preview styles. */
@@ -380,7 +388,7 @@ export function renderMarkdownPreview(md: string): string {
   if (inCode) {
     out.push(`<pre style="background:var(--ctp-surface0);padding:0.8em 1em;border-radius:6px;overflow-x:auto;font-size:0.9em;margin:4px 0;line-height:1.5"><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
   }
-  return out.join('\n');
+  return DOMPurify.sanitize(out.join('\n'));
 }
 
 // ── General helpers ────────────────────────────────────────

@@ -4,6 +4,76 @@ All notable changes to Cascade will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.4] — 2026-03-25
+
+### Security
+
+- **DOMPurify sanitization** — All `innerHTML` assignments from markdown rendering (tables, transclusions, inline preview) now pass through DOMPurify. Added DOMPurify to FeatureWiki and plugin README renderer as defense-in-depth.
+- **URL allowlist** — `isSafeUrl` switched from denylist (`javascript:`, `data:`, `vbscript:`) to allowlist (only `http:`, `https:`, `mailto:`, `asset:`, and relative URLs permitted). Blocks `blob:`, whitespace-obfuscated protocols, and all unknown schemes.
+- **Plugin integrity fail-closed** — Plugins without `.integrity.json` are now rejected by default instead of silently allowed.
+- **Collab server hardened** — Auth timeout (10s), per-IP rate limiting (5 attempts), message size limits (10MB), and password cleared from memory after collab stops.
+- **Path traversal fixes** — Added validation to `sync_log`, `write_settings_file` (restricted to `.cascade/`), and plugin integrity `rel_path`. History path sanitization uses component-based `..` check instead of substring match.
+- **Export path validation** — `export_file` and `export_binary` now require absolute paths.
+- **Asset protocol narrowed** — Removed `$DESKTOP/**` and `$DOWNLOAD/**` from asset protocol scope.
+- **Regex size limit** — Search queries in regex mode capped at 1000 characters to prevent ReDoS.
+- **Plugin CSP** — Removed `data:` from plugin iframe `img-src` directive.
+- **CI supply chain** — All `actions/checkout` and `actions/setup-node` pinned to commit SHAs.
+- **Website CSP** — Added Content-Security-Policy to GitHub Pages site, moved inline `onclick` handlers to `addEventListener`, added ARIA attributes to FAQ accordion.
+
+### Performance
+
+- **Image preview refactored** — Uses module-level `StateField` with `Facet` to avoid recreation on compartment reconfiguration. No more redundant decoration rebuilds on settings changes.
+- **Async indexer** — `build_index` and `query_properties` now use `tokio::task::spawn_blocking` to avoid blocking the main thread on large vaults.
+- **Conditional event listeners** — `SplitPaneContainer` and `Sidebar` only register `mousemove`/`mouseup` listeners during active drag instead of permanently.
+- **Selector consolidation** — `EditorPane` consolidated from 4 separate `useShallow` selectors to 1.
+- **E2E test speed** — Replaced ~60-80s of hardcoded `waitForTimeout` calls across all 11 E2E test files with proper Playwright auto-waiting.
+- **Table editor overflow fix** — `Math.max(...spread)` replaced with `reduce` to prevent stack overflow on large tables.
+
+### Bug Fixes
+
+- **Collab server bind address** — Changed from `127.0.0.1` to `0.0.0.0` so LAN collaboration actually works (the LAN IP was advertised but connections were refused).
+- **Git sync branch detection** — Auto-detects remote default branch (`main`, `master`, etc.) instead of hardcoding `main`.
+- **Git conflict path** — `.replace(".md", ".conflict.md")` now uses `rfind` to replace only the last occurrence.
+- **OnboardingScreen CSS** — Fixed camelCase-to-CSS-variable conversion (`baseFontSize` produced `basefontsize` instead of `base-font-size`).
+- **Keyboard shortcuts** — Meta-only shortcuts can now match (was broken by incorrect ternary logic).
+- **Confirm dialog leak** — Rapid double-show no longer leaves the first promise hanging forever.
+- **Canvas undo corruption** — Undo snapshots now use `structuredClone` for deep copies instead of shallow spread.
+- **Editor store init** — `viewMode` no longer reads from settings store at module load time (which could capture the wrong default).
+- **Vault store side effect** — `localStorage.setItem` moved outside Zustand `set()` callback to prevent quota errors from crashing state updates.
+- **Properties widget focus** — Replaced module-level `_focusNewKey` flag with per-view `WeakMap` to prevent focus hijacking in split panes.
+- **Async widget guards** — Math and Mermaid preview widgets check `_destroyed` flag after async render to avoid mutating detached DOM.
+- **Timer leak** — `contentUpdateTimerRef` cleared on editor destroy.
+- **Spellcheck vault switch** — Added `resetDictionary()` export; async init guards against destroyed views.
+- **Lifecycle event validation** — Collab lifecycle event paths validated for `..` traversal.
+- **Windows filenames** — `sanitize_filename` now rejects Windows reserved device names (CON, PRN, etc.).
+- **Trash timestamp** — `strip_trash_timestamp` only matches exactly 13-digit segments.
+- **History path check** — Uses component-based `..` detection instead of substring `contains("..")`.
+- **Dialog strings** — Tab close dialog comparison made locale-safe.
+
+### Testing
+
+- **61 new unit tests** — Added test suites for `plugin-registry`, `cascade-events`, `logger`, and `showErrorToast`. Total: 361 tests across 20 files.
+- **Test pollution fixed** — `globalThis.fetch` assignments replaced with `vi.spyOn` for proper cleanup.
+- **E2E assertions added** — Headings, formatting, code blocks, HR, and images tests now actually assert instead of just logging.
+- **Edge case coverage** — Added tests for non-existent collab doc paths, multi-dot filenames, XSS via wiki links.
+- **Unmocked invoke fails loudly** — `test-setup.ts` now rejects unmocked Tauri invoke calls with a clear error.
+
+### Documentation
+
+- **README** — Fixed import sources (Bear instead of Logseq), added Vitest to tech stack, added `npm test` to testing docs.
+- **CHANGELOG** — Fixed duplicate v0.3.2 date.
+- **AGENTS.md** — Updated stale version from 0.1.0 to 0.3.3.
+- **Sidebar locale** — Fixed Command Palette shortcut from Ctrl+K to Ctrl+P.
+- **Website** — Self-hosted fonts (removed Google Fonts dependency), added mobile hamburger menu, added ARIA accessibility attributes.
+
+### Code Quality
+
+- **Watcher refactored** — 145-line debouncer closure extracted into 4 named functions.
+- **MergeConflictDialog i18n** — All hardcoded English strings replaced with translation keys.
+- **Cascade events ref pattern** — `use-cascade-events` uses `callbacksRef` to avoid effect re-registration on every render.
+- **Toast ID collision** — Switched from `Date.now()` to `crypto.randomUUID()`.
+- **Settings store cleanup** — Dynamic `import()` in error handlers replaced with static imports; dead `EXCLUDED_FROM_DISK` removed.
+
 ## [0.3.3] — 2026-03-25
 
 ### Security
@@ -61,7 +131,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - **Color validation** — Theme `applyColors` validates hex format before setting CSS properties.
 - **Website** — Updated version badge to v0.3.3; clipboard copy has error handling; screenshot alt text updates on tab switch.
 
-## [0.3.2] — 2026-03-25
+## [0.3.2] — 2026-03-24
 
 ### Performance
 

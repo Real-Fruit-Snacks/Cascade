@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { CanvasNode, CanvasEdge, CanvasData, Viewport } from '../types/canvas';
+import { useToastStore } from './toast-store';
 
 type DragType = 'none' | 'pan' | 'move' | 'resize' | 'connect' | 'marquee';
 
@@ -336,26 +337,26 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
     const updates: Map<string, Partial<CanvasNode>> = new Map();
 
     if (direction === 'left') {
-      const minX = Math.min(...selected.map((n) => n.x));
+      const minX = selected.reduce((min, n) => Math.min(min, n.x), Infinity);
       for (const n of selected) updates.set(n.id, { x: minX });
     } else if (direction === 'center') {
-      const minX = Math.min(...selected.map((n) => n.x));
-      const maxRight = Math.max(...selected.map((n) => n.x + n.width));
+      const minX = selected.reduce((min, n) => Math.min(min, n.x), Infinity);
+      const maxRight = selected.reduce((max, n) => Math.max(max, n.x + n.width), -Infinity);
       const centerX = (minX + maxRight) / 2;
       for (const n of selected) updates.set(n.id, { x: centerX - n.width / 2 });
     } else if (direction === 'right') {
-      const maxRight = Math.max(...selected.map((n) => n.x + n.width));
+      const maxRight = selected.reduce((max, n) => Math.max(max, n.x + n.width), -Infinity);
       for (const n of selected) updates.set(n.id, { x: maxRight - n.width });
     } else if (direction === 'top') {
-      const minY = Math.min(...selected.map((n) => n.y));
+      const minY = selected.reduce((min, n) => Math.min(min, n.y), Infinity);
       for (const n of selected) updates.set(n.id, { y: minY });
     } else if (direction === 'middle') {
-      const minY = Math.min(...selected.map((n) => n.y));
-      const maxBottom = Math.max(...selected.map((n) => n.y + n.height));
+      const minY = selected.reduce((min, n) => Math.min(min, n.y), Infinity);
+      const maxBottom = selected.reduce((max, n) => Math.max(max, n.y + n.height), -Infinity);
       const centerY = (minY + maxBottom) / 2;
       for (const n of selected) updates.set(n.id, { y: centerY - n.height / 2 });
     } else if (direction === 'bottom') {
-      const maxBottom = Math.max(...selected.map((n) => n.y + n.height));
+      const maxBottom = selected.reduce((max, n) => Math.max(max, n.y + n.height), -Infinity);
       for (const n of selected) updates.set(n.id, { y: maxBottom - n.height });
     }
 
@@ -461,7 +462,10 @@ export const useCanvasStore = create<CanvasState & CanvasActions>((set, get) => 
           get().pushUndo();
           set({ nodes: newNodes, isDirty: true });
         })
-        .catch((e) => console.error('Layout failed:', e));
+        .catch((e) => {
+          console.error('Layout failed:', e);
+          useToastStore.getState().addToast('Layout failed: ' + String(e), 'error');
+        });
     } else {
       get().pushUndo();
       set({ nodes: result, isDirty: true });

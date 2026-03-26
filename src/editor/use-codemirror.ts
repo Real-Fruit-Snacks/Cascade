@@ -123,6 +123,10 @@ export function useCodeMirror() {
       viewRef.current?.destroy();
       viewRef.current = null;
       containerRef.current = null;
+      if (contentUpdateTimerRef.current) {
+        clearTimeout(contentUpdateTimerRef.current);
+        contentUpdateTimerRef.current = null;
+      }
       return;
     }
 

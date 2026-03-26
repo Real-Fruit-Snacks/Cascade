@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { ViewMode } from '../types/index';
 import { readSettingsFile, writeSettingsFile } from '../lib/tauri-commands';
 import { getActiveProfile, DEFAULT_SETTINGS_PATH } from '../lib/settings-profiles';
+import { useToastStore } from './toast-store';
 
 export type FileSortOrder = 'name-asc' | 'name-desc' | 'modified-newest' | 'modified-oldest';
 export type StartupBehavior = 'reopen-last' | 'show-picker';
@@ -446,9 +447,7 @@ function saveSettingsToVault(settings: Settings) {
   for (const key of EXCLUDED_FROM_DISK) delete (filtered as Record<string, unknown>)[key];
   const profilePath = getActiveProfile(currentVaultPath);
   writeSettingsFile(currentVaultPath, profilePath, JSON.stringify(filtered, null, 2)).catch((e) => {
-    import('../stores/toast-store').then(({ useToastStore }) => {
-      useToastStore.getState().addToast(`Failed to save settings: ${e instanceof Error ? e.message : String(e)}`, 'error');
-    });
+    useToastStore.getState().addToast(`Failed to save settings: ${e instanceof Error ? e.message : String(e)}`, 'error');
   });
 }
 
@@ -521,9 +520,7 @@ export const useSettingsStore = create<Settings & SettingsActions>((set, get) =>
           }
         }
         set({ ...DEFAULTS, ...defaultSafe });
-        import('../stores/toast-store').then(({ useToastStore }) => {
-          useToastStore.getState().addToast('Settings profile not found. Switched to default profile.', 'warning');
-        });
+        useToastStore.getState().addToast('Settings profile not found. Switched to default profile.', 'warning');
         return;
       }
       set({ ...DEFAULTS, ...safe });

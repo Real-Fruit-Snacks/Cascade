@@ -123,6 +123,9 @@ pub fn write_settings_file(
     if !canonical_root.is_dir() {
         return Err(CascadeError::NotADirectory(vault_root));
     }
+    if !relative_path.starts_with(".cascade/") && !relative_path.starts_with(".cascade\\") {
+        return Err(CascadeError::InvalidPath("settings must be in .cascade/ directory".into()));
+    }
     let file_path = validate_path_canonical(&canonical_root, &relative_path)?;
     if let Some(parent) = file_path.parent() {
         if !parent.exists() {

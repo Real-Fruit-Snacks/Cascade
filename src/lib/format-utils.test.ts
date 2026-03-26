@@ -32,4 +32,12 @@ describe('formatAgo', () => {
   it('returns "hoursAgo" with count 2 for 2 hours ago', () => {
     expect(formatAgo(Date.now() - 7200000, t)).toBe('hoursAgo:{"count":2}');
   });
+
+  it('returns "daysAgo" with count 1 for 25 hours ago', () => {
+    expect(formatAgo(Date.now() - 90000000, t)).toBe('daysAgo:{"count":1}');
+  });
+
+  it('returns "daysAgo" with count 2 for 49 hours ago', () => {
+    expect(formatAgo(Date.now() - 176400000, t)).toBe('daysAgo:{"count":2}');
+  });
 });

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GitMerge } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useFocusTrap } from '../hooks/use-focus-trap';
 import { useCloseAnimation } from '../hooks/use-close-animation';
-import { useRef } from 'react';
 
 export interface ConflictInfo {
   path: string;
@@ -18,6 +18,7 @@ interface MergeConflictDialogProps {
 }
 
 export function MergeConflictDialog({ open, conflicts, onResolve, onCancel }: MergeConflictDialogProps) {
+  const { t } = useTranslation('dialogs');
   const { shouldRender, isClosing } = useCloseAnimation(open);
   const dialogRef = useRef<HTMLDivElement>(null);
   const trapKeyDown = useFocusTrap(dialogRef, open);
@@ -51,7 +52,7 @@ export function MergeConflictDialog({ open, conflicts, onResolve, onCancel }: Me
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Merge Conflicts"
+        aria-label={t('mergeConflict.title')}
         onKeyDown={trapKeyDown}
         className="rounded-xl overflow-hidden flex flex-col"
         style={{
@@ -65,7 +66,7 @@ export function MergeConflictDialog({ open, conflicts, onResolve, onCancel }: Me
         <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid var(--ctp-surface0)' }}>
           <GitMerge size={16} style={{ color: 'var(--ctp-peach)' }} />
           <span className="text-sm font-medium" style={{ color: 'var(--ctp-text)' }}>
-            Merge Conflicts ({conflicts.length} files)
+            {t('mergeConflict.title')} ({conflicts.length} files)
           </span>
         </div>
 
@@ -94,13 +95,13 @@ export function MergeConflictDialog({ open, conflicts, onResolve, onCancel }: Me
           {/* Side-by-side diff */}
           <div className="flex-1 flex min-h-0">
             <div className="flex-1 overflow-auto p-3" style={{ borderRight: '1px solid var(--ctp-surface0)' }}>
-              <div className="text-[10px] font-medium mb-1" style={{ color: 'var(--ctp-blue)' }}>LOCAL (Mine)</div>
+              <div className="text-[10px] font-medium mb-1" style={{ color: 'var(--ctp-blue)' }}>{t('mergeConflict.localLabel')}</div>
               <pre className="text-xs whitespace-pre-wrap" style={{ color: 'var(--ctp-text)', fontFamily: '"JetBrains Mono", monospace' }}>
                 {selected?.localContent || '(empty)'}
               </pre>
             </div>
             <div className="flex-1 overflow-auto p-3">
-              <div className="text-[10px] font-medium mb-1" style={{ color: 'var(--ctp-peach)' }}>REMOTE (Theirs)</div>
+              <div className="text-[10px] font-medium mb-1" style={{ color: 'var(--ctp-peach)' }}>{t('mergeConflict.remoteLabel')}</div>
               <pre className="text-xs whitespace-pre-wrap" style={{ color: 'var(--ctp-text)', fontFamily: '"JetBrains Mono", monospace' }}>
                 {selected?.remoteContent || '(empty)'}
               </pre>
@@ -118,7 +119,7 @@ export function MergeConflictDialog({ open, conflicts, onResolve, onCancel }: Me
               color: resolutions.get(selected?.path ?? '') === 'local' ? 'var(--ctp-base)' : 'var(--ctp-text)',
             }}
           >
-            Keep Mine
+            {t('mergeConflict.keepMine')}
           </button>
           <button
             onClick={() => selected && setChoice(selected.path, 'remote')}
@@ -128,7 +129,7 @@ export function MergeConflictDialog({ open, conflicts, onResolve, onCancel }: Me
               color: resolutions.get(selected?.path ?? '') === 'remote' ? 'var(--ctp-base)' : 'var(--ctp-text)',
             }}
           >
-            Keep Theirs
+            {t('mergeConflict.keepTheirs')}
           </button>
           <div className="flex-1" />
           <button
@@ -136,14 +137,14 @@ export function MergeConflictDialog({ open, conflicts, onResolve, onCancel }: Me
             className="px-3 py-1.5 rounded text-xs"
             style={{ color: 'var(--ctp-subtext0)' }}
           >
-            Cancel
+            {t('mergeConflict.cancel')}
           </button>
           <button
             onClick={() => onResolve(resolutions)}
             className="px-3 py-1.5 rounded text-xs font-medium"
             style={{ backgroundColor: 'var(--ctp-green)', color: 'var(--ctp-base)' }}
           >
-            Apply Resolutions
+            {t('mergeConflict.applyResolutions')}
           </button>
         </div>
       </div>

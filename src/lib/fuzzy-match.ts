@@ -5,7 +5,7 @@ export function fuzzyMatch(query: string, target: string): { match: boolean; sco
   if (t.includes(q)) {
     const start = t.indexOf(q);
     const indices = Array.from({ length: q.length }, (_, i) => start + i);
-    return { match: true, score: 100 - start, indices };
+    return { match: true, score: Math.max(0, 100 - start), indices };
   }
 
   let qi = 0;

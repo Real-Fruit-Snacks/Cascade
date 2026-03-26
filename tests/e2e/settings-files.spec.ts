@@ -22,7 +22,11 @@ test.beforeAll(async () => {
   });
 
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(1000);
+  // Wait for the app shell to mount
+  await page.waitForFunction(
+    () => document.querySelector('.cm-editor') !== null || document.querySelector('[data-path]') !== null || document.querySelector('button') !== null,
+    { timeout: 10000 }
+  ).catch(() => null);
 });
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -36,7 +40,11 @@ async function ensureFileOpen() {
     if (await vaultButtons.count() > 0) {
       await vaultButtons.first().click();
       await page.waitForSelector('[data-path]', { timeout: 10000 }).catch(() => null);
-      await page.waitForTimeout(2000);
+      // Wait for file tree to stabilize after vault load
+      await page.waitForFunction(
+        () => document.querySelectorAll('[data-path]').length > 1,
+        { timeout: 5000 }
+      ).catch(() => null);
     }
   }
   if (!(await editor.isVisible().catch(() => false))) {
@@ -44,7 +52,6 @@ async function ensureFileOpen() {
     if (await mdFile.isVisible().catch(() => false)) {
       await mdFile.click();
       await page.waitForSelector('.cm-editor', { state: 'visible', timeout: 5000 }).catch(() => null);
-      await page.waitForTimeout(500);
     }
   }
 }

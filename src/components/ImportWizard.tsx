@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, CheckCircle, AlertCircle, X, FolderOpen, FileUp, Loader2 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -70,12 +70,12 @@ export function ImportWizard({ open: isOpen, onClose }: ImportWizardProps) {
   const trapKeyDown = useFocusTrap(dialogRef, isOpen);
   const vaultPath = useVaultStore((s) => s.vaultPath);
 
-  const SOURCES: SourceInfo[] = SOURCE_CONFIGS.map((cfg) => ({
+  const SOURCES: SourceInfo[] = useMemo(() => SOURCE_CONFIGS.map((cfg) => ({
     ...cfg,
     label: SOURCE_LABELS[cfg.id],
     description: t(`sources.${cfg.id}.description`),
     fileLabel: t(`sources.${cfg.id}.fileLabel`),
-  }));
+  })), [t]);
 
   const [step, setStep] = useState<Step>('select');
   const [source, setSource] = useState<ImportSource | null>(null);

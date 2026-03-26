@@ -58,7 +58,7 @@ export const useToastStore = create<ToastState & ToastActions>((set) => ({
   toasts: [],
 
   addToast: (message: string, type: ToastType, duration?: number, toastAction?: ToastAction) => {
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    const id = crypto.randomUUID();
     const resolvedDuration = duration ?? DEFAULT_DURATION[type];
 
     set((s) => {

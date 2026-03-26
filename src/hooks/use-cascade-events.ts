@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditorStore } from '../stores/editor-store';
 import { useVaultStore } from '../stores/vault-store';
@@ -21,31 +21,29 @@ export interface CascadeEventCallbacks {
 export function useCascadeEvents(callbacks: CascadeEventCallbacks): void {
   const { t } = useTranslation(['dialogs']);
 
-  useEffect(() => {
-    const {
-      setSearchModalVisible,
-      setNewFileModalVisible,
-      setNewCanvasModalVisible,
-      setSettingsVisible,
-      setCommandPaletteVisible,
-      setExportVisible,
-      setExportDefaultScope,
-      setImportVisible,
-      setAboutOpen,
-      setConfirmDialog,
-    } = callbacks;
+  // Keep a ref so event handlers always call the latest callbacks without
+  // re-registering listeners on every render.
+  const callbacksRef = useRef(callbacks);
+  callbacksRef.current = callbacks;
 
+  useEffect(() => {
     const openSearch = () => {
-      if (useSettingsStore.getState().enableSearch) setSearchModalVisible(true);
+      if (useSettingsStore.getState().enableSearch) callbacksRef.current.setSearchModalVisible(true);
     };
-    const newFile = () => setNewFileModalVisible(true);
-    const newCanvas = () => setNewCanvasModalVisible(true);
-    const openSettings = () => setSettingsVisible(true);
-    const openCmdPalette = () => setCommandPaletteVisible(true);
-    const openExport = () => { setExportDefaultScope('current'); setExportVisible(true); };
-    const openBatchExport = () => { setExportDefaultScope('vault'); setExportVisible(true); };
-    const openImport = () => setImportVisible(true);
-    const openAbout = () => setAboutOpen(true);
+    const newFile = () => callbacksRef.current.setNewFileModalVisible(true);
+    const newCanvas = () => callbacksRef.current.setNewCanvasModalVisible(true);
+    const openSettings = () => callbacksRef.current.setSettingsVisible(true);
+    const openCmdPalette = () => callbacksRef.current.setCommandPaletteVisible(true);
+    const openExport = () => {
+      callbacksRef.current.setExportDefaultScope('current');
+      callbacksRef.current.setExportVisible(true);
+    };
+    const openBatchExport = () => {
+      callbacksRef.current.setExportDefaultScope('vault');
+      callbacksRef.current.setExportVisible(true);
+    };
+    const openImport = () => callbacksRef.current.setImportVisible(true);
+    const openAbout = () => callbacksRef.current.setAboutOpen(true);
     const doCloseVault = () => {
       const store = useEditorStore.getState();
       for (let i = store.tabs.length - 1; i >= 0; i--) {
@@ -61,7 +59,7 @@ export function useCascadeEvents(callbacks: CascadeEventCallbacks): void {
         return;
       }
       const hasDirty = useEditorStore.getState().hasDirtyTabs();
-      setConfirmDialog({
+      callbacksRef.current.setConfirmDialog({
         title: t('dialogs:closeVault.title'),
         message: hasDirty
           ? t('dialogs:closeVault.messageDirty')
@@ -69,7 +67,7 @@ export function useCascadeEvents(callbacks: CascadeEventCallbacks): void {
         kind: hasDirty ? 'warning' : 'info',
         confirmLabel: t('dialogs:closeVault.confirmLabel'),
         onConfirm: () => {
-          setConfirmDialog(null);
+          callbacksRef.current.setConfirmDialog(null);
           doCloseVault();
         },
       });
@@ -89,5 +87,5 @@ export function useCascadeEvents(callbacks: CascadeEventCallbacks): void {
     ];
     for (const [evt, fn] of events) window.addEventListener(evt, fn);
     return () => { for (const [evt, fn] of events) window.removeEventListener(evt, fn); };
-  }, [callbacks, t]);
+  }, [t]);
 }

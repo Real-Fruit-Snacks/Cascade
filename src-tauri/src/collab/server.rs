@@ -6,10 +6,14 @@ use futures_util::{SinkExt, StreamExt};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{broadcast, RwLock};
 use tokio_tungstenite::tungstenite::Message;
+
+const BROADCAST_CAPACITY: usize = 1024;
+const MAX_MESSAGE_SIZE: usize = 10 * 1024 * 1024;
 
 #[derive(Debug, Clone)]
 pub struct ClientInfo {
@@ -56,7 +60,7 @@ pub struct RelayServer {
 
 impl RelayServer {
     pub async fn start(password: String, app_handle: AppHandle) -> Result<(Arc<Self>, u16), String> {
-        let listener = TcpListener::bind("127.0.0.1:0")
+        let listener = TcpListener::bind("0.0.0.0:0")
             .await
             .map_err(|e| format!("Failed to bind listener: {}", e))?;
 
@@ -65,7 +69,7 @@ impl RelayServer {
             .map_err(|e| format!("Failed to get local addr: {}", e))?
             .port();
 
-        let (tx, _) = broadcast::channel(1024);
+        let (tx, _) = broadcast::channel(BROADCAST_CAPACITY);
         let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
 
         let server = Arc::new(RelayServer {
@@ -130,11 +134,15 @@ impl RelayServer {
 
         let (mut sink, mut stream) = ws_stream.split();
 
-        // First message must be the password
-        let auth_msg = match stream.next().await {
-            Some(Ok(msg)) => msg,
-            _ => {
+        // First message must be the password (10-second timeout)
+        let auth_msg = match tokio::time::timeout(Duration::from_secs(10), stream.next()).await {
+            Ok(Some(Ok(msg))) => msg,
+            Ok(_) => {
                 eprintln!("[collab] No auth message from {}", addr);
+                return;
+            }
+            Err(_) => {
+                eprintln!("[collab] Auth timeout from {}", addr);
                 return;
             }
         };
@@ -211,10 +219,18 @@ impl RelayServer {
                 msg = stream.next() => {
                     match msg {
                         Some(Ok(Message::Binary(data))) => {
-                            let _ = server_clone.tx.send((addr, Message::Binary(data)));
+                            if data.len() > MAX_MESSAGE_SIZE {
+                                eprintln!("[collab] Message from {} exceeds size limit, dropping", addr);
+                            } else {
+                                let _ = server_clone.tx.send((addr, Message::Binary(data)));
+                            }
                         }
                         Some(Ok(Message::Text(text))) => {
-                            let _ = server_clone.tx.send((addr, Message::Text(text)));
+                            if text.len() > MAX_MESSAGE_SIZE {
+                                eprintln!("[collab] Message from {} exceeds size limit, dropping", addr);
+                            } else {
+                                let _ = server_clone.tx.send((addr, Message::Text(text)));
+                            }
                         }
                         Some(Ok(Message::Close(_))) | None => break,
                         Some(Err(e)) => {

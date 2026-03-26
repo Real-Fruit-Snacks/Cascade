@@ -1,5 +1,5 @@
 import { EditorView, Decoration, DecorationSet, WidgetType } from '@codemirror/view';
-import { EditorState, Range, StateField, Transaction } from '@codemirror/state';
+import { EditorState, Facet, Range, StateField, Transaction } from '@codemirror/state';
 import { parseAltWidth } from './image-controls';
 
 class ImageWidget extends WidgetType {
@@ -66,6 +66,10 @@ class ImageWidget extends WidgetType {
 
 const IMAGE_RE = /!\[([^\]]*)\]\(([^)]+)\)/g;
 
+const maxHeightFacet = Facet.define<number, number>({
+  combine: (values) => values[0] ?? 300,
+});
+
 function buildDecorations(state: EditorState, maxHeight: number): DecorationSet {
   const decos: Range<Decoration>[] = [];
   const editable = state.facet(EditorView.editable);
@@ -101,28 +105,33 @@ function buildDecorations(state: EditorState, maxHeight: number): DecorationSet 
   return Decoration.set(decos, true);
 }
 
+// Module-level StateField — avoids recreation on compartment reconfiguration
+const imagePreviewField = StateField.define<DecorationSet>({
+  create(state) {
+    const mh = state.facet(maxHeightFacet);
+    return buildDecorations(state, mh);
+  },
+  update(decos, tr: Transaction) {
+    const mh = tr.state.facet(maxHeightFacet);
+    if (tr.docChanged) {
+      return buildDecorations(tr.state, mh);
+    }
+    if (tr.selection) {
+      const oldLine = tr.startState.doc.lineAt(tr.startState.selection.main.head).number;
+      const newLine = tr.state.doc.lineAt(tr.state.selection.main.head).number;
+      if (oldLine !== newLine) return buildDecorations(tr.state, mh);
+    }
+    return decos;
+  },
+  provide(field) {
+    return EditorView.decorations.from(field);
+  },
+});
+
 export function imagePreview(maxHeight = 300) {
   return [
-    StateField.define<DecorationSet>({
-      create(state) {
-        return buildDecorations(state, maxHeight);
-      },
-      update(decos, tr: Transaction) {
-        if (tr.docChanged) {
-          return buildDecorations(tr.state, maxHeight);
-        }
-        // Only rebuild on cursor line change, not every cursor movement
-        if (tr.selection) {
-          const oldLine = tr.startState.doc.lineAt(tr.startState.selection.main.head).number;
-          const newLine = tr.state.doc.lineAt(tr.state.selection.main.head).number;
-          if (oldLine !== newLine) return buildDecorations(tr.state, maxHeight);
-        }
-        return decos;
-      },
-      provide(field) {
-        return EditorView.decorations.from(field);
-      },
-    }),
+    maxHeightFacet.of(maxHeight),
+    imagePreviewField,
     EditorView.baseTheme({
       '.cm-image-preview': {
         userSelect: 'none',

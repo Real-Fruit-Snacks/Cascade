@@ -22,6 +22,8 @@ export const useConfirmStore = create<ConfirmState>((set, get) => ({
 
   show: (request: ConfirmRequest) => {
     return new Promise<boolean>((resolve) => {
+      const { resolve: prev } = get();
+      prev?.(false);
       set({ request, resolve });
     });
   },

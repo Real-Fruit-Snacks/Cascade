@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import DOMPurify from 'dompurify';
 
 export function RenderedMarkdown({ content }: { content: string }) {
   const [html, setHtml] = useState<string | null>(null);
@@ -33,7 +34,7 @@ export function RenderedMarkdown({ content }: { content: string }) {
     <div
       className="plugin-readme text-sm"
       style={{ color: 'var(--ctp-text)', lineHeight: 1.6 }}
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
     />
   );
 }

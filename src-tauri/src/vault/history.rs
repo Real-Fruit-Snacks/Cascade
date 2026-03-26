@@ -12,7 +12,7 @@ pub(crate) fn save_version_snapshot_from_content(canonical_root: &Path, rel_path
         return Ok(());
     }
     let sanitized = rel_path.replace('\\', "/");
-    if sanitized.contains("..") || sanitized.starts_with('/') {
+    if sanitized.split('/').any(|c| c == "..") || sanitized.starts_with('/') {
         return Err(CascadeError::InvalidPath("invalid history path".to_string()));
     }
     let history_dir = canonical_root.join(".cascade").join("history").join(&sanitized);
@@ -54,7 +54,7 @@ pub fn list_file_history(
     let canonical_root = get_canonical_root(&vault_root, &vault_root_state)?;
     // Validate path to prevent traversal out of history directory
     let sanitized = path.replace('\\', "/");
-    if sanitized.contains("..") || sanitized.starts_with('/') {
+    if sanitized.split('/').any(|c| c == "..") || sanitized.starts_with('/') {
         return Err(CascadeError::InvalidPath("invalid history path".to_string()));
     }
     let history_dir = canonical_root.join(".cascade").join("history").join(&sanitized);

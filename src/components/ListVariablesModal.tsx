@@ -113,7 +113,7 @@ export function ListVariablesModal({ open, variables, onClose, onSave }: ListVar
         onKeyDown={trapKeyDown}
         role="dialog"
         aria-modal="true"
-        aria-label="Variables"
+        aria-label={t('variables.title')}
         className="flex flex-col w-full rounded-xl overflow-hidden modal-content"
         style={{
           maxWidth: '32rem',

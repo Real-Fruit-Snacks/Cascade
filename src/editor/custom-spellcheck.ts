@@ -63,7 +63,7 @@ const spellcheckPlugin = ViewPlugin.fromClass(
       this.decorations = Decoration.none;
       // Kick off dictionary load, then rebuild decorations
       initDictionary().then(() => {
-        if (this.destroyed) return;
+        if (this.destroyed || !view.dom.parentNode) return;
         this.decorations = this.buildDecorations(view);
         this.vpBuffer.update(view);
         // Use requestMeasure to trigger a re-read of decorations without empty dispatch

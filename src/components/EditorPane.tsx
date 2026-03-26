@@ -27,9 +27,7 @@ import { useTabContextMenu } from '../hooks/useTabContextMenu';
 import { useEditorContextMenu } from '../hooks/useEditorContextMenu';
 import { useTabDragDrop } from '../hooks/useTabDragDrop';
 
-const SPECIAL_TAB_LABELS: Record<string, { label: string }> = {
-  '__graph__': { label: 'Graph' },
-};
+const SPECIAL_TAB_PATHS = new Set(['__graph__']);
 
 export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
   const { t } = useTranslation('editor');
@@ -50,10 +48,15 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
     return s.activeTabIndex;
   }, [isPane, paneIndex]);
 
-  const tabPaths = useEditorStore(useShallow((s) => selectTabs(s).map((t) => t.path)));
-  const tabDirty = useEditorStore(useShallow((s) => selectTabs(s).map((t) => t.isDirty)));
-  const tabPinned = useEditorStore(useShallow((s) => selectTabs(s).map((t) => !!t.isPinned)));
-  const tabTypes = useEditorStore(useShallow((s) => selectTabs(s).map((t) => t.type ?? getTabType(t.path))));
+  const { tabPaths, tabDirty, tabPinned, tabTypes } = useEditorStore(useShallow((s) => {
+    const tabs = selectTabs(s);
+    return {
+      tabPaths: tabs.map((t) => t.path),
+      tabDirty: tabs.map((t) => t.isDirty),
+      tabPinned: tabs.map((t) => !!t.isPinned),
+      tabTypes: tabs.map((t) => t.type ?? getTabType(t.path)),
+    };
+  }));
   const tabsMeta = useMemo(() => {
     return tabPaths.map((path, i) => ({ path, isDirty: tabDirty[i], isPinned: tabPinned[i], type: tabTypes[i] }));
   }, [tabPaths, tabDirty, tabPinned, tabTypes]);
@@ -304,7 +307,7 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
       />}
 
       {/* Breadcrumb path bar with view mode controls -- only for markdown file tabs, hidden in focus mode */}
-      {!focusModeActive && activeFilePath && !SPECIAL_TAB_LABELS[activeFilePath] && !activeFilePath.startsWith('__plugin-view:') && activeTabType === 'markdown' && (
+      {!focusModeActive && activeFilePath && !SPECIAL_TAB_PATHS.has(activeFilePath) && !activeFilePath.startsWith('__plugin-view:') && activeTabType === 'markdown' && (
         <BreadcrumbBar
           activeFilePath={activeFilePath}
           viewMode={viewMode}
@@ -348,7 +351,7 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
         onContextMenu={handleEditorContextMenu}
         style={{
           backgroundColor: 'var(--ctp-base)',
-          display: activeFilePath && !SPECIAL_TAB_LABELS[activeFilePath] && !activeFilePath.startsWith('__plugin-view:') && !isFileLoading && activeTabType === 'markdown' ? 'flex' : 'none',
+          display: activeFilePath && !SPECIAL_TAB_PATHS.has(activeFilePath) && !activeFilePath.startsWith('__plugin-view:') && !isFileLoading && activeTabType === 'markdown' ? 'flex' : 'none',
           flexDirection: 'column',
         }}
       />
@@ -359,7 +362,7 @@ export function EditorPane({ paneIndex }: { paneIndex?: number } = {}) {
       {!activeFilePath && (showWelcomeView ? <WelcomeView /> : <WelcomeScreen />)}
 
       {/* Status bar -- only for markdown file tabs, when enabled, hidden in focus mode */}
-      {!focusModeActive && activeFilePath && !SPECIAL_TAB_LABELS[activeFilePath] && !activeFilePath.startsWith('__plugin-view:') && activeTabType === 'markdown' && enableStatusBar && <StatusBar />}
+      {!focusModeActive && activeFilePath && !SPECIAL_TAB_PATHS.has(activeFilePath) && !activeFilePath.startsWith('__plugin-view:') && activeTabType === 'markdown' && enableStatusBar && <StatusBar />}
 
       {/* Floating vim mode badge when status bar is off */}
       {!enableStatusBar && <FloatingVimBadge />}

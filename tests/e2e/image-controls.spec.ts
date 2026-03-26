@@ -31,7 +31,11 @@ test.beforeAll(async () => {
   });
 
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(1000);
+  // Wait for the app shell to mount
+  await page.waitForFunction(
+    () => document.querySelector('.cm-editor') !== null || document.querySelector('[data-path]') !== null || document.querySelector('button') !== null,
+    { timeout: 10000 }
+  ).catch(() => null);
 });
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -78,7 +82,11 @@ async function openTestVault() {
     page.waitForSelector('.cm-editor', { state: 'visible', timeout: 10000 }).catch(() => null),
     page.waitForSelector('[data-path]', { timeout: 10000 }).catch(() => null),
   ]);
-  await page.waitForTimeout(2000);
+  // Wait for file tree to stabilize after vault load
+  await page.waitForFunction(
+    () => document.querySelectorAll('[data-path]').length > 1,
+    { timeout: 5000 }
+  ).catch(() => null);
   return true;
 }
 
@@ -101,7 +109,11 @@ async function openVaultIfNeeded() {
       page.waitForSelector('.cm-editor', { state: 'visible', timeout: 10000 }).catch(() => null),
       page.waitForSelector('[data-path]', { timeout: 10000 }).catch(() => null),
     ]);
-    await page.waitForTimeout(2000);
+    // Wait for file tree to stabilize after vault load
+    await page.waitForFunction(
+      () => document.querySelectorAll('[data-path]').length > 1,
+      { timeout: 5000 }
+    ).catch(() => null);
     return true;
   }
 
@@ -118,7 +130,11 @@ async function closeVault() {
   await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent('cascade:close-vault', { detail: { force: true } }));
   });
-  await page.waitForTimeout(1500);
+  // Wait for vault UI to be gone
+  await page.waitForFunction(
+    () => document.querySelector('.cm-editor') === null && document.querySelectorAll('[data-path]').length === 0,
+    { timeout: 5000 }
+  ).catch(() => null);
 }
 
 async function openFile(filename: string) {
@@ -135,7 +151,6 @@ async function openFile(filename: string) {
 
   if (await fileItem.count() > 0) {
     await fileItem.first().click();
-    await page.waitForTimeout(1000);
     // Wait for editor to become visible after opening file
     await page.locator('.cm-editor').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
     return true;
@@ -158,7 +173,7 @@ async function openFileWithImage() {
     const filepath = await item.getAttribute('data-path');
     if (filepath && filepath.endsWith('.md')) {
       await item.click();
-      await page.waitForTimeout(1000);
+      await page.locator('.cm-editor').waitFor({ state: 'visible', timeout: 3000 }).catch(() => {});
       const images = page.locator('.cm-image-widget');
       if (await images.count() > 0) return true;
     }
@@ -224,7 +239,8 @@ test.describe('Image Controls - Live App', () => {
       if (msg.type() === 'error') errors.push(msg.text());
     });
 
-    await page.waitForTimeout(2000);
+    // Wait for editor to be visible — any render errors will have fired by this point
+    await page.locator('.cm-editor').waitFor({ state: 'visible', timeout: 5000 }).catch(() => null);
 
     const blockDecoErrors = errors.filter((e) =>
       e.includes('Block decorations may not be specified via plugins')
@@ -279,7 +295,6 @@ test.describe('Image Controls - Editor Interaction', () => {
 
     const editor = page.locator('.cm-editor');
     await expect(editor).toBeVisible();
-    await page.waitForTimeout(1000);
 
     const imageErrors = errors.filter(
       (e) =>

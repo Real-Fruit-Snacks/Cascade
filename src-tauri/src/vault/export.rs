@@ -13,6 +13,9 @@ use super::{get_canonical_root, validate_path_canonical};
 #[tauri::command]
 pub fn export_file(_vault_root: String, path: String, content: String) -> Result<(), CascadeError> {
     let dest = PathBuf::from(&path);
+    if !dest.is_absolute() {
+        return Err(CascadeError::InvalidPath("export path must be absolute".into()));
+    }
     // Only allow writing supported export formats
     match dest.extension().and_then(|e| e.to_str()) {
         Some("html") | Some("htm") | Some("md") | Some("docx") | Some("zip") => {}
@@ -31,6 +34,9 @@ pub fn export_file(_vault_root: String, path: String, content: String) -> Result
 #[tauri::command]
 pub fn export_binary(path: String, data: Vec<u8>) -> Result<(), CascadeError> {
     let dest = PathBuf::from(&path);
+    if !dest.is_absolute() {
+        return Err(CascadeError::InvalidPath("export path must be absolute".into()));
+    }
     match dest.extension().and_then(|e| e.to_str()) {
         Some("docx") | Some("zip") => {}
         _ => return Err(CascadeError::InvalidPath("binary export only supports .docx/.zip".to_string())),

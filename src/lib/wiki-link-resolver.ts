@@ -21,10 +21,14 @@ let _cachedFiles: string[] | null = null;
 let _exactSet: Set<string> | null = null;
 let _lowerMap: Map<string, string> | null = null;
 let _baseMap: Map<string, string> | null = null;
+// Version counter for explicit cache invalidation (incremented by clearWikiLinkCache)
+let _cacheVersion = 0;
+let _cachedVersion = -1;
 
 function ensureIndex(flatFiles: string[]) {
-  if (_cachedFiles === flatFiles) return;
+  if (_cachedFiles === flatFiles && _cachedVersion === _cacheVersion) return;
   _cachedFiles = flatFiles;
+  _cachedVersion = _cacheVersion;
   _exactSet = new Set(flatFiles);
   _lowerMap = new Map();
   _baseMap = new Map();
@@ -72,6 +76,7 @@ export function parseWikiTarget(target: string): { file: string; heading: string
  */
 /** Clear the wiki-link resolution cache. Useful when vault contents change externally. */
 export function clearWikiLinkCache() {
+  _cacheVersion++;
   _cachedFiles = null;
   _exactSet = null;
   _lowerMap = null;

@@ -84,7 +84,7 @@ export function OnboardingScreen() {
     if (!el) return;
     const mocha = flavors['mocha'];
     for (const [key, value] of Object.entries(mocha)) {
-      const cssKey = key.replace(/([A-Z])/g, (_, c: string) => c.toLowerCase());
+      const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
       el.style.setProperty(`--ctp-${cssKey}`, value);
     }
   }, []);

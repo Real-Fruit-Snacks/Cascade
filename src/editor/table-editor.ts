@@ -76,7 +76,7 @@ function parseTable(lines: string[], from: number, to: number): TableData | null
 // ── Formatting ─────────────────────────────────────────────
 
 function formatTable(headers: string[], rows: string[][], alignments: Alignment[]): string {
-  const colCount = Math.max(headers.length, ...rows.map((r) => r.length));
+  const colCount = rows.reduce((max, r) => Math.max(max, r.length), headers.length);
 
   // Pad all rows to the same column count
   const paddedHeaders = Array.from({ length: colCount }, (_, i) => headers[i] ?? '');

@@ -16,6 +16,8 @@ import { ViewportBuffer, getDecorationRanges } from './viewport-buffer';
 const FOOTNOTE_REF_RE = /\[\^([^\]]+)\]/g;
 // Footnote definition: [^id]: content (at start of line)
 const FOOTNOTE_DEF_RE = /^\[\^([^\]]+)\]:\s*(.*)/;
+// Continuation line: indented line with non-whitespace content
+const CONTINUATION_RE = /^\s+\S/;
 
 // ── Widgets ────────────────────────────────────────────────
 
@@ -99,7 +101,7 @@ function buildFootnoteDecorations(view: EditorView): DecorationSet {
         let nextNum = line.number + 1;
         while (nextNum <= doc.lines) {
           const nextLine = doc.line(nextNum);
-          if (nextLine.text.match(/^\s+\S/) && !nextLine.text.match(FOOTNOTE_DEF_RE)) {
+          if (CONTINUATION_RE.test(nextLine.text) && !nextLine.text.match(FOOTNOTE_DEF_RE)) {
             content += ' ' + nextLine.text.trim();
             blockEnd = nextLine.to;
             nextNum++;

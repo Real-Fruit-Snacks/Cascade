@@ -5,8 +5,8 @@ import { buildRow } from './properties-dom';
 
 export { propertiesTheme } from './properties-styles';
 
-// Track whether we should auto-focus the last key input after widget recreation
-let _focusNewKey = false;
+// Track whether we should auto-focus the last key input after widget recreation (per-view)
+const _focusNewKeyMap = new WeakMap<EditorView, boolean>();
 
 // ── Widget ──────────────────────────────────────────────────
 
@@ -90,15 +90,15 @@ export class PropertiesWidget extends WidgetType {
           newKey = `property${n++}`;
         }
         updated.push({ key: newKey, value: '', type: 'text' });
-        _focusNewKey = true;
+        _focusNewKeyMap.set(view, true);
         this.commit(view, updated);
       });
       wrapper.appendChild(addBtn);
     }
 
     // Auto-focus and select the last key input when a new property was added
-    if (_focusNewKey) {
-      _focusNewKey = false;
+    if (_focusNewKeyMap.get(view)) {
+      _focusNewKeyMap.set(view, false);
       requestAnimationFrame(() => {
         const inputs = wrapper.querySelectorAll('input.cm-props-key');
         const lastInput = inputs[inputs.length - 1] as HTMLInputElement | null;

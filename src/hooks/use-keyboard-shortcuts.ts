@@ -12,12 +12,18 @@ function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
   // Ctrl and Meta are treated as interchangeable (Cmd on macOS = Ctrl on Win/Linux)
   // unless Meta is explicitly required in the shortcut
   const mod = e.ctrlKey || e.metaKey;
-  const ctrlOrMeta = needsCtrl ? mod : needsMeta ? false : !e.ctrlKey && !e.metaKey;
-  const shift = needsShift ? e.shiftKey : !e.shiftKey;
-  const alt = needsAlt ? e.altKey : !e.altKey;
-  const meta = needsMeta ? e.metaKey : true;
+  let ctrlOrMetaOk: boolean;
+  if (needsCtrl) {
+    ctrlOrMetaOk = mod;
+  } else if (needsMeta) {
+    ctrlOrMetaOk = e.metaKey;
+  } else {
+    ctrlOrMetaOk = !e.ctrlKey && !e.metaKey;
+  }
+  const shiftOk = needsShift ? e.shiftKey : !e.shiftKey;
+  const altOk = needsAlt ? e.altKey : !e.altKey;
 
-  if (!ctrlOrMeta || !shift || !alt || !meta) return false;
+  if (!ctrlOrMetaOk || !shiftOk || !altOk) return false;
 
   // Normalize key comparison
   const eventKey = e.key;
@@ -30,7 +36,8 @@ export function useKeyboardShortcuts(): void {
     // Skip non-shortcut keystrokes early (no modifier held)
     if (!e.ctrlKey && !e.metaKey && !e.altKey) return;
 
-    // Dispatch shortcuts via command registry
+    // Dispatch shortcuts via command registry.
+    // O(N) over all commands is acceptable — the registry holds ~50 commands at most.
     const cmds = commandRegistry.getAll();
     for (const cmd of cmds) {
       if (!cmd.shortcut) continue;
