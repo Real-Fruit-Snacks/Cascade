@@ -91,7 +91,7 @@ pub fn write_integrity_file(
         "files": checksums
     });
     let json = serde_json::to_string_pretty(&data)
-        .map_err(|e| CascadeError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+        .map_err(|e| CascadeError::Io(std::io::Error::other(e)))?;
     fs::write(&integrity_path, json)?;
     Ok(())
 }

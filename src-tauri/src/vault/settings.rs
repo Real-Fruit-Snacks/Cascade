@@ -89,7 +89,7 @@ pub fn write_custom_dictionary(
     }
     let dict_path = canonical_root.join(DICTIONARY_FILE);
     let json = serde_json::to_string_pretty(&validated)
-        .map_err(|e| CascadeError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+        .map_err(|e| CascadeError::Io(std::io::Error::other(e)))?;
     fs::write(&dict_path, json)?;
     Ok(())
 }

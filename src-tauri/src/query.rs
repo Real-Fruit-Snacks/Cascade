@@ -61,7 +61,7 @@ fn property_value_to_string(val: &PropertyValue) -> String {
 fn apply_filter(props: &HashMap<String, PropertyValue>, filter: &QueryFilter) -> bool {
     let field_val = props
         .get(&filter.field)
-        .map(|v| property_value_to_string(v))
+        .map(property_value_to_string)
         .unwrap_or_default();
 
     match filter.operator.as_str() {
@@ -202,7 +202,7 @@ pub async fn query_properties(vault_root: String, query: PropertyQuery) -> Resul
                     .map(|field| {
                         let val = props
                             .get(field)
-                            .map(|v| property_value_to_string(v))
+                            .map(property_value_to_string)
                             .unwrap_or_default();
                         (field.clone(), val)
                     })

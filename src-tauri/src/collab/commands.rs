@@ -54,7 +54,7 @@ pub async fn start_collab(
     // Start server
     let (relay, port) = RelayServer::start(password, app_handle.clone())
         .await
-        .map_err(|e| CascadeError::Collab(e))?;
+        .map_err(CascadeError::Collab)?;
 
     // Get local IP
     let local_ip = local_ip_address::local_ip()
@@ -63,7 +63,7 @@ pub async fn start_collab(
 
     // Write presence file
     presence::write_presence(&vault_path, &local_ip, port)
-        .map_err(|e| CascadeError::Collab(e))?;
+        .map_err(CascadeError::Collab)?;
 
     let host_address = format!("{}:{}", local_ip, port);
 

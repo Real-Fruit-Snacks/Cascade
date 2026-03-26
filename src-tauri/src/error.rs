@@ -48,7 +48,7 @@ impl From<std::io::Error> for CascadeError {
 
 impl From<zip::result::ZipError> for CascadeError {
     fn from(e: zip::result::ZipError) -> Self {
-        CascadeError::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+        CascadeError::Io(std::io::Error::other(e.to_string()))
     }
 }
 

@@ -62,7 +62,7 @@ fn convert_bear_markdown(content: &str) -> String {
         } else if in_fence {
             tag_converted.push_str(line);
         } else {
-            tag_converted.push_str(&convert_tags_in_line(line, &tag_re));
+            tag_converted.push_str(&convert_tags_in_line(line, tag_re));
         }
         // Re-add the newline separator (split consumed it); omit trailing newline only if the
         // original content did not end with one.

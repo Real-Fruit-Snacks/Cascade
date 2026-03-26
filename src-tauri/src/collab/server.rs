@@ -16,6 +16,7 @@ const BROADCAST_CAPACITY: usize = 1024;
 const MAX_MESSAGE_SIZE: usize = 10 * 1024 * 1024;
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ClientInfo {
     pub connected_at: u128,
 }
@@ -151,18 +152,18 @@ impl RelayServer {
             Message::Text(ref text) => text.to_string(),
             _ => {
                 eprintln!("[collab] Auth message not text from {}", addr);
-                let _ = sink.send(Message::Text("AUTH_FAILED".to_string().into())).await;
+                let _ = sink.send(Message::Text("AUTH_FAILED".to_string())).await;
                 return;
             }
         };
 
         if !server.auth.verify(&password) {
             eprintln!("[collab] Auth failed for {}", addr);
-            let _ = sink.send(Message::Text("AUTH_FAILED".to_string().into())).await;
+            let _ = sink.send(Message::Text("AUTH_FAILED".to_string())).await;
             return;
         }
 
-        let _ = sink.send(Message::Text("AUTH_OK".to_string().into())).await;
+        let _ = sink.send(Message::Text("AUTH_OK".to_string())).await;
 
         // Register client
         {
@@ -190,11 +191,10 @@ impl RelayServer {
                     result = rx.recv() => {
                         match result {
                             Ok((sender_addr, msg)) => {
-                                if sender_addr != addr {
-                                    if sink.send(msg).await.is_err() {
+                                if sender_addr != addr
+                                    && sink.send(msg).await.is_err() {
                                         break;
                                     }
-                                }
                             }
                             Err(broadcast::error::RecvError::Lagged(n)) => {
                                 eprintln!("collab: client {addr} lagged {n} msgs, forcing reconnect for resync");

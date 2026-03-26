@@ -168,14 +168,12 @@ fn ensure_gitignore(vault_path: &Path) -> Result<(), CascadeError> {
 
 /// Parse a remote URL into protocol and host for git credential.
 fn parse_credential_url(remote_url: &str) -> Result<(String, String), CascadeError> {
-    if remote_url.starts_with("https://") || remote_url.starts_with("http://") {
-        let (protocol, rest) = if remote_url.starts_with("https://") {
-            ("https".to_string(), &remote_url[8..])
-        } else {
-            ("http".to_string(), &remote_url[7..])
-        };
+    if let Some(rest) = remote_url.strip_prefix("https://") {
         let host = rest.split('/').next().unwrap_or("github.com").to_string();
-        Ok((protocol, host))
+        Ok(("https".to_string(), host))
+    } else if let Some(rest) = remote_url.strip_prefix("http://") {
+        let host = rest.split('/').next().unwrap_or("github.com").to_string();
+        Ok(("http".to_string(), host))
     } else {
         Err(CascadeError::Git("Cannot use credential helper with non-HTTPS URL".into()))
     }

@@ -95,6 +95,7 @@ pub fn delete_presence(vault_root: &Path) {
     let _ = std::fs::remove_file(&path);
 }
 
+#[cfg(test)]
 pub fn is_our_presence(vault_root: &Path, host: &str, port: u16) -> bool {
     read_presence(vault_root)
         .map(|info| info.host == host && info.port == port)

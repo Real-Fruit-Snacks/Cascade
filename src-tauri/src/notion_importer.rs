@@ -83,7 +83,7 @@ fn element_to_markdown(
         }
         "pre" => {
             // Look for a nested <code> element and extract language from class
-            let (code_text, lang) = if let Some(code_el) = el.select(&*SEL_CODE).next() {
+            let (code_text, lang) = if let Some(code_el) = el.select(&SEL_CODE).next() {
                 let text = code_el.text().collect::<String>();
                 // Notion/Prism uses class="language-xxx"
                 let lang = code_el
@@ -318,9 +318,9 @@ fn hex_val(b: u8) -> Option<u8> {
 /// Convert an HTML <table> to a markdown table.
 fn convert_table(el: ElementRef) -> String {
     let rows: Vec<Vec<String>> = el
-        .select(&*SEL_TR)
+        .select(&SEL_TR)
         .map(|row| {
-            row.select(&*SEL_TD_TH)
+            row.select(&SEL_TD_TH)
                 .map(|cell| inner_text(cell).trim().replace('\n', " ").replace('|', "\\|"))
                 .collect()
         })
@@ -354,13 +354,13 @@ fn convert_table(el: ElementRef) -> String {
 /// Check if the first table in the document looks like a Notion properties table.
 /// Returns Some(frontmatter_string) if so.
 fn extract_notion_properties(doc: &Html) -> Option<String> {
-    let table = doc.select(&*SEL_TABLE).next()?;
+    let table = doc.select(&SEL_TABLE).next()?;
 
     let rows: Vec<(String, String)> = table
-        .select(&*SEL_TR)
+        .select(&SEL_TR)
         .filter_map(|row| {
             let cells: Vec<String> = row
-                .select(&*SEL_TD_TH)
+                .select(&SEL_TD_TH)
                 .map(|c| inner_text(c).trim().to_string())
                 .collect();
             if cells.len() == 2 && !cells[0].is_empty() {
@@ -399,9 +399,9 @@ fn html_to_markdown(html_content: &str, link_map: &HashMap<String, String>) -> S
 
     // Extract the <body> or fall back to <html>
     let root_el = doc
-        .select(&*SEL_BODY)
+        .select(&SEL_BODY)
         .next()
-        .or_else(|| doc.select(&*SEL_HTML).next());
+        .or_else(|| doc.select(&SEL_HTML).next());
 
     let markdown_body = if let Some(root) = root_el {
         // If we found a properties table, skip the first <table> in body
@@ -645,19 +645,17 @@ fn clean_zip_path(p: &Path) -> PathBuf {
 
     for (i, component) in components.iter().enumerate() {
         use std::path::Component;
-        match component {
-            Component::Normal(seg) => {
-                let seg_str = seg.to_str().unwrap_or("");
-                if i == count - 1 {
-                    // Last component: it's the filename
-                    result.push(clean_filename(seg_str));
-                } else {
-                    // Directory segment: strip UUID
-                    result.push(strip_notion_uuid(seg_str));
-                }
+        if let Component::Normal(seg) = component {
+            let seg_str = seg.to_str().unwrap_or("");
+            if i == count - 1 {
+                // Last component: it's the filename
+                result.push(clean_filename(seg_str));
+            } else {
+                // Directory segment: strip UUID
+                result.push(strip_notion_uuid(seg_str));
             }
-            _ => {} // Skip root, prefix, cur, parent components for safety
         }
+        // Skip root, prefix, cur, parent components for safety
     }
     result
 }
