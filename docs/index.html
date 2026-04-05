@@ -3,861 +3,357 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cascade — Modern Native Markdown Editor</title>
-    <meta name="description" content="Modern native markdown editor with real-time collaboration, live preview, wiki-links, canvas whiteboard, and 21+ themes. Built with Tauri and Rust.">
+    <title>Cascade — Markdown Editing, Elevated</title>
+    <meta name="description" content="Native desktop markdown editor built with Tauri and Rust. Real-time collaboration, 21+ themes, wiki-links, canvas whiteboard, and full offline operation.">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' text-anchor='middle' font-family='Inter,sans-serif' font-size='24' font-weight='800' fill='%23cba6f7'%3EC%3C/text%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --red: #f38ba8;
-            --maroon: #eba0ac;
-            --pink: #f5c2e7;
-            --mauve: #cba6f7;
-            --lavender: #b4befe;
-            --blue: #89b4fa;
-            --sapphire: #74c7ec;
-            --sky: #89dceb;
-            --teal: #94e2d5;
-            --green: #a6e3a1;
-            --yellow: #f9e2af;
-            --peach: #fab387;
-            --text: #cdd6f4;
-            --subtext1: #bac2de;
-            --subtext0: #a6adc8;
-            --overlay2: #9399b2;
-            --overlay1: #7f849c;
-            --overlay0: #6c7086;
-            --surface2: #585b70;
-            --surface1: #45475a;
-            --surface0: #313244;
-            --base: #1e1e2e;
-            --mantle: #181825;
-            --crust: #11111b;
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --accent1:#cba6f7;--accent2:#f5c2e7;--accentmid:#b4befe;
+            --accentrgb:203,166,247;
+            --text:#cdd6f4;--sub1:#bac2de;--sub0:#a6adc8;
+            --ov2:#9399b2;--ov1:#7f849c;--ov0:#6c7086;
+            --sf2:#585b70;--sf1:#45475a;--sf0:#313244;
+            --base:#1e1e2e;--mantle:#181825;--crust:#11111b;
+            --green:#a6e3a1;--yellow:#f9e2af;--red:#f38ba8;
+            --peach:#fab387;--mauve:#cba6f7;--teal:#94e2d5;
         }
+        body{font-family:'Inter',system-ui,sans-serif;background:var(--crust);color:var(--text);line-height:1.7;overflow-x:hidden}
+        ::selection{background:rgba(var(--accentrgb),0.3);color:var(--text)}
+        .container{max-width:1140px;margin:0 auto;padding:0 28px}
+        code{font-family:'JetBrains Mono',monospace;background:var(--mantle);padding:2px 7px;border-radius:3px;font-size:.88em;color:var(--green)}
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--base);
-            color: var(--text);
-            line-height: 1.7;
-            overflow-x: hidden;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image: radial-gradient(circle, var(--overlay0) 1px, transparent 1px);
-            background-size: 24px 24px;
-            opacity: 0.15;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1), rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2px);
-            pointer-events: none;
-            z-index: 999;
-            opacity: 0.4;
-        }
-
-        ::selection { background: rgba(203, 166, 247, 0.3); color: var(--text); }
-
-        code {
-            font-family: 'JetBrains Mono', monospace;
-            background: var(--mantle);
-            padding: 2px 7px;
-            border-radius: 3px;
-            font-size: 0.88em;
-            color: var(--green);
-        }
-
-        .container { max-width: 1140px; margin: 0 auto; padding: 0 28px; }
+        /* ── Nav ── */
+        .nav{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(17,17,27,0.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(49,50,68,0.5);z-index:1000;display:flex;align-items:center;justify-content:center}
+        .nav-inner{max-width:1140px;width:100%;padding:0 28px;display:flex;align-items:center;justify-content:space-between}
+        .nav-logo{font-family:'Inter',sans-serif;font-size:16px;font-weight:700;color:var(--text);text-decoration:none}
+        .nav-links{display:flex;align-items:center;gap:28px}
+        .nav-links a{font-size:13px;font-weight:500;color:var(--ov0);text-decoration:none;transition:color .2s}
+        .nav-links a:hover{color:var(--text)}
+        .nav-cta{background:linear-gradient(135deg,var(--accent1),var(--accentmid));color:var(--crust);padding:7px 18px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;transition:box-shadow .2s,transform .2s}
+        .nav-cta:hover{box-shadow:0 0 20px rgba(var(--accentrgb),0.3);transform:translateY(-1px)}
 
         /* ── Hero ── */
-        .hero {
-            padding: 100px 0 70px;
-            text-align: center;
-            position: relative;
-        }
-
-        .hero::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 10%;
-            right: 10%;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--surface1), transparent);
-        }
-
-        .hero-logo {
-            max-width: 440px;
-            margin: 0 auto 32px;
-        }
-
-        .hero-logo img { width: 100%; height: auto; }
-
-        .hero .subtitle {
-            font-size: clamp(15px, 2vw, 18px);
-            color: var(--subtext0);
-            max-width: 680px;
-            margin: 0 auto 28px;
-            line-height: 1.7;
-        }
-
-        /* ── Stats ── */
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 16px;
-            margin: 48px 0;
-        }
-
-        .stat {
-            background: var(--surface0);
-            border: 1px solid var(--surface1);
-            border-radius: 8px;
-            padding: 20px 16px;
-            text-align: center;
-            transition: transform 0.2s, border-color 0.2s;
-        }
-
-        .stat:hover { transform: translateY(-2px); border-color: var(--surface2); }
-
-        .stat-value {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--mauve);
-            line-height: 1;
-        }
-
-        .stat-label { font-size: 12px; color: var(--overlay1); margin-top: 6px; letter-spacing: 0.03em; }
-
-        /* ── CTAs ── */
-        .cta-group { display: flex; gap: 14px; justify-content: center; margin-top: 36px; }
-
-        .btn {
-            padding: 13px 32px;
-            border-radius: 6px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            font-weight: 600;
-            text-decoration: none;
-            letter-spacing: 0.03em;
-            transition: all 0.2s;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--mauve), var(--pink));
-            color: var(--crust);
-        }
-
-        .btn-primary:hover {
-            box-shadow: 0 0 24px rgba(203, 166, 247, 0.35);
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background: var(--surface0);
-            color: var(--text);
-            border: 1px solid var(--surface1);
-        }
-
-        .btn-secondary:hover { background: var(--surface1); border-color: var(--surface2); }
-
-        .btn-ghost {
-            background: transparent;
-            color: var(--subtext1);
-            border: 1px solid var(--surface1);
-        }
-
-        .btn-ghost:hover { background: var(--surface0); color: var(--text); }
-
-        /* ── Sections ── */
-        section { padding: 72px 0; }
-
-        section h2 {
-            font-size: clamp(28px, 4vw, 42px);
-            font-weight: 700;
-            margin-bottom: 12px;
-            color: var(--text);
-            letter-spacing: -0.02em;
-        }
-
-        section .section-desc {
-            font-size: 15px;
-            color: var(--subtext0);
-            margin-bottom: 44px;
-            max-width: 640px;
-            line-height: 1.7;
-        }
-
-        /* ── Feature Grid ── */
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
-
-        .feature {
-            background: var(--surface0);
-            border: 1px solid var(--surface1);
-            border-radius: 8px;
-            padding: 28px;
-            transition: all 0.25s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .feature::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--mauve), var(--pink));
-            opacity: 0;
-            transition: opacity 0.25s;
-        }
-
-        .feature:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
-            border-color: var(--surface2);
-        }
-
-        .feature:hover::before { opacity: 1; }
-
-        .feature h3 {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--mauve);
-            margin-bottom: 10px;
-            letter-spacing: 0.02em;
-        }
-
-        .feature p { font-size: 13.5px; color: var(--subtext1); line-height: 1.65; }
-
-        /* ── Mode Cards ── */
-        .modes-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-        }
-
-        .mode-card {
-            background: var(--surface0);
-            border: 1px solid var(--surface1);
-            border-radius: 8px;
-            padding: 28px;
-            transition: all 0.25s;
-        }
-
-        .mode-card:hover {
-            transform: translateY(-2px);
-            border-color: var(--surface2);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-        }
-
-        .mode-card .mode-icon {
-            font-size: 24px;
-            margin-bottom: 12px;
-            display: block;
-        }
-
-        .mode-card h3 {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--pink);
-            margin-bottom: 8px;
-        }
-
-        .mode-card p { font-size: 13px; color: var(--subtext1); line-height: 1.6; margin-bottom: 14px; }
-
-        .mode-card .mode-cmd {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            color: var(--green);
-            background: var(--mantle);
-            padding: 8px 12px;
-            border-radius: 4px;
-            display: block;
-            overflow-x: auto;
-        }
-
-        /* ── Capabilities ── */
-        .capabilities {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-            gap: 10px;
-        }
-
-        .capability {
-            background: var(--surface0);
-            border: 1px solid var(--surface1);
-            border-radius: 20px;
-            padding: 9px 18px;
-            font-size: 12.5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .capability:hover { border-color: var(--surface2); background: var(--surface1); }
-
-        .cap-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-        .cap-dot.full { background: var(--green); }
-        .cap-dot.partial { background: var(--yellow); }
-        .cap-dot.none { background: var(--surface2); }
+        .hero{padding:140px 0 80px;text-align:center;position:relative}
+        .hero::before{content:'';position:absolute;top:60px;left:50%;transform:translateX(-50%);width:800px;height:400px;background:radial-gradient(ellipse,rgba(var(--accentrgb),0.08) 0%,transparent 60%);pointer-events:none}
+        .hero-logo{position:relative;max-width:600px;margin:0 auto 32px}
+        .hero-logo img{width:100%;height:auto}
+        .hero-tagline{position:relative;font-size:clamp(24px,3.5vw,38px);font-weight:700;line-height:1.2;margin-bottom:16px;background:linear-gradient(135deg,var(--accent1),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .hero-desc{position:relative;font-size:16px;color:var(--ov0);max-width:560px;margin:0 auto 32px}
+        .hero-ctas{position:relative;display:flex;gap:12px;justify-content:center;margin-bottom:48px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent1),var(--accentmid));color:var(--crust);padding:12px 28px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;text-decoration:none;transition:box-shadow .2s,transform .2s}
+        .btn-primary:hover{box-shadow:0 0 24px rgba(var(--accentrgb),0.35);transform:translateY(-2px)}
+        .btn-secondary{background:var(--sf0);color:var(--text);padding:12px 28px;border-radius:8px;border:1px solid var(--sf1);font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500;text-decoration:none;transition:all .2s}
+        .btn-secondary:hover{background:var(--sf1);border-color:var(--sf2)}
 
         /* ── Terminal ── */
-        .terminal {
-            background: var(--mantle);
-            border: 1px solid var(--surface1);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        }
+        .terminal{position:relative;max-width:800px;margin:0 auto;background:var(--mantle);border:1px solid var(--sf0);border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.5),0 0 24px rgba(var(--accentrgb),0.06)}
+        .terminal-bar{background:var(--crust);padding:12px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--sf0)}
+        .terminal-dot{width:12px;height:12px;border-radius:50%}
+        .terminal-dot:nth-child(1){background:var(--red)}
+        .terminal-dot:nth-child(2){background:var(--yellow)}
+        .terminal-dot:nth-child(3){background:var(--green)}
+        .terminal-label{flex:1;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ov0)}
+        .terminal-body{padding:24px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.9;text-align:left}
+        .terminal-body pre{margin:0;white-space:pre-wrap;word-wrap:break-word}
+        .t-g{color:var(--green)}.t-b{color:var(--accent1)}.t-m{color:var(--sub0)}.t-p{color:var(--peach)}
 
-        .terminal-bar {
-            background: var(--crust);
-            padding: 10px 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-bottom: 1px solid var(--surface0);
-        }
+        /* ── Stats ── */
+        .stats{display:flex;justify-content:center;gap:40px;padding:60px 0;position:relative}
+        .stat{text-align:center}
+        .stat-num{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;color:var(--accent1);line-height:1}
+        .stat-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--sf2);margin-top:6px;letter-spacing:2px;text-transform:uppercase}
+        .stat-div{width:1px;height:48px;background:var(--sf0);align-self:center}
 
-        .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
-        .terminal-dot:nth-child(1) { background: var(--red); }
-        .terminal-dot:nth-child(2) { background: var(--yellow); }
-        .terminal-dot:nth-child(3) { background: var(--green); }
-        .terminal-label { flex: 1; text-align: center; font-size: 11px; color: var(--overlay0); font-family: 'JetBrains Mono', monospace; }
+        /* ── Sections ── */
+        section{padding:80px 0}
+        .section-label{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--accent1);letter-spacing:3px;text-transform:uppercase;margin-bottom:12px}
+        .section-title{font-size:clamp(28px,4vw,40px);font-weight:700;margin-bottom:12px;letter-spacing:-.02em}
+        .section-desc{font-size:15px;color:var(--ov0);margin-bottom:48px;max-width:560px}
+        .gradient-line{height:1px;background:linear-gradient(90deg,transparent,var(--accent1),var(--accent2),transparent);margin:0 auto;max-width:600px}
 
-        .terminal-body {
-            padding: 24px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            line-height: 1.8;
-        }
+        /* ── Bento ── */
+        .bento{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+        .bento-card{background:var(--mantle);border:1px solid var(--sf0);border-radius:12px;padding:28px;transition:all .25s;position:relative;overflow:hidden}
+        .bento-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent1),var(--accent2));opacity:0;transition:opacity .25s}
+        .bento-card:hover{transform:translateY(-3px);border-color:var(--sf1);box-shadow:0 12px 32px rgba(0,0,0,0.25),0 0 20px rgba(var(--accentrgb),0.06)}
+        .bento-card:hover::before{opacity:1}
+        .bento-hero{grid-column:span 2}
+        .bento-card h3{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--accent1);margin-bottom:8px}
+        .bento-card p{font-size:13.5px;color:var(--sub0);line-height:1.6}
+        .bento-card .mini-terminal{background:var(--crust);border-radius:8px;padding:14px;margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.8;text-align:left}
+        .bento-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+        .bento-stat .big{font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:700;color:var(--accent1)}
+        .bento-stat .label{font-size:12px;color:var(--sf2);margin-top:4px;letter-spacing:1px}
 
-        .terminal-body pre { margin: 0; white-space: pre-wrap; word-wrap: break-word; }
-        .terminal-body .p { color: var(--green); }
-        .terminal-body .c { color: var(--overlay0); }
-        .terminal-body .v { color: var(--mauve); }
-        .terminal-body .f { color: var(--peach); }
-        .terminal-body .cursor {
-            display: inline-block;
-            width: 8px; height: 15px;
-            background: var(--text);
-            animation: blink 1s step-end infinite;
-            vertical-align: middle;
-        }
+        /* ── Pills ── */
+        .pills{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+        .pill{background:var(--mantle);border:1px solid var(--sf0);border-radius:20px;padding:9px 18px;font-family:'JetBrains Mono',monospace;font-size:12px;display:flex;align-items:center;gap:8px;transition:all .2s;color:var(--sub0)}
+        .pill:hover{border-color:var(--sf1);background:var(--base)}
+        .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+        .dot-g{background:var(--green)}.dot-y{background:var(--yellow)}.dot-n{background:var(--sf2)}
 
-        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+        /* ── Arch ── */
+        .arch-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+        .arch-card{background:var(--mantle);border:1px solid var(--sf0);border-radius:12px;padding:28px;transition:border-color .2s}
+        .arch-card:hover{border-color:var(--sf1)}
+        .arch-num{display:inline-flex;width:30px;height:30px;background:linear-gradient(135deg,var(--accent1),var(--accentmid));color:var(--crust);border-radius:50%;align-items:center;justify-content:center;font-weight:700;font-size:14px;margin-bottom:14px}
+        .arch-card h3{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--teal);margin-bottom:8px}
+        .arch-card p{font-size:13.5px;color:var(--sub0);line-height:1.6}
 
-        /* ── Architecture ── */
-        .arch-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
+        /* ── Two Col ── */
+        .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 
-        .arch-card {
-            background: var(--surface0);
-            border: 1px solid var(--surface1);
-            border-radius: 8px;
-            padding: 28px;
-            transition: border-color 0.2s;
-        }
-
-        .arch-card:hover { border-color: var(--surface2); }
-
-        .arch-num {
-            display: inline-flex;
-            width: 30px; height: 30px;
-            background: linear-gradient(135deg, var(--mauve), var(--pink));
-            color: var(--crust);
-            border-radius: 50%;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 14px;
-            margin-bottom: 14px;
-        }
-
-        .arch-card h3 {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--pink);
-            margin-bottom: 10px;
-        }
-
-        .arch-card p { font-size: 13.5px; color: var(--subtext1); line-height: 1.6; }
-
-        /* ── Two Column ── */
-        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
-
-        /* ── Shortcuts ── */
-        .shortcuts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 32px; }
-
-        .shortcut-card {
-            background: var(--surface0);
-            border-radius: 8px;
-            padding: 28px;
-        }
-
-        .shortcut-card h3 {
-            font-size: 15px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .shortcut-card ul {
-            list-style: none;
-            font-size: 13px;
-            color: var(--subtext1);
-            line-height: 2;
-        }
-
-        .shortcut-card ul li::before { margin-right: 8px; }
-
-        .shortcut-nav { border-left: 3px solid var(--mauve); }
-        .shortcut-nav h3 { color: var(--mauve); }
-        .shortcut-edit { border-left: 3px solid var(--pink); }
-        .shortcut-edit h3 { color: var(--pink); }
+        /* ── Detection ── */
+        .detect-card{background:var(--mantle);border-radius:12px;padding:28px}
+        .detect-card h3{font-size:14px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+        .detect-card ul{list-style:none;font-size:13px;color:var(--sub0);line-height:2.2}
+        .detect-hidden{border-left:3px solid var(--green)}.detect-hidden h3{color:var(--green)}
+        .detect-visible{border-left:3px solid var(--yellow)}.detect-visible h3{color:var(--yellow)}
 
         /* ── Footer ── */
-        footer {
-            border-top: 1px solid var(--surface1);
-            padding: 48px 0;
-            margin-top: 80px;
-        }
+        footer{padding:48px 0;margin-top:40px}
+        .footer-line{height:1px;background:linear-gradient(90deg,transparent,var(--accent1),var(--accent2),transparent);margin-bottom:48px}
+        .footer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:32px}
+        .footer-grid h4{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);margin-bottom:14px;letter-spacing:2px;text-transform:uppercase}
+        .footer-grid ul{list-style:none}
+        .footer-grid li{margin-bottom:8px}
+        .footer-grid a{color:var(--ov2);text-decoration:none;font-size:13px;transition:color .2s}
+        .footer-grid a:hover{color:var(--accent1)}
+        .footer-grid p{font-size:13px;color:var(--ov1);line-height:1.7}
+        .footer-bottom{text-align:center;margin-top:36px;padding-top:24px;border-top:1px solid var(--sf0);font-size:12px;color:var(--ov0)}
 
-        .footer-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 32px;
-        }
-
-        .footer-grid h4 {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            color: var(--text);
-            margin-bottom: 14px;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-
-        .footer-grid ul { list-style: none; }
-        .footer-grid li { margin-bottom: 8px; }
-        .footer-grid a { color: var(--overlay2); text-decoration: none; font-size: 13px; transition: color 0.2s; }
-        .footer-grid a:hover { color: var(--mauve); }
-
-        .footer-grid p { font-size: 13px; color: var(--overlay1); line-height: 1.7; }
-
-        .footer-bottom {
-            text-align: center;
-            margin-top: 36px;
-            padding-top: 24px;
-            border-top: 1px solid var(--surface0);
-            font-size: 12px;
-            color: var(--overlay0);
-            letter-spacing: 0.02em;
-        }
+        /* ── Animate ── */
+        .animate{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+        .animate.visible{opacity:1;transform:translateY(0)}
+        .animate-scale{opacity:0;transform:translateY(24px) scale(.97);transition:opacity .8s ease,transform .8s ease}
+        .animate-scale.visible{opacity:1;transform:translateY(0) scale(1)}
 
         /* ── Responsive ── */
-        @media (max-width: 960px) {
-            .stats { grid-template-columns: repeat(3, 1fr); }
-            .modes-grid, .two-col, .arch-grid, .shortcuts-grid { grid-template-columns: 1fr; }
-            .footer-grid { grid-template-columns: repeat(2, 1fr); }
-        }
+        @media(max-width:960px){.bento{grid-template-columns:1fr 1fr}.bento-hero{grid-column:span 2}.two-col,.arch-grid{grid-template-columns:1fr}.footer-grid{grid-template-columns:repeat(2,1fr)}.stats{flex-wrap:wrap;gap:24px}}
+        @media(max-width:600px){.container{padding:0 16px}.hero{padding:100px 0 48px}.bento{grid-template-columns:1fr}.bento-hero{grid-column:span 1}.stats{gap:16px}.stat-div{display:none}.nav-links a:not(.nav-cta){display:none}.footer-grid{grid-template-columns:1fr}.pills{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
 
-        @media (max-width: 600px) {
-            .container { padding: 0 16px; }
-            .hero { padding: 60px 0 48px; }
-            section { padding: 48px 0; }
-            .stats { grid-template-columns: repeat(2, 1fr); }
-            .cta-group { flex-direction: column; align-items: center; }
-            .btn { width: 100%; max-width: 280px; text-align: center; }
-            .features { grid-template-columns: 1fr; }
-            .footer-grid { grid-template-columns: 1fr; }
-        }
-
-        a:focus-visible { outline: 2px solid var(--mauve); outline-offset: 2px; }
+        a:focus-visible{outline:2px solid var(--accent1);outline-offset:2px}
     </style>
 </head>
 <body>
 
-    <!-- ════════════════════ HERO ════════════════════ -->
+    <!-- Nav -->
+    <nav class="nav"><div class="nav-inner">
+        <a href="#" class="nav-logo">Cascade</a>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#architecture">Architecture</a>
+            <a href="https://github.com/Real-Fruit-Snacks/Cascade">GitHub</a>
+            <a href="https://github.com/Real-Fruit-Snacks/Cascade/releases/latest" class="nav-cta">Download</a>
+        </div>
+    </div></nav>
+
+    <!-- Hero -->
     <section class="hero">
         <div class="container">
-            <div class="hero-logo">
-                <img src="https://raw.githubusercontent.com/Real-Fruit-Snacks/Cascade/main/docs/assets/logo-dark.svg" alt="Cascade">
+            <div class="hero-logo animate"><img src="https://raw.githubusercontent.com/Real-Fruit-Snacks/Cascade/main/docs/assets/logo-dark.svg" alt="Cascade"></div>
+            <h1 class="hero-tagline animate" style="transition-delay:.1s">Markdown editing, elevated</h1>
+            <p class="hero-desc animate" style="transition-delay:.2s">Native desktop markdown editor built with Tauri and Rust. Real-time collaboration, 21+ themes, wiki-links with backlinks, canvas whiteboard, and full offline operation.</p>
+            <div class="hero-ctas animate" style="transition-delay:.3s">
+                <a href="https://github.com/Real-Fruit-Snacks/Cascade/releases/latest" class="btn-primary">Download Latest</a>
+                <a href="https://github.com/Real-Fruit-Snacks/Cascade" class="btn-secondary">View Source</a>
             </div>
+            <div class="terminal animate-scale" style="transition-delay:.4s">
+                <div class="terminal-bar">
+                    <span class="terminal-dot"></span><span class="terminal-dot"></span><span class="terminal-dot"></span>
+                    <span class="terminal-label">cascade</span>
+                </div>
+                <div class="terminal-body"><pre><span class="t-g">$</span> git clone https://github.com/Real-Fruit-Snacks/Cascade.git
+<span class="t-g">$</span> cd Cascade && npm install
+<span class="t-g">$</span> npm run tauri dev
+<span class="t-b">  Compiling cascade v0.1.0</span>
+<span class="t-b">  Finished dev [unoptimized + debuginfo]</span>
 
-            <p class="subtitle">
-                Modern native markdown editor with real-time collaboration, live preview,
-                wiki-links, canvas whiteboard, and 21+ themes.
-                Built with Tauri and Rust. Your files stay on your disk.
-            </p>
+<span class="t-p">  Info  Tauri v2 running on http://localhost:1420</span>
+<span class="t-p">  Ready in 3.2s</span>
 
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-value">21+</div>
-                    <div class="stat-label">Built-in Themes</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">40+</div>
-                    <div class="stat-label">Commands</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">3</div>
-                    <div class="stat-label">Platforms</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">4</div>
-                    <div class="stat-label">Import Sources</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">2200+</div>
-                    <div class="stat-label">i18n Keys</div>
-                </div>
-            </div>
-
-            <div class="cta-group">
-                <a href="https://github.com/Real-Fruit-Snacks/Cascade/releases/latest" class="btn btn-primary">Download Latest</a>
-                <a href="https://github.com/Real-Fruit-Snacks/Cascade" class="btn btn-secondary">View Source</a>
-                <a href="https://github.com/Real-Fruit-Snacks/Cascade#quick-start" class="btn btn-ghost">Documentation</a>
+<span class="t-g">$</span> npm run tauri build
+<span class="t-m">  Built .msi, .dmg, .AppImage</span></pre></div>
             </div>
         </div>
     </section>
 
-    <!-- ════════════════════ CORE FEATURES ════════════════════ -->
-    <section>
-        <div class="container">
-            <h2>Core Features</h2>
-            <p class="section-desc">Six major feature areas covering every aspect of personal knowledge management. Native performance, no Electron overhead.</p>
+    <!-- Stats -->
+    <div class="container">
+        <div class="stats animate">
+            <div class="stat"><div class="stat-num" data-target="21">0</div><div class="stat-label">Themes</div></div>
+            <div class="stat-div"></div>
+            <div class="stat"><div class="stat-num" data-target="40">0</div><div class="stat-label">Components</div></div>
+            <div class="stat-div"></div>
+            <div class="stat"><div class="stat-num" data-target="2200">0</div><div class="stat-label">i18n Keys</div></div>
+            <div class="stat-div"></div>
+            <div class="stat"><div class="stat-num" data-target="3">0</div><div class="stat-label">Platforms</div></div>
+        </div>
+        <div class="gradient-line"></div>
+    </div>
 
-            <div class="modes-grid">
-                <div class="mode-card">
-                    <span class="mode-icon">&#9997;</span>
+    <!-- Features Bento -->
+    <section id="features">
+        <div class="container">
+            <div class="section-label animate">FEATURES</div>
+            <h2 class="section-title animate" style="transition-delay:.08s">Your notes, your machine</h2>
+            <p class="section-desc animate" style="transition-delay:.16s">Vault-based knowledge management with live preview, wiki-links, graph view, canvas whiteboard, and real-time collaboration.</p>
+
+            <div class="bento">
+                <div class="bento-card bento-hero animate" style="transition-delay:.1s">
                     <h3>Live Preview Editor</h3>
-                    <p>Three view modes with CodeMirror 6. Syntax highlighting, code folding, bracket matching, LaTeX math, and Mermaid diagrams.</p>
-                    <code class="mode-cmd">Live Preview &middot; Source &middot; Reading</code>
+                    <p>CodeMirror 6 with three view modes — Live Preview, Source, and Reading. Syntax highlighting, code folding, bracket matching, Vim mode, LaTeX math, and Mermaid diagrams.</p>
+                    <div class="mini-terminal"><span class="t-m">/heading  /code  /callout  /table</span><br><span class="t-b">Slash commands for quick formatting</span><br><span class="t-b">Ctrl+P command palette (40+ commands)</span></div>
                 </div>
-
-                <div class="mode-card">
-                    <span class="mode-icon">&#128279;</span>
-                    <h3>Wiki-Links</h3>
-                    <p>[[note]] links with autocomplete, backlink tracking, heading links, and embed preview for transclusion.</p>
-                    <code class="mode-cmd">[[note]] &middot; ![[embed]] &middot; [[note#heading]]</code>
+                <div class="bento-card bento-stat animate" style="transition-delay:.18s">
+                    <div class="big">21<span style="font-size:24px">+</span></div>
+                    <div class="label">Built-in Themes</div>
                 </div>
-
-                <div class="mode-card">
-                    <span class="mode-icon">&#129309;</span>
-                    <h3>Collaboration</h3>
-                    <p>Live collaborative editing via Yjs CRDT. Cursors, presence dots, auto host election. Zero-config shared folders.</p>
-                    <code class="mode-cmd">Yjs CRDT &middot; Argon2 auth &middot; Auto-discovery</code>
+                <div class="bento-card animate" style="transition-delay:.2s">
+                    <h3 style="color:var(--mauve)">Wiki-Links & Graph</h3>
+                    <p>[[note]] links with autocomplete, backlink tracking, and heading links. Graph view visualizing connections. Tag index with browsing and renaming.</p>
                 </div>
-
-                <div class="mode-card">
-                    <span class="mode-icon">&#127912;</span>
-                    <h3>Canvas Whiteboard</h3>
-                    <p>Infinite canvas with text, file, and link cards. Edges, groups, auto-layout. Obsidian-compatible .canvas format.</p>
-                    <code class="mode-cmd">Pan &middot; Zoom &middot; Snap-to-grid &middot; Export</code>
+                <div class="bento-card animate" style="transition-delay:.28s">
+                    <h3 style="color:var(--green)">Real-Time Collab</h3>
+                    <p>Live collaborative editing via Yjs CRDT sync. Multiple users with live cursors and per-user colors. Auto host election with zero-config discovery.</p>
                 </div>
-
-                <div class="mode-card">
-                    <span class="mode-icon">&#128209;</span>
-                    <h3>Knowledge Graph</h3>
-                    <p>Visual graph of note connections. Backlinks panel, tag index, bookmarks, outline navigation, and table of contents.</p>
-                    <code class="mode-cmd">Graph &middot; Backlinks &middot; Tags &middot; Outline</code>
+                <div class="bento-card animate" style="transition-delay:.36s">
+                    <h3 style="color:var(--peach)">Canvas Whiteboard</h3>
+                    <p>Infinite canvas with pan, zoom, and snap-to-grid. Text, file, and link cards with markdown rendering. Auto-layout algorithms. Obsidian-compatible .canvas format.</p>
                 </div>
-
-                <div class="mode-card">
-                    <span class="mode-icon">&#127912;</span>
-                    <h3>21+ Themes</h3>
-                    <p>Catppuccin, Nord, Dracula, Gruvbox, Tokyo Night, Rose Pine, and more. Custom themes via JSON with visual editor.</p>
-                    <code class="mode-cmd">Theme Studio &middot; JSON import &middot; Card picker</code>
+                <div class="bento-card bento-stat animate" style="transition-delay:.1s">
+                    <div class="big" style="color:var(--teal)">3</div>
+                    <div class="label">View Modes</div>
+                </div>
+                <div class="bento-card bento-hero animate" style="transition-delay:.18s">
+                    <h3 style="color:var(--red)">Import & Export</h3>
+                    <p>Import from Obsidian, Notion, Bear, and Roam Research. Export to Markdown, HTML, or PDF with batch export. Deep link support via cascade:// protocol. GitHub sync for vault backup.</p>
+                    <div class="mini-terminal"><span class="t-m">Obsidian  Notion  Bear  Roam  →  Cascade</span><br><span class="t-b">Cascade  →  Markdown  HTML  PDF</span><br><span class="t-m">cascade://open/vault/note</span></div>
+                </div>
+                <div class="bento-card animate" style="transition-delay:.26s">
+                    <h3 style="color:var(--yellow)">Focus & Writing</h3>
+                    <p>Focus mode with paragraph dimming and typewriter mode. Word count goals with progress tracking. Split panes for side-by-side editing. Auto-save.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ════════════════════ FEATURES ════════════════════ -->
-    <section style="background: var(--mantle);">
+    <!-- Capabilities -->
+    <section style="background:var(--mantle)">
         <div class="container">
-            <h2>Editor Features</h2>
-            <p class="section-desc">A complete writing environment with every tool you need. Slash commands, focus mode, split panes, and deep customization.</p>
-
-            <div class="features">
-                <div class="feature">
-                    <h3>Slash Commands</h3>
-                    <p>Type <code>/</code> to insert headings, code blocks, callouts, tables, and more. Context-aware completions with keyboard navigation.</p>
-                </div>
-                <div class="feature">
-                    <h3>Focus Mode</h3>
-                    <p>Paragraph dimming reduces distraction. Typewriter mode keeps the current line centered. Word count goals with progress tracking.</p>
-                </div>
-                <div class="feature">
-                    <h3>Split Panes</h3>
-                    <p>Side-by-side editing with independent scroll. Compare notes, reference while writing, or preview alongside source.</p>
-                </div>
-                <div class="feature">
-                    <h3>Find &amp; Replace</h3>
-                    <p>Search across your entire vault with <code>Ctrl+Shift+F</code>. In-file find and replace with regex support.</p>
-                </div>
-                <div class="feature">
-                    <h3>Table Editor</h3>
-                    <p>Visual table editing with column/row manipulation. Tab through cells. Alignment controls. No raw markdown wrangling.</p>
-                </div>
-                <div class="feature">
-                    <h3>Smart Lists</h3>
-                    <p>Auto-continue bullets, tasks, and numbered lists. Indent/outdent with Tab/Shift+Tab. Checkbox toggling.</p>
-                </div>
-                <div class="feature">
-                    <h3>Spellcheck</h3>
-                    <p>Built-in spellcheck with custom dictionary support. Add words per-vault. No external service required.</p>
-                </div>
-                <div class="feature">
-                    <h3>Import &amp; Export</h3>
-                    <p>Import from <strong>Obsidian</strong>, <strong>Notion</strong>, <strong>Bear</strong>, <strong>Roam Research</strong>. Export to Markdown, HTML, or PDF with batch support.</p>
-                </div>
-                <div class="feature">
-                    <h3>Plugin System</h3>
-                    <p>Sandboxed iframe execution with restrictive CSP. Plugin marketplace. 30+ configurable feature toggles per vault.</p>
-                </div>
+            <div class="section-label animate">CAPABILITIES</div>
+            <h2 class="section-title animate" style="transition-delay:.08s">Editor features</h2>
+            <p class="section-desc animate" style="transition-delay:.16s">Full-featured on all desktop platforms. Native installers for Windows (.msi), macOS (.dmg), and Linux (.AppImage/.deb).</p>
+            <div class="pills">
+                <div class="pill animate"><span class="dot dot-g"></span>Live Preview</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Source Mode</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Reading Mode</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Wiki-Links</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Backlinks</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Real-Time Collab</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Canvas</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Slash Commands</div>
+                <div class="pill animate"><span class="dot dot-g"></span>LaTeX Math</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Focus & Writing</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Code Folding</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Split Panes</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Focus Mode</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Typewriter</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Word Goals</div>
+                <div class="pill animate"><span class="dot dot-g"></span>Plugin System</div>
+                <div class="pill animate"><span class="dot dot-g"></span>21+ Themes</div>
+                <div class="pill animate"><span class="dot dot-g"></span>GitHub Sync</div>
+            </div>
+            <div style="margin-top:16px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ov0)">
+                <span style="color:var(--green)">●</span> Full &nbsp;
+                <span style="color:var(--yellow)">●</span> Full &nbsp;
+                <span style="color:var(--sf2)">●</span> Not Supported
             </div>
         </div>
     </section>
 
-    <!-- ════════════════════ CAPABILITIES ════════════════════ -->
-    <section>
+    <!-- Architecture -->
+    <section id="architecture">
         <div class="container">
-            <h2>Platform Capabilities</h2>
-            <p class="section-desc">Full-featured on all three desktop platforms. Native performance via Tauri — no Electron, no browser overhead.</p>
-
-            <div class="capabilities">
-                <div class="capability"><span class="cap-dot full"></span>Live Preview</div>
-                <div class="capability"><span class="cap-dot full"></span>Source Mode</div>
-                <div class="capability"><span class="cap-dot full"></span>Reading Mode</div>
-                <div class="capability"><span class="cap-dot full"></span>Wiki-links</div>
-                <div class="capability"><span class="cap-dot full"></span>Backlinks</div>
-                <div class="capability"><span class="cap-dot full"></span>Graph View</div>
-                <div class="capability"><span class="cap-dot full"></span>Canvas</div>
-                <div class="capability"><span class="cap-dot full"></span>Collaboration</div>
-                <div class="capability"><span class="cap-dot full"></span>Slash Commands</div>
-                <div class="capability"><span class="cap-dot full"></span>21+ Themes</div>
-                <div class="capability"><span class="cap-dot full"></span>Split Panes</div>
-                <div class="capability"><span class="cap-dot full"></span>Focus Mode</div>
-                <div class="capability"><span class="cap-dot full"></span>LaTeX Math</div>
-                <div class="capability"><span class="cap-dot full"></span>Mermaid</div>
-                <div class="capability"><span class="cap-dot full"></span>Spellcheck</div>
-                <div class="capability"><span class="cap-dot full"></span>Import/Export</div>
-                <div class="capability"><span class="cap-dot full"></span>PDF Export</div>
-                <div class="capability"><span class="cap-dot full"></span>Plugin System</div>
-                <div class="capability"><span class="cap-dot full"></span>GitHub Sync</div>
-                <div class="capability"><span class="cap-dot full"></span>Deep Links</div>
-                <div class="capability"><span class="cap-dot full"></span>Vim Mode</div>
-                <div class="capability"><span class="cap-dot full"></span>i18n Ready</div>
-                <div class="capability"><span class="cap-dot full"></span>Auto-save</div>
-                <div class="capability"><span class="cap-dot partial"></span>Periodic Notes</div>
-            </div>
-
-            <div style="margin-top: 20px; font-size: 12px; color: var(--overlay0); font-family: 'JetBrains Mono', monospace;">
-                <span style="color: var(--green);">&#9679;</span> All Platforms &nbsp;&nbsp;
-                <span style="color: var(--yellow);">&#9679;</span> Template-based &nbsp;&nbsp;
-                <span style="color: var(--surface2);">&#9679;</span> Not Supported
-            </div>
-        </div>
-    </section>
-
-    <!-- ════════════════════ SHORTCUTS ════════════════════ -->
-    <section style="background: var(--mantle);">
-        <div class="container">
-            <h2>Keyboard Shortcuts</h2>
-            <p class="section-desc">40+ commands accessible via keyboard. Fully customizable bindings. Command Palette for everything else.</p>
-
-            <div class="shortcuts-grid">
-                <div class="shortcut-card shortcut-nav">
-                    <h3>Navigation</h3>
-                    <ul>
-                        <li><code>Ctrl+O</code> &mdash; Quick Open</li>
-                        <li><code>Ctrl+P</code> &mdash; Command Palette</li>
-                        <li><code>Ctrl+Tab</code> &mdash; Next Tab</li>
-                        <li><code>Ctrl+B</code> &mdash; Toggle Sidebar</li>
-                        <li><code>Ctrl+,</code> &mdash; Settings</li>
-                    </ul>
-                </div>
-                <div class="shortcut-card shortcut-edit">
-                    <h3>Editing</h3>
-                    <ul>
-                        <li><code>Ctrl+N</code> &mdash; New File</li>
-                        <li><code>Ctrl+S</code> &mdash; Save</li>
-                        <li><code>Ctrl+Shift+F</code> &mdash; Search in Vault</li>
-                        <li><code>Ctrl+Shift+C</code> &mdash; New Canvas</li>
-                        <li><code>Alt+D</code> &mdash; Open Daily Note</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ════════════════════ ARCHITECTURE ════════════════════ -->
-    <section>
-        <div class="container">
-            <h2>Architecture</h2>
-            <p class="section-desc">Four-layer design. Tauri bridges native Rust performance with a modern React frontend. No Electron overhead.</p>
-
+            <div class="section-label animate">ARCHITECTURE</div>
+            <h2 class="section-title animate" style="transition-delay:.08s">Tauri v2 architecture</h2>
+            <p class="section-desc animate" style="transition-delay:.16s">React frontend with CodeMirror 6 for editing, Zustand for state, Yjs for CRDT sync. Rust backend handles file I/O, collaboration, and search.</p>
             <div class="arch-grid">
-                <div class="arch-card">
-                    <div class="arch-num">1</div>
-                    <h3>React Frontend</h3>
-                    <p>React 19 + TypeScript with Tailwind CSS. 40+ components including editor panes, canvas, settings, import/export wizards. Zustand 5 for state management.</p>
-                </div>
-                <div class="arch-card">
-                    <div class="arch-num">2</div>
-                    <h3>CodeMirror 6 Editor</h3>
-                    <p>30+ custom extensions: wiki-links, live preview, image preview, math rendering, Mermaid diagrams, slash commands, table editor, and Yjs collaboration binding.</p>
-                </div>
-                <div class="arch-card">
-                    <div class="arch-num">3</div>
-                    <h3>Tauri v2 Backend</h3>
-                    <p>Rust-powered file I/O with path traversal protection. Collaboration server bound to localhost. Full-text search indexer. Git sync. Multi-format importers.</p>
-                </div>
-                <div class="arch-card">
-                    <div class="arch-num">4</div>
-                    <h3>Plugin &amp; Theme Layer</h3>
-                    <p>Sandboxed iframe plugin execution with restrictive CSP. 21+ themes with JSON custom theme support. i18next internationalization with 2200+ translation keys.</p>
-                </div>
+                <div class="arch-card animate" style="transition-delay:.1s"><div class="arch-num">1</div><h3>React Frontend</h3><p>40+ UI components with Zustand state management. CodeMirror 6 extensions for wiki-links, live preview, slash commands, and collaboration.</p></div>
+                <div class="arch-card animate" style="transition-delay:.2s"><div class="arch-num">2</div><h3>Editor Engine</h3><p>CodeMirror 6 with custom extensions for wiki-links, live preview, slash commands. Yjs CRDT for real-time collaboration with WebSocket sync.</p></div>
+                <div class="arch-card animate" style="transition-delay:.3s"><div class="arch-num">3</div><h3>Rust Backend</h3><p>Tauri v2 commands for file I/O, vault management, themes, plugins, and export. WebSocket collaboration server. Full-text search engine.</p></div>
+                <div class="arch-card animate" style="transition-delay:.4s"><div class="arch-num">4</div><h3>Plugin System</h3><p>Sandboxed iframe execution with restrictive CSP. Built-in marketplace. 30+ configurable feature toggles. Per-plugin settings and i18next internationalization.</p></div>
             </div>
         </div>
     </section>
 
-    <!-- ════════════════════ GETTING STARTED ════════════════════ -->
-    <section style="background: var(--mantle);">
+    <!-- Getting Started -->
+    <section style="background:var(--mantle)">
         <div class="container">
-            <h2>Getting Started</h2>
-            <p class="section-desc">Download a pre-built binary or build from source. Available for Windows, macOS, and Linux.</p>
-
+            <div class="section-label animate">GETTING STARTED</div>
+            <h2 class="section-title animate" style="transition-delay:.08s">Download or build</h2>
+            <p class="section-desc animate" style="transition-delay:.16s">Pre-built installers for all platforms. Or build from source with Node.js 18+ and Rust 1.70+.</p>
             <div class="two-col">
-                <div class="terminal">
-                    <div class="terminal-bar">
-                        <span class="terminal-dot"></span>
-                        <span class="terminal-dot"></span>
-                        <span class="terminal-dot"></span>
-                        <span class="terminal-label">build.sh</span>
-                    </div>
-                    <div class="terminal-body">
-                        <pre><span class="c"># Clone and build</span>
-<span class="p">$</span> git clone https://github.com/Real-Fruit-Snacks/Cascade.git
-<span class="p">$</span> cd Cascade
+                <div class="terminal animate" style="transition-delay:.1s">
+                    <div class="terminal-bar"><span class="terminal-dot"></span><span class="terminal-dot"></span><span class="terminal-dot"></span><span class="terminal-label">build.sh</span></div>
+                    <div class="terminal-body"><pre><span class="t-g">$</span> git clone https://github.com/Real-Fruit-Snacks/Cascade.git
+<span class="t-g">$</span> cd Cascade && npm install
 
-<span class="c"># Install dependencies</span>
-<span class="p">$</span> npm install
+<span class="t-m"># Development mode</span>
+<span class="t-g">$</span> npm run tauri dev
 
-<span class="c"># Development mode</span>
-<span class="p">$</span> npm run tauri dev
-
-<span class="c"># Production build</span>
-<span class="p">$</span> npm run tauri build
-<span class="v">  Compiling cascade v0.1.0</span>
-<span class="v">    Finished release [optimized]</span><span class="cursor"></span></pre>
-                    </div>
+<span class="t-m"># Production build</span>
+<span class="t-g">$</span> npm run tauri build
+<span class="t-b">.msi  .dmg  .AppImage  .deb</span></pre></div>
                 </div>
+                <div class="terminal animate" style="transition-delay:.25s">
+                    <div class="terminal-bar"><span class="terminal-dot"></span><span class="terminal-dot"></span><span class="terminal-dot"></span><span class="terminal-label">usage.sh</span></div>
+                    <div class="terminal-body"><pre><span class="t-m"># Run unit tests</span>
+<span class="t-g">$</span> npm test
 
-                <div class="terminal">
-                    <div class="terminal-bar">
-                        <span class="terminal-dot"></span>
-                        <span class="terminal-dot"></span>
-                        <span class="terminal-dot"></span>
-                        <span class="terminal-label">usage.sh</span>
-                    </div>
-                    <div class="terminal-body">
-                        <pre><span class="c"># Run tests</span>
-<span class="p">$</span> npm test
-<span class="v">  Tests: 42 passed, 0 failed</span>
+<span class="t-m"># E2E tests</span>
+<span class="t-g">$</span> npx playwright test
 
-<span class="c"># Lint</span>
-<span class="p">$</span> npm run lint
-<span class="v">  No warnings or errors</span>
+<span class="t-m"># Lint</span>
+<span class="t-g">$</span> npm run lint
 
-<span class="c"># E2E tests</span>
-<span class="p">$</span> npx playwright test
-<span class="v">  12 tests passed</span>
-
-<span class="c"># Type check</span>
-<span class="p">$</span> npm run build
-<span class="v">  Build completed successfully</span></pre>
-                    </div>
+<span class="t-m"># Type check</span>
+<span class="t-g">$</span> npx tsc --noEmit</pre></div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ════════════════════ FOOTER ════════════════════ -->
+    <!-- Footer -->
     <footer>
         <div class="container">
+            <div class="footer-line"></div>
             <div class="footer-grid">
-                <div>
-                    <h4>Documentation</h4>
-                    <ul>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Cascade#quick-start">Quick Start</a></li>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Cascade#editor">Editor</a></li>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Cascade#real-time-collaboration">Collaboration</a></li>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Cascade#architecture">Architecture</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4>Resources</h4>
-                    <ul>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Cascade/releases/latest">Latest Release</a></li>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Cascade/issues">Report Issue</a></li>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Cascade/blob/main/CONTRIBUTING.md">Contributing</a></li>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Cascade/blob/main/CHANGELOG.md">Changelog</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4>Toolkit</h4>
-                    <ul>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Aquifer">Aquifer</a></li>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Flux">Flux</a></li>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Riptide">Riptide</a></li>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Slipstream">Slipstream</a></li>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Tidepool">Tidepool</a></li>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/HydroShot">HydroShot</a></li>
-                        <li><a href="https://github.com/Real-Fruit-Snacks/Conduit">Conduit</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4>License</h4>
-                    <p>MIT License<br>Copyright &copy; 2026 Real-Fruit-Snacks<br><br>Built with Tauri + React + Rust</p>
-                </div>
+                <div><h4>Documentation</h4><ul><li><a href="https://github.com/Real-Fruit-Snacks/Cascade#quick-start">Quick Start</a></li><li><a href="https://github.com/Real-Fruit-Snacks/Cascade#features">Features</a></li><li><a href="https://github.com/Real-Fruit-Snacks/Cascade#architecture">Architecture</a></li><li><a href="https://github.com/Real-Fruit-Snacks/Cascade#security">Security</a></li></ul></div>
+                <div><h4>Resources</h4><ul><li><a href="https://github.com/Real-Fruit-Snacks/Cascade/releases/latest">Latest Release</a></li><li><a href="https://github.com/Real-Fruit-Snacks/Cascade/issues">Report Issue</a></li><li><a href="https://github.com/Real-Fruit-Snacks/Cascade/blob/main/CONTRIBUTING.md">Contributing</a></li><li><a href="https://github.com/Real-Fruit-Snacks/Cascade/blob/main/CHANGELOG.md">Changelog</a></li></ul></div>
+                <div><h4>Toolkit</h4><ul><li><a href="https://github.com/Real-Fruit-Snacks/Flux">Flux</a></li><li><a href="https://github.com/Real-Fruit-Snacks/Rapids">Rapids</a></li><li><a href="https://github.com/Real-Fruit-Snacks/Whirlpool">Whirlpool</a></li><li><a href="https://github.com/Real-Fruit-Snacks">View All →</a></li></ul></div>
+                <div><h4>License</h4><p>MIT License<br>Copyright © 2026<br>Real-Fruit-Snacks</p></div>
             </div>
-            <div class="footer-bottom">
-                Part of the Real-Fruit-Snacks toolkit &nbsp;&middot;&nbsp; Your notes, your disk, your control.
-            </div>
+            <div class="footer-bottom">Part of the Real-Fruit-Snacks productivity suite</div>
         </div>
     </footer>
 
+    <script>
+    // Scroll animations
+    const obs=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting){el.target.classList.add('visible');obs.unobserve(el.target)}})},{threshold:.1,rootMargin:'0px 0px -50px 0px'});
+    document.querySelectorAll('.animate,.animate-scale').forEach(el=>obs.observe(el));
+
+    // Counter animation
+    function countUp(el){const t=parseInt(el.dataset.target),s=el.dataset.suffix||'',p=el.dataset.prefix||'',d=1500,st=performance.now();function u(n){const pr=Math.min((n-st)/d,1),e=1-Math.pow(1-pr,3);el.textContent=p+Math.floor(t*e)+s;if(pr<1)requestAnimationFrame(u)}requestAnimationFrame(u)}
+    const sobs=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting){countUp(el.target);sobs.unobserve(el.target)}})},{threshold:.5});
+    document.querySelectorAll('.stat-num').forEach(el=>sobs.observe(el));
+
+    // Nav scroll
+    window.addEventListener('scroll',()=>{document.querySelector('.nav').style.borderBottomColor=window.scrollY>20?'rgba(49,50,68,0.8)':'rgba(49,50,68,0.3)'});
+    </script>
 </body>
 </html>
