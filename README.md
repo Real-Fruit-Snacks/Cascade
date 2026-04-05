@@ -1,15 +1,16 @@
 <div align="center">
 
-<img src="docs/banner.svg" alt="Cascade" width="800">
+<img src="docs/assets/logomark-dark.svg" alt="Cascade" width="120">
 
-A fast, beautiful markdown note-taking app for personal knowledge management.
-Built with Tauri, React, and CodeMirror.
+# Cascade
+
+Modern native markdown editor with real-time collaboration, live preview, wiki-links, canvas whiteboard, and 21+ themes — built with Tauri and Rust.
 
 <p>
-  <a href="https://github.com/Real-Fruit-Snacks/Cascade/releases"><img src="https://img.shields.io/github/v/release/Real-Fruit-Snacks/Cascade" alt="Release" /></a>
-  <a href="https://github.com/Real-Fruit-Snacks/Cascade/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Real-Fruit-Snacks/Cascade" alt="License" /></a>
-  <a href="https://github.com/Real-Fruit-Snacks/Cascade/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Real-Fruit-Snacks/Cascade/ci.yml" alt="CI" /></a>
-  <a href="https://github.com/Real-Fruit-Snacks/Cascade/stargazers"><img src="https://img.shields.io/github/stars/Real-Fruit-Snacks/Cascade" alt="Stars" /></a>
+  <a href="https://github.com/Real-Fruit-Snacks/Cascade/releases"><img src="https://img.shields.io/github/v/release/Real-Fruit-Snacks/Cascade?style=flat-square&color=cba6f7" alt="Release" /></a>
+  <a href="https://github.com/Real-Fruit-Snacks/Cascade/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Real-Fruit-Snacks/Cascade?style=flat-square&color=f5c2e7" alt="License" /></a>
+  <a href="https://github.com/Real-Fruit-Snacks/Cascade/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Real-Fruit-Snacks/Cascade/ci.yml?style=flat-square&color=a6e3a1" alt="CI" /></a>
+  <a href="https://github.com/Real-Fruit-Snacks/Cascade/stargazers"><img src="https://img.shields.io/github/stars/Real-Fruit-Snacks/Cascade?style=flat-square&color=f9e2af" alt="Stars" /></a>
 </p>
 
 <p>
@@ -17,10 +18,19 @@ Built with Tauri, React, and CodeMirror.
   <a href="#screenshots">Screenshots</a> &bull;
   <a href="#installation">Installation</a> &bull;
   <a href="#development">Development</a> &bull;
+  <a href="#contributing">Contributing</a> &bull;
   <a href="#license">License</a>
 </p>
 
 </div>
+
+<br />
+
+<div align="center">
+  <img src="docs/banner.svg" alt="Cascade Banner" width="800">
+</div>
+
+<br />
 
 <p align="center">
   <img src="docs/screenshots/editor-main.png" alt="Cascade Editor" width="800" />
@@ -30,49 +40,42 @@ Built with Tauri, React, and CodeMirror.
 
 ## Features
 
-**Editor**
-- Live Preview, Source, and Reading view modes
-- CodeMirror 6 with syntax highlighting, code folding, and bracket matching
-- Wiki-links (`[[note]]`) with autocomplete, backlink tracking, and heading links
-- Slash commands — type `/` to open an inline command menu (headings, code blocks, callouts, tables, and more)
+### Editor
+
+- **Live Preview, Source, and Reading** view modes with seamless switching
+- **CodeMirror 6** with syntax highlighting, code folding, bracket matching, and line numbers
+- **Wiki-links** (`[[note]]`) with autocomplete, backlink tracking, and heading links
+- **Slash commands** — type `/` to insert headings, code blocks, callouts, tables, and more
 - YAML frontmatter properties editor with type indicators
 - Inline image preview with resize and alignment controls
-- Math (LaTeX) block preview
-- Mermaid diagram rendering
+- Math (LaTeX) block preview and Mermaid diagram rendering
 - Callout blocks (`> [!NOTE]`, `> [!WARNING]`, etc.)
 - Table editor with column/row manipulation
 - Tags with autocomplete, nested tag support, and tag panel
 - Highlight syntax (`==highlighted==`)
-- Find and replace across notes (Ctrl+Shift+F)
+- Find and replace across notes (`Ctrl+Shift+F`)
 - Spellcheck with custom dictionary support
-- Vim mode (optional)
+- Optional Vim mode
 - Smart lists (auto-continue bullets, tasks, numbered lists)
 - Indent guides with customizable style and color
-- Code block line numbers
 - Embed preview for transclusion (`![[note]]`)
 - Query/Dataview-like preview blocks
 
-**Real-Time Collaboration**
-- Live collaborative editing for shared folder vaults — multiple users edit simultaneously
+### Real-Time Collaboration
+
+- **Live collaborative editing** for shared folder vaults — multiple users edit simultaneously
 - Live cursors and selections with user colors
-- Collaborators sidebar panel showing who's editing what
+- Collaborators sidebar panel showing who is editing what
 - File tree presence dots showing active collaborators per file
 - Auto host election with presence file discovery — zero config, just open the same vault
-- Password-protected sessions (never saved to disk)
+- Password-protected sessions (never saved to disk, Argon2 hashed)
 - Automatic host promotion on disconnect
 - Collab-aware file operations — rename/delete events sync across all users
 - Settings profiles for per-user preferences when sharing a vault
 
-**Focus & Writing**
-- Focus mode with paragraph dimming
-- Typewriter mode (keeps current line centered)
-- Word count goals with progress tracking
-- Auto-save with timer and focus-change modes
-- Split panes for side-by-side editing
-- Status bar (word count, character count, reading time, selection info)
+### Canvas Whiteboard
 
-**Canvas Whiteboard**
-- Infinite canvas for visual thinking with pan, zoom, and snap-to-grid
+- **Infinite canvas** for visual thinking with pan, zoom, and snap-to-grid
 - Text, file, and link cards with markdown rendering
 - Connect cards with edges (arrows, labels, colors, line styles)
 - Group nodes for organizing related cards
@@ -81,33 +84,45 @@ Built with Tauri, React, and CodeMirror.
 - Undo/redo, copy/paste, duplicate, lock/unlock nodes
 - `.canvas` file format compatible with Obsidian
 
-**Knowledge Management**
-- Backlinks panel showing all notes that link to the current note
+### Focus & Writing
+
+- Focus mode with paragraph dimming
+- Typewriter mode (keeps current line centered)
+- Word count goals with progress tracking
+- Auto-save with timer and focus-change modes
+- Split panes for side-by-side editing
+- Status bar (word count, character count, reading time, selection info)
+
+### Knowledge Management
+
+- **Backlinks panel** showing all notes that link to the current note
+- **Graph view** visualizing connections between notes
 - Tag index with tag panel for browsing and renaming
-- Graph view visualizing connections between notes
 - Bookmarks for quick access to frequently used notes
 - Outline panel for heading navigation
 - Table of contents generation
 - Daily, weekly, monthly, quarterly, and yearly notes with templates
 
-**Organization**
+### Organization
+
 - Vault-based file management with folder tree
-- Quick Open (Ctrl+O) for fast file switching
-- Command Palette (Ctrl+P) with 40+ commands and keyboard shortcuts
+- Quick Open (`Ctrl+O`) for fast file switching
+- Command Palette (`Ctrl+P`) with 40+ commands and keyboard shortcuts
 - Drag-and-drop file reorganization
 - File properties dialog (word count, character count, backlinks, tags)
-- Template system for creating notes from templates
-- Variable replacement system with custom delimiters
+- Template system with variable replacement and custom delimiters
 - Folder colors with multiple display styles
 - GitHub sync for vault backup and collaboration
 
-**Import & Export**
-- Import from Obsidian, Notion, Bear, Roam Research, and plain markdown
-- Export to Markdown, HTML, or PDF
+### Import & Export
+
+- Import from **Obsidian, Notion, Bear, Roam Research**, and plain markdown
+- Export to **Markdown, HTML, or PDF**
 - Batch export with customizable options
 
-**Customization**
-- 21+ built-in themes: Catppuccin (Mocha, Macchiato, Frappe, Latte), Nord, Dracula, Gruvbox, Tokyo Night, One Dark, Solarized, Rosé Pine, GitHub, Monokai, Material, Night Owl, Ayu, Kanagawa, Everforest
+### Customization
+
+- **21+ built-in themes**: Catppuccin (Mocha, Macchiato, Frappe, Latte), Nord, Dracula, Gruvbox, Tokyo Night, One Dark, Solarized, Rose Pine, GitHub, Monokai, Material, Night Owl, Ayu, Kanagawa, Everforest
 - Custom theme support via JSON with visual card picker
 - Configurable fonts (UI and editor), font sizes, and line height
 - Plugin system with sandboxed iframe execution and marketplace
@@ -115,13 +130,14 @@ Built with Tauri, React, and CodeMirror.
 - Customizable keyboard shortcuts
 - Internationalization ready (i18next, 2200+ keys)
 
-**Performance & Security**
-- Native desktop app — no Electron, no browser overhead
+### Performance & Security
+
+- **Native desktop app** — no Electron, no browser overhead
 - Rust backend for file I/O with canonical path validation and traversal protection
 - Collaboration server binds to localhost with Argon2 password hashing
 - Plugin HTML sandboxed with restrictive CSP; asset protocol scoped to user documents
 - CI pipeline with SHA-pinned actions, cargo clippy, and npm audit
-- Files stay on your disk, no cloud dependency
+- Files stay on your disk — no cloud dependency
 - Lazy-loaded components and namespaced i18n bundles
 - Deep link support (`cascade://open/vault/note`)
 
@@ -193,11 +209,11 @@ Built with Tauri, React, and CodeMirror.
 
 Download the latest release for your platform from the [Releases](https://github.com/Real-Fruit-Snacks/Cascade/releases) page.
 
-| Platform | Download |
-|----------|----------|
-| Windows  | `.msi` installer |
-| macOS    | `.dmg` disk image |
-| Linux    | `.AppImage` / `.deb` |
+| Platform | Download | Format |
+|----------|----------|--------|
+| Windows  | [Latest Release](https://github.com/Real-Fruit-Snacks/Cascade/releases) | `.msi` installer |
+| macOS    | [Latest Release](https://github.com/Real-Fruit-Snacks/Cascade/releases) | `.dmg` disk image |
+| Linux    | [Latest Release](https://github.com/Real-Fruit-Snacks/Cascade/releases) | `.AppImage` / `.deb` |
 
 ### Build from Source
 
@@ -242,7 +258,7 @@ cascade/
 │       ├── commands.rs   # IPC command handlers
 │       └── error.rs      # Error types
 ├── tests/e2e/            # Playwright E2E tests
-└── docs/                 # Documentation
+└── docs/                 # Documentation & assets
 ```
 
 ### Tech Stack
@@ -254,9 +270,10 @@ cascade/
 | Editor   | [CodeMirror 6](https://codemirror.net/) |
 | Styling  | [Tailwind CSS](https://tailwindcss.com/) |
 | State    | [Zustand 5](https://zustand.docs.pmnd.rs/) |
+| Collab   | [Yjs](https://yjs.dev/) (CRDT real-time sync) |
 | i18n     | [react-i18next](https://react.i18next.com/) |
 | Themes   | [Catppuccin](https://catppuccin.com/) + 17 more |
-| Testing  | [Vitest, Playwright](https://playwright.dev/) |
+| Testing  | [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/) |
 
 ### Running Tests
 
@@ -264,7 +281,10 @@ cascade/
 # Run unit tests
 npm test
 
-# Start the app first
+# Run unit tests in watch mode
+npm run test:watch
+
+# Start the app for E2E testing
 npm run tauri dev
 
 # Run E2E tests (requires app to be running)
@@ -278,6 +298,7 @@ npx playwright test
 | `npm run dev` | Start Vite dev server |
 | `npm run build` | TypeScript check + Vite build |
 | `npm run lint` | ESLint check |
+| `npm test` | Run unit tests |
 | `npm run tauri dev` | Start Tauri app in dev mode |
 | `npm run tauri build` | Build production binaries |
 
@@ -301,6 +322,14 @@ npx playwright test
 | `Ctrl+Z` | Undo |
 | `Ctrl+Shift+Z` | Redo |
 
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get involved.
+
+## Security
+
+To report a vulnerability, please see [SECURITY.md](SECURITY.md).
+
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) &copy; 2026 [Real-Fruit-Snacks](https://github.com/Real-Fruit-Snacks)

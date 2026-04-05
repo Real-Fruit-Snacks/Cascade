@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="flow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#cba6f7"/>
+      <stop offset="100%" style="stop-color:#f5c2e7"/>
+    </linearGradient>
+    <linearGradient id="flow2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#cba6f7;stop-opacity:0.6"/>
+      <stop offset="100%" style="stop-color:#f5c2e7;stop-opacity:0.6"/>
+    </linearGradient>
+    <linearGradient id="flow3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#cba6f7;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#f5c2e7;stop-opacity:0.3"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Stepped platforms — muted surface rectangles descending left to right -->
+  <rect x="60" y="120" width="120" height="4" rx="2" fill="#45475a"/>
+  <rect x="180" y="220" width="130" height="4" rx="2" fill="#45475a"/>
+  <rect x="310" y="310" width="140" height="4" rx="2" fill="#45475a"/>
+
+  <!-- Flowing curves cascading down each step -->
+  <!-- Step 1: top-left platform to mid platform -->
+  <path d="M100,120 C100,120 120,120 140,122 C160,124 170,140 172,160 C174,180 176,200 190,214 C204,220 220,220 240,220"
+        fill="none" stroke="url(#flow)" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Step 2: mid platform to lower platform -->
+  <path d="M220,220 C240,220 260,220 275,224 C290,228 298,248 300,268 C302,288 306,300 320,308 C334,312 350,310 370,310"
+        fill="none" stroke="url(#flow)" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Step 3: lower platform flowing out -->
+  <path d="M360,310 C380,310 400,310 420,316 C440,322 445,340 448,360 C451,380 454,395 460,405"
+        fill="none" stroke="url(#flow)" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Secondary flow lines — lighter, offset -->
+  <path d="M80,120 C80,122 95,124 110,130 C130,140 138,165 142,185 C146,205 155,218 175,222 C190,224 205,222 215,222"
+        fill="none" stroke="url(#flow2)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <path d="M200,222 C215,224 235,226 248,232 C265,242 270,262 274,282 C278,298 288,308 305,312 C318,314 335,312 348,312"
+        fill="none" stroke="url(#flow2)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <path d="M340,312 C358,314 378,316 395,324 C412,334 418,354 422,374 C426,390 432,400 440,408"
+        fill="none" stroke="url(#flow2)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Tertiary wisps -->
+  <path d="M120,118 C128,130 132,150 136,170 C140,190 148,210 165,218"
+        fill="none" stroke="url(#flow3)" stroke-width="1.2" stroke-linecap="round"/>
+
+  <path d="M250,218 C258,232 262,252 266,272 C270,292 280,306 295,312"
+        fill="none" stroke="url(#flow3)" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Splash dots at each step landing -->
+  <!-- Step 1 landing -->
+  <circle cx="178" cy="210" r="2" fill="#cba6f7" opacity="0.7"/>
+  <circle cx="186" cy="205" r="1.5" fill="#f5c2e7" opacity="0.6"/>
+  <circle cx="172" cy="216" r="1.5" fill="#cba6f7" opacity="0.5"/>
+  <circle cx="192" cy="212" r="1" fill="#f5c2e7" opacity="0.4"/>
+  <circle cx="168" cy="208" r="1" fill="#cba6f7" opacity="0.4"/>
+
+  <!-- Step 2 landing -->
+  <circle cx="308" cy="300" r="2" fill="#f5c2e7" opacity="0.7"/>
+  <circle cx="316" cy="296" r="1.5" fill="#cba6f7" opacity="0.6"/>
+  <circle cx="302" cy="306" r="1.5" fill="#f5c2e7" opacity="0.5"/>
+  <circle cx="322" cy="302" r="1" fill="#cba6f7" opacity="0.4"/>
+  <circle cx="298" cy="298" r="1" fill="#f5c2e7" opacity="0.4"/>
+
+  <!-- Step 3 landing -->
+  <circle cx="448" cy="392" r="2" fill="#cba6f7" opacity="0.7"/>
+  <circle cx="455" cy="386" r="1.5" fill="#f5c2e7" opacity="0.6"/>
+  <circle cx="442" cy="398" r="1.5" fill="#cba6f7" opacity="0.5"/>
+  <circle cx="460" cy="394" r="1" fill="#f5c2e7" opacity="0.4"/>
+</svg>

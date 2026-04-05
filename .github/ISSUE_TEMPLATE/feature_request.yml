@@ -1,0 +1,23 @@
+name: Feature Request
+description: Suggest a new feature for Cascade
+labels: [enhancement]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      placeholder: Describe the feature you'd like
+    validations:
+      required: true
+  - type: textarea
+    id: usecase
+    attributes:
+      label: Use Case
+      placeholder: Why would this be useful?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      placeholder: Any workarounds or alternative approaches?
