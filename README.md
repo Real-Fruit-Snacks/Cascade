@@ -1,29 +1,47 @@
-<div align="center">
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Real-Fruit-Snacks/Cascade/main/docs/assets/logo-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Real-Fruit-Snacks/Cascade/main/docs/assets/logo-light.svg">
-  <img alt="Cascade" src="https://raw.githubusercontent.com/Real-Fruit-Snacks/Cascade/main/docs/assets/logo-dark.svg" width="520">
+  <img alt="Cascade" src="https://raw.githubusercontent.com/Real-Fruit-Snacks/Cascade/main/docs/assets/logo-dark.svg" width="100%">
 </picture>
 
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
-![Rust](https://img.shields.io/badge/Rust-orange?style=flat&logo=rust&logoColor=white)
-![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+> [!IMPORTANT]
+> **Modern native markdown editor with real-time collaboration, canvas whiteboard, and 21+ themes.** Vault-based knowledge management built with Tauri and Rust. Live preview, wiki-links with backlinks, graph view, infinite canvas, slash commands, focus mode, split panes, plugin system, and full offline operation. Your files stay on your disk.
 
-**Modern native markdown editor with real-time collaboration, canvas whiteboard, and 21+ themes**
-
-Vault-based knowledge management built with Tauri and Rust. Live preview, wiki-links with backlinks,
-graph view, infinite canvas, slash commands, focus mode, split panes, plugin system, and full offline
-operation. Your files stay on your disk.
-
-</div>
+> *A cascade chains one drop into the next — a vault chains one note into the next. Felt fitting for an editor that ties wiki-links, backlinks, and a graph view together over plain markdown on your disk.*
 
 ---
 
-## Quick Start
+## §1 / Premise
 
-### Pre-built Binaries
+Cascade is a **vault-based markdown editor** built on Tauri v2 with a Rust backend and a React + CodeMirror 6 frontend. Three view modes (Live Preview, Source, Reading), wiki-links with autocomplete and backlinks, an infinite canvas whiteboard (Obsidian-compatible `.canvas` format), and real-time collaboration via Yjs CRDT sync with auto-elected hosts.
+
+Files live as plain markdown on your disk. Tauri provides the native shell with deep links (`cascade://open/vault/note`) and platform-native installers. Plugins run in sandboxed iframes with a restrictive CSP and access the vault through message passing.
+
+---
+
+## §2 / Specs
+
+| KEY        | VALUE                                                                       |
+|------------|-----------------------------------------------------------------------------|
+| EDITOR     | **CodeMirror 6** · Live Preview · Source · Reading · optional Vim mode      |
+| LINKS      | `[[note]]` · `[[note#heading]]` · `![[embed]]` · `#tag` · backlinks panel   |
+| GRAPH      | Knowledge graph view · backlinks · tag index · TOC · bookmarks              |
+| CANVAS     | Infinite · pan · zoom · snap · text/file/link cards · `.canvas` (Obsidian)  |
+| COLLAB     | **Yjs CRDT** · live cursors · auto host election · Argon2 password sessions |
+| THEMES     | **21+ built-in** · Catppuccin · Nord · Dracula · Gruvbox · Tokyo Night · Rose Pine · custom JSON |
+| IMPORT     | Obsidian · Notion · Bear · Roam Research                                    |
+| EXPORT     | Markdown · HTML · PDF · batch export                                        |
+| PLUGINS    | Sandboxed iframes · marketplace · per-plugin settings · message-passing API |
+| I18N       | i18next · 2200+ translation keys                                            |
+| STACK      | **Tauri v2** · Rust · React · TypeScript · CodeMirror 6 · Zustand · Yjs · MIT |
+
+Architecture in §5 below.
+
+---
+
+## §3 / Quickstart
+
+### Pre-built binaries
 
 Download the latest release from the [Releases](https://github.com/Real-Fruit-Snacks/Cascade/releases) page:
 
@@ -33,20 +51,17 @@ Download the latest release from the [Releases](https://github.com/Real-Fruit-Sn
 | macOS    | `.dmg` disk image |
 | Linux    | `.AppImage` / `.deb` |
 
-### Build from Source
+### Build from source
 
-Prerequisites: Node.js 18+, Rust 1.70+, Tauri CLI 2.x.
+Prerequisites: **Node.js 18+**, **Rust 1.70+**, **Tauri CLI 2.x**.
 
 ```bash
 git clone https://github.com/Real-Fruit-Snacks/Cascade.git
 cd Cascade
-
 npm install
-npm run tauri dev       # development mode
-npm run tauri build     # production build
+npm run tauri dev       # development
+npm run tauri build     # production
 ```
-
-### Verify
 
 ```bash
 npm test                # unit tests (Vitest)
@@ -56,147 +71,101 @@ npm run lint            # ESLint
 
 ---
 
-## Features
-
-### Live Preview Editor
-
-CodeMirror 6 with three view modes -- Live Preview, Source, and Reading. Syntax highlighting, code folding, bracket matching, line numbers, and optional Vim mode with seamless switching between modes.
+## §4 / Reference
 
 ```
-/heading    → insert heading
-/code       → insert code block
-/callout    → insert callout
-/table      → insert table
-```
+SLASH COMMANDS
 
-Inline image preview with resize controls, LaTeX math rendering, and Mermaid diagram support. Table editor with column and row manipulation. Find and replace across notes with `Ctrl+Shift+F`.
+  /heading             Insert heading
+  /code                Insert code block
+  /callout             Insert callout
+  /table               Insert table
 
-### Wiki-Links and Knowledge Graph
+MARKDOWN EXTENSIONS
 
-`[[note]]` links with autocomplete, backlink tracking, and heading links. Graph view visualizing connections between notes with a backlinks panel, tag index, and outline navigation.
+  [[my-note]]          Wiki-link to note
+  [[my-note#heading]]  Wiki-link to heading
+  ![[my-note]]         Embed / transclusion
+  #tag                 Tag with autocomplete
+  > [!NOTE]            Callout block
+  $$E = mc^2$$         LaTeX math (KaTeX)
 
-```markdown
-[[my-note]]           # link to note
-[[my-note#heading]]   # link to heading
-![[my-note]]          # embed / transclusion
-#tag                  # tag with autocomplete
-> [!NOTE]             # callout block
-$$E = mc^2$$          # LaTeX math
-```
+CANVAS
 
-Backlinks panel shows all notes linking to the current note. Tag index with browsing and renaming. Table of contents generation and bookmarks for quick access.
+  Card types           text · file · link
+  Layouts              grid · tree · force-directed
+  Export               PNG · SVG
+  Groups               collapsible card grouping
+  Operations           undo/redo · copy/paste · lock/unlock
 
-### Real-Time Collaboration
+COLLABORATION
 
-Live collaborative editing via Yjs CRDT sync. Multiple users edit simultaneously with live cursors and per-user colors. Auto host election with zero-config discovery and password-protected sessions using Argon2 hashing.
+  Live cursors and selections per user
+  Collaborator presence sidebar
+  Auto host promotion on disconnect
+  Collab-aware file ops (rename / delete sync)
+  Per-user settings profiles
 
-```
-Collab features:
-  - Live cursors and selections
-  - Collaborator presence sidebar
-  - Auto host promotion on disconnect
-  - Collab-aware file operations (rename/delete sync)
-  - Per-user settings profiles
-```
+WRITING TOOLS
 
-### Canvas Whiteboard
+  Focus mode           Paragraph dimming · distraction-free
+  Typewriter           Current line stays centered
+  Word goals           Progress bar with target tracking
+  Split panes          Side-by-side note editing
+  Quick Open           Ctrl+O for fast file switching
+  Command Palette      Ctrl+P · 40+ commands
 
-Infinite canvas for visual thinking with pan, zoom, and snap-to-grid. Text, file, and link cards with markdown rendering. Connect cards with edges and auto-layout algorithms. `.canvas` format compatible with Obsidian.
+CUSTOM THEME
 
-```
-Card types:  text, file, link
-Layout:      grid, tree, force-directed
-Export:      PNG, SVG
-Groups:      collapsible card grouping
-Operations:  undo/redo, copy/paste, lock/unlock
-```
-
-### 21+ Built-in Themes
-
-Catppuccin (Mocha, Macchiato, Frappe, Latte), Nord, Dracula, Gruvbox, Tokyo Night, One Dark, Solarized, Rose Pine, GitHub, Monokai, Material, Night Owl, Ayu, Kanagawa, Everforest. Custom theme support via JSON with a visual card picker.
-
-```json
-{
-  "name": "my-theme",
-  "colors": {
-    "background": "#1e1e2e",
-    "foreground": "#cdd6f4",
-    "accent": "#cba6f7"
+  {
+    "name": "my-theme",
+    "colors": {
+      "background": "#1e1e2e",
+      "foreground": "#cdd6f4",
+      "accent": "#cba6f7"
+    }
   }
-}
-```
-
-### Import and Export
-
-Import from Obsidian, Notion, Bear, and Roam Research. Export to Markdown, HTML, or PDF with batch export. Deep link support via `cascade://open/vault/note`. GitHub sync for vault backup.
-
-```bash
-# Supported import sources
-Obsidian    →  vault migration with wiki-link conversion
-Notion      →  database and page import
-Bear/Roam   →  note conversion with tag preservation
-
-# Export formats
-Markdown    →  plain .md files
-HTML        →  styled single-page output
-PDF         →  print-ready documents (batch supported)
-```
-
-### Plugin System
-
-Sandboxed iframe plugin execution with a built-in marketplace. 30+ configurable feature toggles with per-feature option pages. Customizable keyboard shortcuts and internationalization support (i18next, 2200+ translation keys).
-
-```
-Plugin lifecycle:
-  1. Install from marketplace or local directory
-  2. Sandboxed iframe execution with restrictive CSP
-  3. Access vault API through message passing
-  4. Per-plugin settings in the options panel
-```
-
-### Focus and Writing Tools
-
-Focus mode with paragraph dimming and typewriter mode keeping the current line centered. Word count goals with progress tracking, auto-save with timer and focus-change triggers, and split panes for side-by-side editing.
-
-```
-Focus mode     →  paragraph dimming, distraction-free
-Typewriter     →  current line stays centered
-Word goals     →  progress bar with target tracking
-Split panes    →  side-by-side note editing
-Quick Open     →  Ctrl+O for fast file switching
-Command Palette →  Ctrl+P with 40+ commands
 ```
 
 ---
 
-## Architecture
+## §5 / Architecture
 
 ```
-Cascade/
-├── src/                    # React frontend
-│   ├── components/         # 40+ UI components
-│   ├── editor/             # CodeMirror 6 extensions
-│   │   ├── wiki-links.ts
-│   │   ├── collab-extension.ts
-│   │   ├── slash-commands/
-│   │   └── live-preview/
-│   ├── stores/             # Zustand state management
-│   ├── hooks/              # Custom React hooks
-│   └── i18n/               # Internationalization
-├── src-tauri/src/          # Rust backend (Tauri v2)
-│   ├── collab/             # WebSocket collaboration server
-│   ├── vault/              # File I/O, themes, plugins, export
-│   ├── search.rs           # Full-text search
-│   └── watcher.rs          # File system watcher
-├── tests/e2e/              # Playwright E2E tests
-└── docs/                   # GitHub Pages site
+src/                   React frontend
+  components/          40+ UI components
+  editor/              CodeMirror 6 extensions
+    wiki-links.ts
+    collab-extension.ts
+    slash-commands/
+    live-preview/
+  stores/              Zustand state management
+  hooks/               Custom React hooks
+  i18n/                Internationalization (2200+ keys)
+
+src-tauri/src/         Rust backend (Tauri v2)
+  collab/              WebSocket collaboration server
+  vault/               File I/O · themes · plugins · export
+  search.rs            Full-text search
+  watcher.rs           File system watcher
+
+tests/e2e/             Playwright E2E tests
 ```
 
-Tauri v2 provides the native runtime with a Rust backend handling file operations, collaboration, and search. The React frontend uses CodeMirror 6 for editing, Zustand for state management, and Yjs for CRDT-based real-time collaboration sync.
+| Layer        | Implementation                                                  |
+|--------------|-----------------------------------------------------------------|
+| **Shell**    | Tauri v2 · platform-native installers · deep-link `cascade://`  |
+| **Editor**   | CodeMirror 6 · slash commands · live preview · vim mode         |
+| **Backend**  | Rust · file I/O · search · watcher · plugin sandbox             |
+| **Collab**   | Yjs CRDT · WebSocket server · auto host election · Argon2 password sessions |
+| **State**    | Zustand                                                         |
+| **Plugins**  | Sandboxed iframes · restrictive CSP · message-passing API       |
+
+**Key patterns:** Files stay on your disk as plain markdown — no proprietary database, no lock-in. Vault operations go through the Rust backend; the React frontend only sees what's needed. Collab is opt-in per session and ends with the connection.
 
 ---
 
-## Platform Support
+## §6 / Platform support
 
 | Capability | Linux | macOS | Windows |
 |------------|-------|-------|---------|
@@ -212,6 +181,4 @@ Tauri v2 provides the native runtime with a Rust backend handling file operation
 
 ---
 
-## License
-
-[MIT](LICENSE) — Copyright 2026 Real-Fruit-Snacks
+[License: MIT](LICENSE) · Part of [Real-Fruit-Snacks](https://github.com/Real-Fruit-Snacks) — building offensive security tools, one wave at a time.
