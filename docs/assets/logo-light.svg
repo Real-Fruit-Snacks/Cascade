@@ -3,19 +3,27 @@
   <line x1="0" y1="32" x2="800" y2="32" stroke="#bcc0cc" stroke-width="1"/>
   <text x="20" y="22" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="10" font-weight="700" fill="#8839ef" letter-spacing="2">RFS</text>
   <text x="60" y="22" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="10" font-weight="500" fill="#9ca0b0" letter-spacing="2">·  CASCADE  ·  NATIVE MARKDOWN EDITOR</text>
-  <circle cx="676" cy="18" r="3" fill="#40a02b"/>
+  <circle cx="640" cy="18" r="3" fill="#40a02b"/>
   <text x="780" y="22" text-anchor="end" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="10" font-weight="500" fill="#6c6f85" letter-spacing="2">TAURI · DESKTOP</text>
   <text x="20" y="115" font-family="'Inter', sans-serif" font-size="92" font-weight="800" fill="#1e1e2e" letter-spacing="-4">CASCADE<tspan fill="#dd7878">.</tspan></text>
   <line x1="0" y1="140" x2="800" y2="140" stroke="#bcc0cc" stroke-width="1"/>
   <line x1="200" y1="140" x2="200" y2="200" stroke="#bcc0cc" stroke-width="1"/>
   <line x1="400" y1="140" x2="400" y2="200" stroke="#bcc0cc" stroke-width="1"/>
   <line x1="600" y1="140" x2="600" y2="200" stroke="#bcc0cc" stroke-width="1"/>
-  <text x="20" y="158" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="9" font-weight="600" fill="#9ca0b0" letter-spacing="2">THEMES</text>
-  <text x="20" y="186" font-family="'Inter', sans-serif" font-size="22" font-weight="700" fill="#1e1e2e" letter-spacing="-1">21+<tspan fill="#dd7878" font-size="14"> BUILT-IN</tspan></text>
-  <text x="220" y="158" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="9" font-weight="600" fill="#9ca0b0" letter-spacing="2">VIEWS</text>
-  <text x="220" y="186" font-family="'Inter', sans-serif" font-size="22" font-weight="700" fill="#1e1e2e" letter-spacing="-1">3<tspan fill="#dd7878" font-size="14"> · LIVE · SRC · READ</tspan></text>
-  <text x="420" y="158" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="9" font-weight="600" fill="#9ca0b0" letter-spacing="2">CANVAS</text>
-  <text x="420" y="186" font-family="'Inter', sans-serif" font-size="22" font-weight="700" fill="#1e1e2e" letter-spacing="-1">INFINITE<tspan fill="#dd7878" font-size="14"> · CRDT</tspan></text>
-  <text x="620" y="158" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="9" font-weight="600" fill="#9ca0b0" letter-spacing="2">STACK</text>
-  <text x="620" y="186" font-family="'Inter', sans-serif" font-size="22" font-weight="700" fill="#1e1e2e" letter-spacing="-1">TAURI<tspan fill="#dd7878" font-size="14"> · RUST · TS</tspan></text>
+
+  <text x="20" y="158" font-family="'JetBrains Mono', 'Courier New', monospace" font-size="10" font-weight="600" fill="#9ca0b0" letter-spacing="1">THEMES</text>
+  <text x="20" y="175" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="700" fill="#dd7878" letter-spacing="0">21+ BUILT-IN</text>
+  <text x="20" y="190" font-family="'JetBrains Mono', 'Courier New', monospace" font-size="8" fill="#9ca0b0" letter-spacing="0">CATPPUCCIN · NORD · GRUVBOX</text>
+
+  <text x="220" y="158" font-family="'JetBrains Mono', 'Courier New', monospace" font-size="10" font-weight="600" fill="#9ca0b0" letter-spacing="1">VIEWS</text>
+  <text x="220" y="175" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="700" fill="#dd7878" letter-spacing="0">3 MODES</text>
+  <text x="220" y="190" font-family="'JetBrains Mono', 'Courier New', monospace" font-size="8" fill="#9ca0b0" letter-spacing="0">LIVE · SOURCE · READ</text>
+
+  <text x="420" y="158" font-family="'JetBrains Mono', 'Courier New', monospace" font-size="10" font-weight="600" fill="#9ca0b0" letter-spacing="1">CANVAS</text>
+  <text x="420" y="175" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="700" fill="#dd7878" letter-spacing="0">INFINITE</text>
+  <text x="420" y="190" font-family="'JetBrains Mono', 'Courier New', monospace" font-size="8" fill="#9ca0b0" letter-spacing="0">CRDT · WIKI-LINKS · COLLAB</text>
+
+  <text x="620" y="158" font-family="'JetBrains Mono', 'Courier New', monospace" font-size="10" font-weight="600" fill="#9ca0b0" letter-spacing="1">STACK</text>
+  <text x="620" y="175" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="700" fill="#dd7878" letter-spacing="0">TAURI</text>
+  <text x="620" y="190" font-family="'JetBrains Mono', 'Courier New', monospace" font-size="8" fill="#9ca0b0" letter-spacing="0">RUST · TS · NATIVE</text>
 </svg>
